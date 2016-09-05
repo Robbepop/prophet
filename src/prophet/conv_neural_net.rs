@@ -249,23 +249,21 @@ impl ConvNeuralNet {
 
 	fn propagate_gradients(&mut self, target_values: &[f32]) {
 		let act_fn_dx = self.act_fns.derived; // because of borrow checker bugs
-		self.output_layer_mut().calculate_output_gradients(target_values, act_fn_dx);
 
-		if let Some((&mut ref last, ref mut tail)) = self.layers.split_last_mut() {
+		if let Some((&mut ref mut last, ref mut tail)) = self.layers.split_last_mut() {
 			tail.iter_mut()
 				.rev()
-				.fold(last, |prev, layer| layer.propagate_gradients(prev, act_fn_dx));
+				.fold(last.calculate_output_gradients(target_values, act_fn_dx),
+				      |prev, layer| layer.propagate_gradients(prev, act_fn_dx));
 		}
 	}
 
 	fn update_weights(&mut self, input: &[f32]) {
 		let learn_rate     = self.learning_rate;
 		let learn_momentum = self.learning_momentum;
-		if let Some((&mut ref mut first, ref mut tail)) = self.layers.split_first_mut() {
-			first.update_weights(input, learn_rate, learn_momentum);
-			tail.iter_mut()
-				.fold(first.output_as_slice(), |prev_output, layer| layer.update_weights(prev_output, learn_rate, learn_momentum));
-		}
+
+		self.layers.iter_mut()
+			.fold(input, |prev_output, layer| layer.update_weights(prev_output, learn_rate, learn_momentum));
 	}
 
 	fn update_error_stats(&mut self, target_values: &[f32]) -> ErrorStats {
