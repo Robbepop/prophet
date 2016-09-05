@@ -12,9 +12,10 @@ Usage
 
 This project is not (yet) supported on crates.io.
 
-Future Plans
-------------
-
+Future Plans (in no specific order)
+-----------------------------------
+ 
+ - implement neural net generically for ```num::Float``` types
  - add better abstractions and features
  - improve code documentation
  - add usage examples

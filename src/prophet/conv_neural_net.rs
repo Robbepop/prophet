@@ -12,7 +12,7 @@ use prophet::neural_net::{NeuralNet, TrainableNeuralNet};
 type Array1D<F> = Array<F, Ix>;
 type Array2D<F> = Array<F, (Ix, Ix)>;
 
-pub struct ConvNeuralLayer {
+struct ConvNeuralLayer {
 	weights:       Array2D<f32>,
 	delta_weights: Array2D<f32>,
 	outputs:       Array1D<f32>,
@@ -53,7 +53,7 @@ impl ConvNeuralLayer {
 	/// The weights are randomized within the open interval (0,1).
 	/// This excludes 0.0 and 1.0 as weights.
 	/// Other optional intervals may come with a future update!
-	pub fn random(inputs: Ix, outputs: Ix) -> Self {
+	fn random(inputs: Ix, outputs: Ix) -> Self {
 		assert!(inputs >= 1 && outputs >= 1);
 		let inputs = inputs + 1; // implicitely add bias!
 		let elems = inputs * outputs;
@@ -85,7 +85,7 @@ impl ConvNeuralLayer {
 	///  - weight matrix with m rows and (n+1) columns
 	/// Asserts:
 	///  - output with m elements
-	pub fn feed_forward<'a>(
+	fn feed_forward<'a>(
 		&'a mut self,
 		input: &[f32],
 		activation_fn: ActivationFn<f32>
@@ -231,10 +231,6 @@ impl ConvNeuralNet {
 		self.layers.last().unwrap()
 	}
 
-	fn output_layer_mut(&mut self) -> &mut ConvNeuralLayer {
-		self.layers.last_mut().unwrap()
-	}
-
 	fn overall_net_error(&self, target_values: &[f32]) -> f32 {
 		let outputs = self.output_layer().output_as_slice();
 		let sum = Zip::new((outputs.iter(), target_values))
@@ -243,7 +239,7 @@ impl ConvNeuralNet {
 		(sum / outputs.len() as f32).sqrt()
 	}
 
-	fn latest_error_stats(&self) -> ErrorStats {
+	pub fn latest_error_stats(&self) -> ErrorStats {
 		self.error_stats
 	}
 

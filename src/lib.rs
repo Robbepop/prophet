@@ -3,5 +3,4 @@ extern crate num;
 extern crate ndarray;
 extern crate itertools;
 
-mod prophet;
-
+pub mod prophet;
