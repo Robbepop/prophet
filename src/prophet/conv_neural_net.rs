@@ -166,9 +166,9 @@ impl ConvNeuralLayer {
 	/// Updates the connection weights of this layer.
 	/// This operation is usually used after successful computation of gradients.
 	fn update_weights(&mut self,
-	                      prev_outputs: &[f32],
-	                      train_rate: f32,
-	                      learning_momentum: f32) -> &[f32]
+	                  prev_outputs: &[f32],
+	                  train_rate: f32,
+	                  learning_momentum: f32) -> &[f32]
 	{
 		debug_assert_eq!(prev_outputs.len() + 1, self.count_columns());
 		debug_assert_eq!(self.count_gradients(), self.count_rows() + 1);
@@ -258,10 +258,11 @@ impl ConvNeuralNet {
 		}
 	}
 
-	fn update_weights(&mut self) {
+	fn update_weights(&mut self, input: &[f32]) {
 		let learn_rate     = self.learning_rate;
 		let learn_momentum = self.learning_momentum;
-		if let Some((&mut ref first, ref mut tail)) = self.layers.split_first_mut() {
+		if let Some((&mut ref mut first, ref mut tail)) = self.layers.split_first_mut() {
+			first.update_weights(input, learn_rate, learn_momentum);
 			tail.iter_mut()
 				.fold(first.output_as_slice(), |prev_output, layer| layer.update_weights(prev_output, learn_rate, learn_momentum));
 		}
@@ -288,7 +289,7 @@ impl TrainableNeuralNet for ConvNeuralNet {
 	fn train(&mut self, input: &[Self::Elem], target_values: &[Self::Elem]) -> ErrorStats {
 		self.predict(input);
 		self.propagate_gradients(target_values);
-		self.update_weights();
+		self.update_weights(input);
 		self.update_error_stats(target_values)
 	}
 }
@@ -313,7 +314,7 @@ mod tests {
 		let t =  1.0;
 		let f = -1.0;
 		let print = false;
-		for _ in 0..500 {
+		for _ in 0..200 {
 			if print {
 				println!("(f,f) => {}"  , net.train(&[f, f], &[f]));
 				println!("(f,t) => {}"  , net.train(&[f, t], &[t]));
@@ -332,7 +333,7 @@ mod tests {
 
 	#[test]
 	fn train_constant() {
-		let mut net = ConvNeuralNet::new(0.25, 0.5, BaseDerivedActivationFn::<f32>::identity(), &[1, 1, 1]);
+		let mut net = ConvNeuralNet::new(0.25, 0.5, BaseDerivedActivationFn::<f32>::identity(), &[1, 1]);
 		let mut vx = vec![0.0; 1];
 		let print = false;
 		for _ in 0..100 {
@@ -355,7 +356,7 @@ mod tests {
 		let f = -1.0;
 		let t =  1.0;
 		let print = false;
-		for _ in 0..500 {
+		for _ in 0..200 {
 			if print {
 				println!("(f, f) => {}"  , net.train(&[f, f], &[f]));
 				println!("(f, t) => {}"  , net.train(&[f, t], &[f]));
