@@ -1,176 +1,263 @@
+//! Provides utility functionality when working with common activation (or transfer) functions.
+
 use num::{Float};
+use std::fmt;
 use std::ops::{Deref};
 
+
+/// Defines a generic type alias to describe a conforming functional interface
+/// for the family of activation functions supported by this library.
 pub type ActivationFn<F> = fn(F) -> F;
 
+/// Represents the pair of an activation function and its derivate.
+/// 
+/// Has some convenience constructors to build some commonly used activation functions
+/// with their respective derivate.
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct BaseDerivedActivationFn<F: Float> {
-	pub base: ActivationFn<F>,
-	pub derived: ActivationFn<F>
+	/// the base function
+	base: ActivationFn<F>,
+	/// the derivation of the base function
+	derived: ActivationFn<F>,
+	/// a string representation of the function
+	repr: &'static str
 }
 
+/// Identity: *ƒ(x) = x*
 pub fn identity_fn<F: Float>(x: F) -> F { x }
+/// Derivation of the Identity: *ƒ(x) = 1*
 pub fn identity_fn_dx<F: Float>(_: F) -> F { F::one() }
 
+/// 
+/// Binary Step:  
+/// *ƒ(x) = 0* **if** *x < 0*  
+/// *ƒ(x) = 1* **if** *x ≥ 0*
 pub fn binary_step_fn<F: Float>(x: F) -> F {
 	if x < F::zero() { F::zero() } else { F::one() }
 }
+/// Derivation of Binary Step: *ƒ(x) = 0, x ≠ 0*
 pub fn binary_step_fn_dx<F: Float>(x: F) -> F {
 	if x != F::zero() { F::zero() } else { F::infinity() }
 }
 
+/// Logistic or Sigmoid
 pub fn logistic_fn<F: Float>(x: F) -> F {
 	softplus_fn_dx(x)
 }
+/// Derivation of Logistic or Sigmoid
 pub fn logistic_fn_dx<F: Float>(x: F) -> F {
 	logistic_fn(x) * (F::one() - logistic_fn(x))
 }
 
+/// Tangens Hyperbolicus (**tanh**): *ƒ(x) = tanh(x)*
 pub fn tanh_fn<F: Float>(x: F) -> F {
 	x.tanh()
 }
+/// Derivation of Tangens Hyperbolicus (**tanh⁻¹**): *ƒ(x) = 1 - tanh²(x)*
 pub fn tanh_fn_dx<F: Float>(x: F) -> F {
 	let fx = tanh_fn(x);
 	F::one() - fx*fx
 }
 
+/// Arcus Tangens (**atan**): *ƒ(x) = atan(x)*
 pub fn arctan_fn<F: Float>(x: F) -> F {
 	x.atan()
 }
+/// Derivation of Arcus Tangens (**atan⁻¹**): *ƒ(x) = (x² + 1)⁻¹*
 pub fn arctan_fn_dx<F: Float>(x: F) -> F {
 	F::one() / (x*x + F::one())
 }
 
+/// SoftSign: *ƒ(x) = x ⋅ (1 + |x|)⁻¹*
 pub fn softsign_fn<F: Float>(x: F) -> F { x / (F::one() + x.abs()) }
+/// Derivation of SoftSign: *ƒ(x) = ( (1 + |x|)² )⁻¹*
 pub fn softsign_fn_dx<F: Float>(x: F) -> F { let dx = F::one() + x.abs(); F::one() / (dx*dx) }
 
+///   
+/// ReLU:  
+/// *ƒ(x) = 0* **if** *x < 0*  
+/// *ƒ(x) = x* **else**
 pub fn relu_fn<F: Float>(x: F) -> F { if x < F::zero() { F::zero() } else { x } }
+///   
+/// Derivation of ReLU:  
+/// *ƒ(x) = 0* **if** *x < 0*  
+/// *ƒ(x) = 1* **else**
 pub fn relu_fn_dx<F: Float>(x: F) -> F { if x < F::zero() { F::zero() } else { F::one() } }
 
+/// SoftPlus: *ƒ(x) = __ln__(1 + eˣ)*
 pub fn softplus_fn<F: Float>(x: F) -> F {
 	x.exp().ln_1p()
 }
+/// Derivation of SoftPlus: *ƒ(x) = (1 + e⁻ˣ)⁻¹*
 pub fn softplus_fn_dx<F: Float>(x: F) -> F {
 	F::one() / (F::one() + (-x).exp())
 }
 
+/// Bent Identity: *ƒ(x) = ½(__sqrt__(x² + 1) - 1) + x*
 pub fn bent_identity_fn<F: Float>(x: F) -> F {
-	// ((sqrt(x^2 + 1) - 1) / 2) + x
 	let two = F::from(2.0).unwrap();
 	(((x*x) + F::one()).sqrt() - F::one()) / two + x
 }
+/// Derivation of Bent Identity: *ƒ(x) = x ⋅ (2 * __sqrt__(x² + 1))⁻¹ + 1*
 pub fn bent_identity_fn_dx<F: Float>(x: F) -> F {
-	// (x / (2 * sqrt(x^2 + 1))) + 1
 	let two = F::from(2.0).unwrap();
 	x / (two * ((x * x) + F::one()).sqrt()) + F::one()
 }
 
+/// Sinusoid: *ƒ(x) = __sin__(x)*
 pub fn sinusoid_fn<F: Float>(x: F) -> F {
 	x.sin()
 }
+/// Derivation of Sinusoid: *ƒ(x) = __cos__(x)*
 pub fn sinusoid_fn_dx<F: Float>(x: F) -> F {
 	x.cos()
 }
 
+/// Gaussian:  *ƒ(x) = e⁻ˣˣ*
 pub fn gaussian_fn<F: Float>(x: F) -> F {
 	(-x * x).exp()
 }
+/// Derivation of Gaussian:  *ƒ(x) = -2xe⁻ˣˣ*
 pub fn gaussian_fn_dx<F: Float>(x: F) -> F {
 	let two = F::from(2.0).unwrap();
 	-two * x * gaussian_fn(x)
 }
 
 impl<F: Float> BaseDerivedActivationFn<F> {
-	pub fn new(base: ActivationFn<F>, derived: ActivationFn<F>) -> Self {
+	/// Used to create custom pairs of activation functions for users
+	/// who wish to use an activation function that is not already covered by this library.
+	pub fn custom(base: ActivationFn<F>, derived: ActivationFn<F>) -> Self {
 		BaseDerivedActivationFn{
 			base: base,
-			derived: derived
+			derived: derived,
+			repr: "custom"
 		}
 	}
 
+	/// Convenience constructor for the identity activation function.
 	pub fn identity() -> Self {
 		BaseDerivedActivationFn{
 			base: identity_fn,
-			derived: identity_fn_dx
+			derived: identity_fn_dx,
+			repr: "Identity"
 		}
 	}
 
+	/// Convenience constructor for the binary step activation function.
 	pub fn binary_step() -> Self {
 		BaseDerivedActivationFn{
 			base: binary_step_fn,
-			derived: binary_step_fn_dx
+			derived: binary_step_fn_dx,
+			repr: "Binary Step"
 		}
 	}
 
+	/// Convenience constructor for the arcus tangens activation function.
 	pub fn arctan() -> Self {
 		BaseDerivedActivationFn{
 			base: arctan_fn,
-			derived: arctan_fn_dx
+			derived: arctan_fn_dx,
+			repr: "Arcus Tangens (arctan)"
 		}
 	}
 
+	/// Convenience constructor for the tangens hyperbolicus (tanh) activation function.
 	pub fn tanh() -> Self {
 		BaseDerivedActivationFn{
 			base: tanh_fn,
-			derived: tanh_fn_dx
+			derived: tanh_fn_dx,
+			repr: "Tangens Hyperbolicus (tanh)"
 		}
 	}
 
+	/// Convenience constructor for the logistic or sigmoid activation function.
 	pub fn logistic() -> Self {
 		BaseDerivedActivationFn{
 			base: logistic_fn,
-			derived: logistic_fn_dx
+			derived: logistic_fn_dx,
+			repr: "Logistic/Sigmoid"
 		}
 	}
 
+	/// Convenience constructor for the soft sign activation function.
 	pub fn softsign() -> Self {
 		BaseDerivedActivationFn{
 			base: softsign_fn,
-			derived: softsign_fn_dx
+			derived: softsign_fn_dx,
+			repr: "SoftSign"
 		}
 	}
 
+	/// Convenience constructor for the ReLU activation function.
 	pub fn relu() -> Self {
 		BaseDerivedActivationFn{
 			base: relu_fn,
-			derived: relu_fn_dx
+			derived: relu_fn_dx,
+			repr: "ReLU"
 		}
 	}
 
+	/// Convenience constructor for the soft plus activation function.
 	pub fn softplus() -> Self {
 		BaseDerivedActivationFn{
 			base: softplus_fn,
-			derived: softplus_fn_dx
+			derived: softplus_fn_dx,
+			repr: "SoftPlus"
 		}
 	}
 
+	/// Convenience constructor for the bent identity activation function.
 	pub fn bent_identity() -> Self {
 		BaseDerivedActivationFn{
 			base: bent_identity_fn,
-			derived: bent_identity_fn_dx
+			derived: bent_identity_fn_dx,
+			repr: "Bent Identity"
 		}
 	}
 
+	/// Convenience constructor for the sinusoid activation function.
 	pub fn sinusoid() -> Self {
 		BaseDerivedActivationFn{
 			base: sinusoid_fn,
-			derived: sinusoid_fn_dx
+			derived: sinusoid_fn_dx,
+			repr: "Sinusoid"
 		}
 	}
 
+	/// Convenience constructor for the gaussian activation function.
 	pub fn gaussian() -> Self {
 		BaseDerivedActivationFn{
 			base: gaussian_fn,
-			derived: gaussian_fn_dx
+			derived: gaussian_fn_dx,
+			repr: "Gaussian"
 		}
 	}
 
+	/// Returns the function pointer to the base function.
+	pub fn base_ptr(&self) -> ActivationFn<F> {
+		self.base
+	}
+
+	/// Returns the function pointer to the derivation of the base function.
+	pub fn derived_ptr(&self) -> ActivationFn<F> {
+		self.derived
+	}
+
+	/// Forwards `x` to the base function and returns its result.
 	pub fn base(&self, x: F) -> F {
 		(self.base)(x)
 	}
 
+	/// Forwards `x` to the derivation of the base function and returns its result.
 	pub fn derived(&self, x: F) -> F {
 		(self.derived)(x)
 	}
+}
+
+impl<F: Float> fmt::Display for BaseDerivedActivationFn<F> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.repr)
+    }
 }
 
 impl<F: Float> Deref for BaseDerivedActivationFn<F> {
@@ -184,12 +271,12 @@ impl<F: Float> Deref for BaseDerivedActivationFn<F> {
 #[cfg(test)]
 mod tests {
 	use num::Float;
-	use super::{BaseDerivedActivationFn};
+	use super::{BaseDerivedActivationFn, tanh_fn};
 
 	#[test]
 	fn new_base_deriv_act_fn() {
 		use super::{logistic_fn, logistic_fn_dx};
-		let custom_sigmoid = BaseDerivedActivationFn::<f32>::new(logistic_fn, logistic_fn_dx);
+		let custom_sigmoid = BaseDerivedActivationFn::<f32>::custom(logistic_fn, logistic_fn_dx);
 		let predef_sigmoid = BaseDerivedActivationFn::<f32>::logistic();
 		assert_eq!(custom_sigmoid.base(-1.0), predef_sigmoid.base(-1.0));
 		assert_eq!(custom_sigmoid.base(-0.5), predef_sigmoid.base(-0.5));

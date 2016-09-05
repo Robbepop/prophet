@@ -21,3 +21,4 @@ Future Plans (in no specific order)
  - add usage examples
  - improve test code coverage
  - implement a GPGPU implementation for large layers
+ - improve error handling: less panics, more results

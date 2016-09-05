@@ -1,3 +1,6 @@
+//! An implementation of a convolutional neural network that can be used to learn from target data
+//! and to predict results after feeding it some training data.
+
 use std::vec::Vec;
 
 use rand::*;
@@ -5,13 +8,23 @@ use ndarray::prelude::*;
 use ndarray::{Shape};
 use itertools::{Zip};
 
-use prophet::error_stats::{ErrorStats};
-use prophet::activation_fn::{ActivationFn, BaseDerivedActivationFn};
-use prophet::neural_net::{NeuralNet, TrainableNeuralNet};
+use learn_config::{LearnConfig};
+use error_stats::{ErrorStats};
+use activation_fn::{
+	ActivationFn,
+	BaseDerivedActivationFn
+};
+use neural_net::{
+	NeuralNet,
+	TrainableNeuralNet
+};
 
 type Array1D<F> = Array<F, Ix>;
 type Array2D<F> = Array<F, (Ix, Ix)>;
 
+/// A layer within a convolutional neural net.
+/// 
+/// 
 struct ConvNeuralLayer {
 	weights:       Array2D<f32>,
 	delta_weights: Array2D<f32>,
@@ -19,11 +32,29 @@ struct ConvNeuralLayer {
 	gradients:     Array1D<f32>
 }
 
+/// A convolutional neural net.
+/// 
+/// Can be trained with testing data and afterwards be used to predict results.
+/// 
+/// Neural nets in this implementation constists of several stacked neural layers
+/// and organized the data flow between them.
+/// 
+/// For example when the user uses ```predict``` from ```NeuralNet``` this
+/// object organizes the input data throughout all of its owned layers and pipes
+/// the result in the last layer back to the user.
 pub struct ConvNeuralNet {
+	/// the layers within this ```ConvNeuralNet```
 	layers: Vec<ConvNeuralLayer>,
-	act_fns: BaseDerivedActivationFn<f32>,
-	learning_rate: f32,
-	learning_momentum: f32,
+
+	/// the config that handles all the parameters to tune the learning process
+	pub config: LearnConfig,
+	// /// the activation function and its derivate used for ```predict``` and ```train```
+	// act_fns: BaseDerivedActivationFn<f32>,
+	// /// the learning rate at which this ```ConvNeuralNet``` adepts to target values during training
+	// learning_rate: f32,
+	// /// the learn momentum at which this ```ConvNeuralNet``` updates its weights
+	// learning_momentum: f32,
+	/// holds error stats for the user to query the current learning state of the network
 	error_stats: ErrorStats
 }
 
@@ -196,26 +227,62 @@ impl ConvNeuralLayer {
 
 impl ConvNeuralNet {
 	fn from_vec(
-		learning_rate: f32,
-		learning_momentum: f32,
-		act_fn: BaseDerivedActivationFn<f32>,
+		learn_config: LearnConfig,
 		layers: Vec<ConvNeuralLayer>
 	)
 		-> Self
 	{
 		ConvNeuralNet{
 			layers: layers,
-			act_fns: act_fn,
-			learning_rate: learning_rate,
-			learning_momentum: learning_momentum,
+			config: learn_config,
 			error_stats: ErrorStats::default()
 		}
 	}
 
+	/// Creates a new instance of a ```ConvNeuralNet```.
+	/// 
+	///  - ```layer_sizes``` define the count of neurons (without bias) per neural layer.
+	///  - ```learning_rate``` and ```learning_momentum``` describe the acceleration and momentum
+	/// with which the created neural net will be learning. These values can be changed later during
+	/// the lifetime of the object if needed.
+	///  - ```act_fn``` represents the pair of activation function and derivate used throughout the
+	/// neural net layers.
+	/// 
+	/// Weights between the neural layers are initialized to ```(0,1)```.
+	/// 
+	/// # Examples
+	///
+	/// ```
+	/// use prophet::conv_neural_net::ConvNeuralNet;
+	/// use prophet::activation_fn::BaseDerivedActivationFn;
+	/// use prophet::neural_net::*;
+	/// use prophet::learn_config::LearnConfig;
+	///
+	/// let config  = LearnConfig::new(
+	/// 	0.15,                           // learning_rate
+	/// 	0.4,                            // learning_momentum
+	/// 	BaseDerivedActivationFn::tanh() // activation function + derivate
+	/// );
+	/// let mut net = ConvNeuralNet::new(config, &[2, 4, 3, 1]);
+	/// // layer_sizes: - input layer which expects two values
+	/// //              - two hidden layers with 4 and 3 neurons
+	/// //              - output layer with one neuron
+	/// 
+	/// // now train the neural net how to be an XOR-operator
+	/// let f = -1.0; // represents false
+	/// let t =  1.0; // represents true
+	/// for _ in 0..1000 {
+	/// 	net.train(&[f, f], &[f]);
+	/// 	net.train(&[f, t], &[t]);
+	/// 	net.train(&[t, f], &[t]);
+	/// 	net.train(&[t, t], &[f]);
+	/// }
+	/// // now check if the neural net has successfully learned it by checking how close
+	/// // the latest ```avg_error``` is to ```0.0```:
+	/// assert!(net.latest_error_stats().avg_error() < 0.05);
+	/// ```
 	pub fn new(
-		learning_rate: f32,
-		learning_momentum: f32,
-		act_fn: BaseDerivedActivationFn<f32>,
+		config: LearnConfig,
 		layer_sizes: &[Ix]
 	)
 		-> Self
@@ -224,7 +291,7 @@ impl ConvNeuralNet {
 			.map(|inout| (inout[0], inout[1]))
 			.map(|(inputs, outputs)| ConvNeuralLayer::random(inputs, outputs))
 			.collect::<Vec<ConvNeuralLayer>>();
-		ConvNeuralNet::from_vec(learning_rate, learning_momentum, act_fn, buffer)
+		ConvNeuralNet::from_vec(config, buffer)
 	}
 
 	fn output_layer(&self) -> &ConvNeuralLayer {
@@ -239,12 +306,16 @@ impl ConvNeuralNet {
 		(sum / outputs.len() as f32).sqrt()
 	}
 
+	/// Returns the ```ErrorStats``` that were generated by the latest call to ```train```.
+	/// 
+	/// Returns a default constructed ```ErrorStats``` object when this neural net
+	/// was never trained before.
 	pub fn latest_error_stats(&self) -> ErrorStats {
 		self.error_stats
 	}
 
 	fn propagate_gradients(&mut self, target_values: &[f32]) {
-		let act_fn_dx = self.act_fns.derived; // because of borrow checker bugs
+		let act_fn_dx = self.config.act_fn.derived_ptr(); // because of borrow checker bugs
 
 		if let Some((&mut ref mut last, ref mut tail)) = self.layers.split_last_mut() {
 			tail.iter_mut()
@@ -255,8 +326,8 @@ impl ConvNeuralNet {
 	}
 
 	fn update_weights(&mut self, input: &[f32]) {
-		let learn_rate     = self.learning_rate;
-		let learn_momentum = self.learning_momentum;
+		let learn_rate     = self.config.learn_rate();
+		let learn_momentum = self.config.learn_momentum();
 
 		self.layers.iter_mut()
 			.fold(input, |prev_output, layer| layer.update_weights(prev_output, learn_rate, learn_momentum));
@@ -273,7 +344,7 @@ impl NeuralNet for ConvNeuralNet {
 	type Elem = f32;
 
 	fn predict<'b, 'a: 'b>(&'a mut self, input: &'b [Self::Elem]) -> &'b [Self::Elem] {
-		let act_fn = self.act_fns.base; // cannot be used in the fold as self.activation_fn
+		let act_fn = self.config.act_fn.base_ptr(); // cannot be used in the fold as self.activation_fn
 		self.layers.iter_mut()
 			.fold(input, |out, layer| layer.feed_forward(out, act_fn))
 	}
@@ -290,11 +361,14 @@ impl TrainableNeuralNet for ConvNeuralNet {
 
 #[cfg(test)]
 mod tests {
-	use prophet::neural_net::{
+	use learn_config::{
+		LearnConfig
+	};
+	use neural_net::{
 		NeuralNet,
 		TrainableNeuralNet
 	};
-	use prophet::activation_fn::{
+	use activation_fn::{
 		BaseDerivedActivationFn
 	};
 	use super::{
@@ -304,7 +378,8 @@ mod tests {
 
 	#[test]
 	fn train_xor() {
-		let mut net = ConvNeuralNet::new(0.15, 0.4, BaseDerivedActivationFn::<f32>::tanh(), &[2, 4, 3, 1]);
+		let config  = LearnConfig::new(0.15, 0.4, BaseDerivedActivationFn::<f32>::tanh());
+		let mut net = ConvNeuralNet::new(config, &[2, 4, 3, 1]);
 		let t =  1.0;
 		let f = -1.0;
 		let print = false;
@@ -327,7 +402,8 @@ mod tests {
 
 	#[test]
 	fn train_constant() {
-		let mut net = ConvNeuralNet::new(0.25, 0.5, BaseDerivedActivationFn::<f32>::identity(), &[1, 1]);
+		let config  = LearnConfig::new(0.25, 0.5, BaseDerivedActivationFn::<f32>::identity());
+		let mut net = ConvNeuralNet::new(config, &[1, 1]);
 		let mut vx = vec![0.0; 1];
 		let print = false;
 		for _ in 0..100 {
@@ -346,7 +422,8 @@ mod tests {
 
 	#[test]
 	fn train_and() {
-		let mut net = ConvNeuralNet::new(0.15, 0.5, BaseDerivedActivationFn::<f32>::tanh(), &[2, 3, 3, 1]);
+		let config  = LearnConfig::new(0.15, 0.5, BaseDerivedActivationFn::<f32>::tanh());
+		let mut net = ConvNeuralNet::new(config, &[2, 3, 3, 1]);
 		let f = -1.0;
 		let t =  1.0;
 		let print = false;
