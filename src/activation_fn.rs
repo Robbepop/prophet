@@ -271,7 +271,7 @@ impl<F: Float> Deref for BaseDerivedActivationFn<F> {
 #[cfg(test)]
 mod tests {
 	use num::Float;
-	use super::{BaseDerivedActivationFn, tanh_fn};
+	use super::*;
 
 	#[test]
 	fn new_base_deriv_act_fn() {

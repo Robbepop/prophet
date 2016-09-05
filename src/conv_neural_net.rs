@@ -10,10 +10,7 @@ use itertools::{Zip};
 
 use learn_config::{LearnConfig};
 use error_stats::{ErrorStats};
-use activation_fn::{
-	ActivationFn,
-	BaseDerivedActivationFn
-};
+use activation_fn::*;
 use neural_net::{
 	NeuralNet,
 	TrainableNeuralNet
@@ -364,16 +361,12 @@ mod tests {
 	use learn_config::{
 		LearnConfig
 	};
-	use neural_net::{
-		NeuralNet,
-		TrainableNeuralNet
-	};
+	use neural_net::*;
 	use activation_fn::{
 		BaseDerivedActivationFn
 	};
 	use super::{
-		ConvNeuralNet,
-		ConvNeuralLayer
+		ConvNeuralNet
 	};
 
 	#[test]
