@@ -20,7 +20,7 @@ Future Plans (in no specific order)
  
  - implement neural net generically for ```num::Float``` types
  - add better abstractions and features
+ - improve error handling: less panics, more results
  - add usage examples
  - improve test code coverage
  - implement a GPGPU implementation for large layers
- - improve error handling: less panics, more results

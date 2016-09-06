@@ -21,7 +21,29 @@ type Array2D<F> = Array<F, (Ix, Ix)>;
 
 /// A layer within a convolutional neural net.
 /// 
+/// The layer constists of a weights and a delta-weights matrix with equal dimensions
+/// and an output and gradients vector of equal size.
 /// 
+/// The values stored within the n-th column of the two weights matrices are respective to 
+/// the weights of the n-th input neuron to all other neurons of the next neuron layer.
+/// 
+/// And respective are all values stored within the n-th row or the two weights matrices
+/// interpreted as the weights of all incoming connections to the n-th neuron in the next 
+/// neuron layer.
+/// 
+/// For predicting only the weights matrix and the outputs vector is required.
+/// 
+/// The outputs and gradients vectors are just used as frequently used intermediate buffers
+/// which should speed up computation.
+/// 
+/// The data structure is organized in a way that it mainly represents the connections
+/// between two adjacent neuron layers.
+/// It owns its output but needs a reference to its input.
+/// This design was chosen to be the most modular one and enables to avoid copy-overhead in 
+/// all currently developed situations.
+/// 
+/// Besides that this design allows to completely avoid heap memory allocations after 
+/// setting up the objects initially.
 struct ConvNeuralLayer {
 	weights:       Array2D<f32>,
 	delta_weights: Array2D<f32>,
