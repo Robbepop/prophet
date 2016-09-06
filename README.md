@@ -5,6 +5,8 @@ A convolutional neural net implementation written in Rust with a focus on perfor
 
 Take a look into the [documentation](https://docs.rs/prophet) to get to know how to use it!
 
+Link to [crates.io](https://crates.io/crates/prophet).
+
 Usage
 -----
 
