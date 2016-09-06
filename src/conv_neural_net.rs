@@ -458,4 +458,55 @@ mod tests {
 		}
 		assert!(net.latest_error_stats().avg_error() < 0.05);
 	}
+
+	#[test]
+	fn train_triple_add() {
+		use rand::*;
+		let config  = LearnConfig::new(0.25, 0.5, BaseDerivedActivationFn::<f32>::identity());
+		let mut net = ConvNeuralNet::new(config, &[3, 1]);
+		let mut gen     = thread_rng();
+		let print   = false;
+		for _ in 0..200 {
+			let a = gen.next_f32();
+			let b = gen.next_f32();
+			let c = gen.next_f32();
+			if print {
+				println!("{} + {} + {} (= {}) => {}", a, b, c, a+b+c, net.train(&[a, b, c], &[a+b+c]));
+			}
+			else {
+				net.train(&[a, b], &[a+b]);
+			}
+		}
+		assert!(net.latest_error_stats().avg_error() < 0.05);
+	}
+
+	#[test]
+	fn bench_giant() {
+		use time::precise_time_ns;
+		let config  = LearnConfig::new(0.25, 0.5, BaseDerivedActivationFn::<f32>::tanh());
+		let mut net = ConvNeuralNet::new(config, &[2, 500, 500, 1]);
+		let f = -1.0;
+		let t =  1.0;
+		let iterations = 100;
+		let print = false;
+		let start = precise_time_ns();
+		for _ in 0..iterations {
+			if print {
+				println!("(f, f) => {}"  , net.train(&[f, f], &[f]));
+				println!("(f, t) => {}"  , net.train(&[f, t], &[f]));
+				println!("(t, f) => {}"  , net.train(&[t, f], &[f]));
+				println!("(t, t) => {}\n", net.train(&[t, t], &[t]));
+			}
+			else {
+				net.train(&[f, f], &[f]);
+				net.train(&[f, t], &[f]);
+				net.train(&[t, f], &[f]);
+				net.train(&[t, t], &[t]);
+			}
+		}
+		let duration_ms = (precise_time_ns() - start) / 1_000_000;
+		println!("conv_neural_net::tests::bench_giant::'total req. time': {} ms", duration_ms);
+		println!("conv_neural_net::tests::bench_giant::'req. time per iteration': {} ms", duration_ms / iterations);
+		assert!(net.latest_error_stats().avg_error() < 0.05);
+	}
 }

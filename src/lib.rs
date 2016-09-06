@@ -64,6 +64,9 @@ extern crate num;
 extern crate ndarray;
 extern crate itertools;
 
+#[cfg(test)]
+extern crate time;
+
 // pub mod prophet;
 
 pub mod neural_net;
