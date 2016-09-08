@@ -2,23 +2,21 @@
 
 use num::{Float};
 use std::fmt;
-use std::ops::{Deref};
 
-
-/// Defines a generic type alias to describe a conforming functional interface
-/// for the family of activation functions supported by this library.
-pub type ActivationFn<F> = fn(F) -> F;
+// /// Defines a generic type alias to describe a conforming functional interface
+// /// for the family of activation functions supported by this library.
+// pub type ActivationFn<F> = fn(F) -> F;
 
 /// Represents the pair of an activation function and its derivate.
 /// 
 /// Has some convenience constructors to build some commonly used activation functions
 /// with their respective derivate.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct BaseDerivedActivationFn<F: Float> {
+pub struct ActivationFn<F: Float> {
 	/// the base function
-	base: ActivationFn<F>,
+	base: fn(F) -> F,
 	/// the derivation of the base function
-	derived: ActivationFn<F>,
+	derived: fn(F) -> F,
 	/// a string representation of the function
 	repr: &'static str
 }
@@ -123,11 +121,11 @@ pub fn gaussian_fn_dx<F: Float>(x: F) -> F {
 	-two * x * gaussian_fn(x)
 }
 
-impl<F: Float> BaseDerivedActivationFn<F> {
+impl<F: Float> ActivationFn<F> {
 	/// Used to create custom pairs of activation functions for users
 	/// who wish to use an activation function that is not already covered by this library.
-	pub fn custom(base: ActivationFn<F>, derived: ActivationFn<F>) -> Self {
-		BaseDerivedActivationFn{
+	pub fn custom(base: fn(F) -> F, derived: fn(F) -> F) -> Self {
+		ActivationFn{
 			base: base,
 			derived: derived,
 			repr: "custom"
@@ -136,7 +134,7 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 
 	/// Convenience constructor for the identity activation function.
 	pub fn identity() -> Self {
-		BaseDerivedActivationFn{
+		ActivationFn{
 			base: identity_fn,
 			derived: identity_fn_dx,
 			repr: "Identity"
@@ -145,7 +143,7 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 
 	/// Convenience constructor for the binary step activation function.
 	pub fn binary_step() -> Self {
-		BaseDerivedActivationFn{
+		ActivationFn{
 			base: binary_step_fn,
 			derived: binary_step_fn_dx,
 			repr: "Binary Step"
@@ -154,7 +152,7 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 
 	/// Convenience constructor for the arcus tangens activation function.
 	pub fn arctan() -> Self {
-		BaseDerivedActivationFn{
+		ActivationFn{
 			base: arctan_fn,
 			derived: arctan_fn_dx,
 			repr: "Arcus Tangens (arctan)"
@@ -163,7 +161,7 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 
 	/// Convenience constructor for the tangens hyperbolicus (tanh) activation function.
 	pub fn tanh() -> Self {
-		BaseDerivedActivationFn{
+		ActivationFn{
 			base: tanh_fn,
 			derived: tanh_fn_dx,
 			repr: "Tangens Hyperbolicus (tanh)"
@@ -172,7 +170,7 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 
 	/// Convenience constructor for the logistic or sigmoid activation function.
 	pub fn logistic() -> Self {
-		BaseDerivedActivationFn{
+		ActivationFn{
 			base: logistic_fn,
 			derived: logistic_fn_dx,
 			repr: "Logistic/Sigmoid"
@@ -181,7 +179,7 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 
 	/// Convenience constructor for the soft sign activation function.
 	pub fn softsign() -> Self {
-		BaseDerivedActivationFn{
+		ActivationFn{
 			base: softsign_fn,
 			derived: softsign_fn_dx,
 			repr: "SoftSign"
@@ -190,7 +188,7 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 
 	/// Convenience constructor for the ReLU activation function.
 	pub fn relu() -> Self {
-		BaseDerivedActivationFn{
+		ActivationFn{
 			base: relu_fn,
 			derived: relu_fn_dx,
 			repr: "ReLU"
@@ -199,7 +197,7 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 
 	/// Convenience constructor for the soft plus activation function.
 	pub fn softplus() -> Self {
-		BaseDerivedActivationFn{
+		ActivationFn{
 			base: softplus_fn,
 			derived: softplus_fn_dx,
 			repr: "SoftPlus"
@@ -208,7 +206,7 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 
 	/// Convenience constructor for the bent identity activation function.
 	pub fn bent_identity() -> Self {
-		BaseDerivedActivationFn{
+		ActivationFn{
 			base: bent_identity_fn,
 			derived: bent_identity_fn_dx,
 			repr: "Bent Identity"
@@ -217,7 +215,7 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 
 	/// Convenience constructor for the sinusoid activation function.
 	pub fn sinusoid() -> Self {
-		BaseDerivedActivationFn{
+		ActivationFn{
 			base: sinusoid_fn,
 			derived: sinusoid_fn_dx,
 			repr: "Sinusoid"
@@ -226,7 +224,7 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 
 	/// Convenience constructor for the gaussian activation function.
 	pub fn gaussian() -> Self {
-		BaseDerivedActivationFn{
+		ActivationFn{
 			base: gaussian_fn,
 			derived: gaussian_fn_dx,
 			repr: "Gaussian"
@@ -234,12 +232,12 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 	}
 
 	/// Returns the function pointer to the base function.
-	pub fn base_ptr(&self) -> ActivationFn<F> {
+	pub fn base_ptr(&self) -> fn(F) -> F {
 		self.base
 	}
 
 	/// Returns the function pointer to the derivation of the base function.
-	pub fn derived_ptr(&self) -> ActivationFn<F> {
+	pub fn derived_ptr(&self) -> fn(F) -> F {
 		self.derived
 	}
 
@@ -254,17 +252,9 @@ impl<F: Float> BaseDerivedActivationFn<F> {
 	}
 }
 
-impl<F: Float> fmt::Display for BaseDerivedActivationFn<F> {
+impl<F: Float> fmt::Display for ActivationFn<F> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.repr)
-    }
-}
-
-impl<F: Float> Deref for BaseDerivedActivationFn<F> {
-    type Target = ActivationFn<F>;
-
-    fn deref(&self) -> &Self::Target {
-    	&self.base
     }
 }
 
@@ -276,8 +266,8 @@ mod tests {
 	#[test]
 	fn new_base_deriv_act_fn() {
 		use super::{logistic_fn, logistic_fn_dx};
-		let custom_sigmoid = BaseDerivedActivationFn::<f32>::custom(logistic_fn, logistic_fn_dx);
-		let predef_sigmoid = BaseDerivedActivationFn::<f32>::logistic();
+		let custom_sigmoid = ActivationFn::<f32>::custom(logistic_fn, logistic_fn_dx);
+		let predef_sigmoid = ActivationFn::<f32>::logistic();
 		assert_eq!(custom_sigmoid.base(-1.0), predef_sigmoid.base(-1.0));
 		assert_eq!(custom_sigmoid.base(-0.5), predef_sigmoid.base(-0.5));
 		assert_eq!(custom_sigmoid.base( 0.0), predef_sigmoid.base( 0.0));
@@ -286,14 +276,8 @@ mod tests {
 	}
 
 	#[test]
-	fn activation_fn_deref() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::tanh();
-		assert_eq!(act_fn_pair.base(1.0), act_fn_pair(1.0));
-	}
-
-	#[test]
 	fn identity_activation_fn() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::identity();
+		let act_fn_pair = ActivationFn::<f32>::identity();
 		assert_eq!(act_fn_pair.base(-1.0), -1.0);
 		assert_eq!(act_fn_pair.base(-0.5), -0.5);
 		assert_eq!(act_fn_pair.base( 0.0),  0.0);
@@ -308,7 +292,7 @@ mod tests {
 
 	#[test]
 	fn binary_step_activation_fn() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::binary_step();
+		let act_fn_pair = ActivationFn::<f32>::binary_step();
 		assert_eq!(act_fn_pair.base(-1.0), 0.0);
 		assert_eq!(act_fn_pair.base(-0.5), 0.0);
 		assert_eq!(act_fn_pair.base( 0.0), 1.0);
@@ -323,7 +307,7 @@ mod tests {
 
 	#[test]
 	fn logistic_activation_fn() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::logistic();
+		let act_fn_pair = ActivationFn::<f32>::logistic();
 		assert_eq!(act_fn_pair.base(-1.0), 0.26894143);
 		assert_eq!(act_fn_pair.base(-0.5), 0.37754068);
 		assert_eq!(act_fn_pair.base( 0.0), 0.5);
@@ -338,7 +322,7 @@ mod tests {
 
 	#[test]
 	fn arctan_activation_fn() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::arctan();
+		let act_fn_pair = ActivationFn::<f32>::arctan();
 		assert_eq!(act_fn_pair.base(-1.0), -0.7853982);
 		assert_eq!(act_fn_pair.base(-0.5), -0.4636476);
 		assert_eq!(act_fn_pair.base( 0.0),  0.0);
@@ -353,7 +337,7 @@ mod tests {
 
 	#[test]
 	fn tanh_activation_fn() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::tanh();
+		let act_fn_pair = ActivationFn::<f32>::tanh();
 		assert_eq!(act_fn_pair.base(-1.0), -0.7615942);
 		assert_eq!(act_fn_pair.base(-0.5), -0.46211717);
 		assert_eq!(act_fn_pair.base( 0.0),  0.0);
@@ -368,7 +352,7 @@ mod tests {
 
 	#[test]
 	fn softsign_activation_fn() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::softsign();
+		let act_fn_pair = ActivationFn::<f32>::softsign();
 		assert_eq!(act_fn_pair.base(-1.0), -0.5);
 		assert_eq!(act_fn_pair.base(-0.5), -0.33333334);
 		assert_eq!(act_fn_pair.base( 0.0),  0.0);
@@ -383,7 +367,7 @@ mod tests {
 
 	#[test]
 	fn relu_activation_fn() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::relu();
+		let act_fn_pair = ActivationFn::<f32>::relu();
 		assert_eq!(act_fn_pair.base(-1.0), 0.0);
 		assert_eq!(act_fn_pair.base(-0.5), 0.0);
 		assert_eq!(act_fn_pair.base( 0.0), 0.0);
@@ -398,7 +382,7 @@ mod tests {
 
 	#[test]
 	fn softplus_activation_fn() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::softplus();
+		let act_fn_pair = ActivationFn::<f32>::softplus();
 		assert_eq!(act_fn_pair.base(-1.0), 0.3132617);
 		assert_eq!(act_fn_pair.base(-0.5), 0.474077);
 		assert_eq!(act_fn_pair.base( 0.0), 0.6931472);
@@ -413,7 +397,7 @@ mod tests {
 
 	#[test]
 	fn bent_identity_activation_fn() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::bent_identity();
+		let act_fn_pair = ActivationFn::<f32>::bent_identity();
 		assert_eq!(act_fn_pair.base(-1.0), -0.79289323);
 		assert_eq!(act_fn_pair.base(-0.5), -0.440983);
 		assert_eq!(act_fn_pair.base( 0.0),  0.0);
@@ -428,7 +412,7 @@ mod tests {
 
 	#[test]
 	fn sinusoid_activation_fn() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::sinusoid();
+		let act_fn_pair = ActivationFn::<f32>::sinusoid();
 		assert_eq!(act_fn_pair.base(-1.0), -0.84147096);
 		assert_eq!(act_fn_pair.base(-0.5), -0.47942555);
 		assert_eq!(act_fn_pair.base( 0.0), 0.0);
@@ -443,7 +427,7 @@ mod tests {
 
 	#[test]
 	fn gaussian_activation_fn() {
-		let act_fn_pair = BaseDerivedActivationFn::<f32>::gaussian();
+		let act_fn_pair = ActivationFn::<f32>::gaussian();
 		assert_eq!(act_fn_pair.base(-1.0), 0.36787945);
 		assert_eq!(act_fn_pair.base(-0.5), 0.7788008);
 		assert_eq!(act_fn_pair.base( 0.0), 1.0);

@@ -10,7 +10,6 @@ use itertools::{Zip};
 
 use learn_config::{LearnConfig};
 use error_stats::{ErrorStats};
-use activation_fn::*;
 use neural_net::{
 	NeuralNet,
 	TrainableNeuralNet
@@ -67,12 +66,7 @@ pub struct ConvNeuralNet {
 
 	/// the config that handles all the parameters to tune the learning process
 	pub config: LearnConfig,
-	// /// the activation function and its derivate used for ```predict``` and ```train```
-	// act_fns: BaseDerivedActivationFn<f32>,
-	// /// the learning rate at which this ```ConvNeuralNet``` adepts to target values during training
-	// learning_rate: f32,
-	// /// the learn momentum at which this ```ConvNeuralNet``` updates its weights
-	// learning_momentum: f32,
+
 	/// holds error stats for the user to query the current learning state of the network
 	error_stats: ErrorStats
 }
@@ -138,24 +132,26 @@ impl ConvNeuralLayer {
 	fn feed_forward<'a>(
 		&'a mut self,
 		input: &[f32],
-		activation_fn: ActivationFn<f32>
+		activation_fn: fn(f32) -> f32
 	)
 		-> &'a [f32]
 	{
 		debug_assert_eq!(self.count_rows(), self.count_outputs());
 		debug_assert_eq!(self.count_columns(), input.len() + 1);
 
-		for (weights_row, output) in Zip::new((self.weights.outer_iter(), self.outputs.iter_mut())) {
-			*output = activation_fn(Zip::new((weights_row.iter(),
-			                                  input.iter().chain(&[1.0])))
-				.fold(0.0, |sum, (w, i)| sum + w*i));
+		for (weights_row, output) in Zip::new((self.weights.outer_iter(),
+			                                   self.outputs.iter_mut())) {
+			*output = activation_fn(
+				Zip::new((weights_row.iter(),
+				          input.iter().chain(&[1.0])))
+					.fold(0.0, |sum, (w, i)| sum + w*i));
 		};
 		self.output_as_slice()
 	}
 
 	/// Used internally in the output layer to initialize gradients for the back propagation phase.
 	/// Sets the gradient for the bias neuron to zero - hopefully this is the correct behaviour.
-	fn calculate_output_gradients(&mut self, target_values: &[f32], act_fn_dx: ActivationFn<f32>) -> &Self {
+	fn calculate_output_gradients(&mut self, target_values: &[f32], act_fn_dx: fn(f32) -> f32) -> &Self {
 		debug_assert_eq!(self.count_outputs(), target_values.len());
 		debug_assert_eq!(self.count_gradients(), target_values.len() + 1); // no calculation for bias!
 
@@ -176,11 +172,11 @@ impl ConvNeuralLayer {
 			*gradient = 0.0;
 		}
 
-		debug_assert_eq!(self.gradients.iter().sum::<f32>(), 0.0);
+		debug_assert!(self.gradients.iter().all(|&g| g == 0.0));
 	}
 
 	/// Applies the given activation function on all gradients of this layer.
-	fn apply_activation(&mut self, act_fn_dx: ActivationFn<f32>) {
+	fn apply_activation(&mut self, act_fn_dx: fn(f32) -> f32) {
 		debug_assert_eq!(self.count_gradients(), self.count_outputs() + 1);
 
 		for (mut gradient, output) in Zip::new((self.gradients.iter_mut(),
@@ -193,7 +189,7 @@ impl ConvNeuralLayer {
 	/// using the given activation function.
 	/// This also computes the gradient for the bias neuron.
 	/// Returns readable reference to self to allow chaining.
-	fn propagate_gradients(&mut self, prev: &ConvNeuralLayer, act_fn_dx: ActivationFn<f32>) -> &Self {
+	fn propagate_gradients(&mut self, prev: &ConvNeuralLayer, act_fn_dx: fn(f32) -> f32) -> &Self {
 		debug_assert_eq!(prev.count_rows(), prev.count_gradients() - 1);
 		debug_assert_eq!(prev.count_columns(), self.count_gradients());
 
@@ -272,15 +268,12 @@ impl ConvNeuralNet {
 	/// # Examples
 	///
 	/// ```
-	/// use prophet::conv_neural_net::ConvNeuralNet;
-	/// use prophet::activation_fn::BaseDerivedActivationFn;
-	/// use prophet::neural_net::*;
-	/// use prophet::learn_config::LearnConfig;
+	/// use prophet::prelude::*;
 	///
 	/// let config  = LearnConfig::new(
 	/// 	0.15,                           // learning_rate
 	/// 	0.4,                            // learning_momentum
-	/// 	BaseDerivedActivationFn::tanh() // activation function + derivate
+	/// 	ActivationFn::tanh() // activation function + derivate
 	/// );
 	/// let mut net = ConvNeuralNet::new(config, &[2, 4, 3, 1]);
 	/// // layer_sizes: - input layer which expects two values
@@ -385,7 +378,7 @@ mod tests {
 	};
 	use neural_net::*;
 	use activation_fn::{
-		BaseDerivedActivationFn
+		ActivationFn
 	};
 	use super::{
 		ConvNeuralNet
@@ -393,7 +386,7 @@ mod tests {
 
 	#[test]
 	fn train_xor() {
-		let config  = LearnConfig::new(0.15, 0.4, BaseDerivedActivationFn::<f32>::tanh());
+		let config  = LearnConfig::new(0.15, 0.4, ActivationFn::<f32>::tanh());
 		let mut net = ConvNeuralNet::new(config, &[2, 4, 3, 1]);
 		let t =  1.0;
 		let f = -1.0;
@@ -417,7 +410,7 @@ mod tests {
 
 	#[test]
 	fn train_constant() {
-		let config  = LearnConfig::new(0.25, 0.5, BaseDerivedActivationFn::<f32>::identity());
+		let config  = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::identity());
 		let mut net = ConvNeuralNet::new(config, &[1, 1]);
 		let mut vx = vec![0.0; 1];
 		let print = false;
@@ -437,7 +430,7 @@ mod tests {
 
 	#[test]
 	fn train_and() {
-		let config  = LearnConfig::new(0.15, 0.5, BaseDerivedActivationFn::<f32>::tanh());
+		let config  = LearnConfig::new(0.15, 0.5, ActivationFn::<f32>::tanh());
 		let mut net = ConvNeuralNet::new(config, &[2, 3, 3, 1]);
 		let f = -1.0;
 		let t =  1.0;
@@ -462,7 +455,7 @@ mod tests {
 	#[test]
 	fn train_triple_add() {
 		use rand::*;
-		let config  = LearnConfig::new(0.25, 0.5, BaseDerivedActivationFn::<f32>::identity());
+		let config  = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::identity());
 		let mut net = ConvNeuralNet::new(config, &[3, 1]);
 		let mut gen     = thread_rng();
 		let print   = false;
@@ -483,7 +476,7 @@ mod tests {
 	#[test]
 	fn bench_giant() {
 		use time::precise_time_ns;
-		let config  = LearnConfig::new(0.25, 0.5, BaseDerivedActivationFn::<f32>::tanh());
+		let config  = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::tanh());
 		let mut net = ConvNeuralNet::new(config, &[2, 500, 500, 1]);
 		let f = -1.0;
 		let t =  1.0;

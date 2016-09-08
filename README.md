@@ -13,14 +13,13 @@ Usage
  - pull this project into your workspace
  - build and run with cargo
 
-This project is not (yet) supported on crates.io.
 
 Future Plans (in no specific order)
 -----------------------------------
- 
+
  - implement neural net generically for ```num::Float``` types
- - add better abstractions and features
  - improve error handling: less panics, more results
- - add usage examples
- - improve test code coverage
- - implement a GPGPU implementation for large layers
+ - enhance interfaces with stronger type safety
+ - add usage examples and benchmarks
+ - increase test code coverage
+ - parallel implementation for large layers

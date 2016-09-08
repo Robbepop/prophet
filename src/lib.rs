@@ -30,15 +30,12 @@
 //! The code below demonstrates how to train a neural net to be a logical-OR operator.
 //!
 //! ```rust
-//! use prophet::conv_neural_net::ConvNeuralNet;
-//! use prophet::activation_fn::BaseDerivedActivationFn;
-//! use prophet::neural_net::*;
-//! use prophet::learn_config::LearnConfig;
+//! use prophet::prelude::*;
 //!
 //! let config  = LearnConfig::new(
-//! 	0.25,                           // learning_rate
-//! 	0.5,                            // learning_momentum
-//! 	BaseDerivedActivationFn::tanh() // activation function + derivate
+//! 	0.25,                // learning_rate
+//! 	0.5,                 // learning_momentum
+//! 	ActivationFn::tanh() // activation function + derivate
 //! );
 //! let mut net = ConvNeuralNet::new(config, &[2, 3, 2, 1]);
 //! // layer_sizes: - input layer which expects two values
@@ -67,10 +64,18 @@ extern crate itertools;
 #[cfg(test)]
 extern crate time;
 
-// pub mod prophet;
-
 pub mod neural_net;
 pub mod activation_fn;
 pub mod conv_neural_net;
 pub mod error_stats;
 pub mod learn_config;
+
+/// The prophet prelude publicly imports all propet modules the user needs in order to
+/// create, train and use neural networks.
+pub mod prelude {
+	pub use neural_net::{NeuralNet, TrainableNeuralNet};
+	pub use conv_neural_net::{ConvNeuralNet};
+	pub use error_stats::{ErrorStats};
+	pub use learn_config::{LearnConfig};
+	pub use activation_fn::{ActivationFn};
+}

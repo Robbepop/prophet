@@ -17,9 +17,9 @@ keywords = ["neuronal", "network", "machine", "learning"]
 
 [dependencies]
 rand = "0.3"
-num = "0.1.3"
-ndarray = "0.6.1"
-itertools = "0.4.18"
+num = "0.1"
+ndarray = "0.6"
+itertools = "0.4"
 
 [dev-dependencies]
 time = "0.1"
