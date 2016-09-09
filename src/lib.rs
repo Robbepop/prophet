@@ -64,7 +64,7 @@ extern crate itertools;
 #[cfg(test)]
 extern crate time;
 
-pub mod neural_net;
+pub mod traits;
 pub mod activation_fn;
 pub mod conv_neural_net;
 pub mod error_stats;
@@ -73,7 +73,7 @@ pub mod learn_config;
 /// The prophet prelude publicly imports all propet modules the user needs in order to
 /// create, train and use neural networks.
 pub mod prelude {
-	pub use neural_net::{NeuralNet, TrainableNeuralNet};
+	pub use traits::{Prophet, Disciple};
 	pub use conv_neural_net::{ConvNeuralNet};
 	pub use error_stats::{ErrorStats};
 	pub use learn_config::{LearnConfig};

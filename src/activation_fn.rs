@@ -2,10 +2,39 @@
 
 use num::{Float};
 use std::fmt;
+use std::ops::Deref;
 
-// /// Defines a generic type alias to describe a conforming functional interface
-// /// for the family of activation functions supported by this library.
-// pub type ActivationFn<F> = fn(F) -> F;
+macro_rules! fn_ptr_wrapper {
+    ($name:ident) => {
+		/// Represents a base or derived function for an activation function pair of
+		/// a base function and its derivate.
+		/// This enforces a strict type system that prevents certain errors
+		/// and prevents usage of a wrong function within the pair.
+		pub struct $name<T>{
+			fn_ptr: fn(T) -> T
+		}
+
+		impl<T> From<fn(T) -> T> for $name<T> {
+			fn from(fn_ptr: fn(T) -> T) -> Self {
+				$name{
+					fn_ptr: fn_ptr
+				}
+			}
+		}
+
+		impl<T> Deref for $name<T> {
+		    type Target = fn(T) -> T;
+
+		    fn deref(&self) -> &Self::Target {
+		        &self.fn_ptr
+		    }
+		}
+    };
+}
+
+fn_ptr_wrapper!(BaseFn);
+fn_ptr_wrapper!(DerivedFn);
+
 
 /// Represents the pair of an activation function and its derivate.
 /// 

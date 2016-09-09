@@ -9,7 +9,7 @@ use error_stats::ErrorStats;
 /// This might come in handy for future versions of this library to provide a way to 
 /// convert a trainable neural network into a static one to optimize for space since
 /// there are many constructs in a neural network that are only needed for training purpose.
-pub trait NeuralNet {
+pub trait Prophet {
 	/// The type used internally to store weights, intermediate results etc.
 	/// 
 	/// In future versions of this library it might be possible to create neural networks
@@ -35,7 +35,17 @@ pub trait NeuralNet {
 
 /// Representative for neural network implementations that have the capability to 
 /// learn from training data and predict data based on the learned examples.
-pub trait TrainableNeuralNet: NeuralNet {
+pub trait Disciple {
+	/// The type used internally to store weights, intermediate results etc.
+	/// 
+	/// In future versions of this library it might be possible to create neural networks
+	/// that can be parameterize over a given set of floating point types. For example
+	/// to create the possibility to use ```f32``` or ```f64``` internally.
+	/// 
+	/// Eventual language updates like adding ```f16``` or ```f128``` float primitives
+	/// would enhance this functionality furthermore.
+	type Elem: Float;
+
 	/// Trains the neural network with the given input data based on the target expected values.
 	/// 
 	/// Returns an ErrorStats object that stores useful information about the learning process.

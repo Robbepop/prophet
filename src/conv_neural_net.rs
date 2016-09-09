@@ -10,9 +10,9 @@ use itertools::{Zip};
 
 use learn_config::{LearnConfig};
 use error_stats::{ErrorStats};
-use neural_net::{
-	NeuralNet,
-	TrainableNeuralNet
+use traits::{
+	Prophet,
+	Disciple
 };
 
 type Array1D<F> = Array<F, Ix>;
@@ -352,7 +352,7 @@ impl ConvNeuralNet {
 	}
 }
 
-impl NeuralNet for ConvNeuralNet {
+impl Prophet for ConvNeuralNet {
 	type Elem = f32;
 
 	fn predict<'b, 'a: 'b>(&'a mut self, input: &'b [Self::Elem]) -> &'b [Self::Elem] {
@@ -362,7 +362,9 @@ impl NeuralNet for ConvNeuralNet {
 	}
 }
 
-impl TrainableNeuralNet for ConvNeuralNet {
+impl Disciple for ConvNeuralNet {
+	type Elem = f32;
+
 	fn train(&mut self, input: &[Self::Elem], target_values: &[Self::Elem]) -> ErrorStats {
 		self.predict(input);
 		self.propagate_gradients(target_values);
@@ -376,7 +378,7 @@ mod tests {
 	use learn_config::{
 		LearnConfig
 	};
-	use neural_net::*;
+	use traits::*;
 	use activation_fn::{
 		ActivationFn
 	};
