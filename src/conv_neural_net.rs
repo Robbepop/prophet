@@ -14,6 +14,7 @@ use traits::{
 	Prophet,
 	Disciple
 };
+use activation_fn::{BaseFn, DerivedFn};
 
 type Array1D<F> = Array<F, Ix>;
 type Array2D<F> = Array<F, (Ix, Ix)>;
@@ -132,7 +133,7 @@ impl ConvNeuralLayer {
 	fn feed_forward<'a>(
 		&'a mut self,
 		input: &[f32],
-		activation_fn: fn(f32) -> f32
+		activation_fn: BaseFn<f32>
 	)
 		-> &'a [f32]
 	{
@@ -151,7 +152,7 @@ impl ConvNeuralLayer {
 
 	/// Used internally in the output layer to initialize gradients for the back propagation phase.
 	/// Sets the gradient for the bias neuron to zero - hopefully this is the correct behaviour.
-	fn calculate_output_gradients(&mut self, target_values: &[f32], act_fn_dx: fn(f32) -> f32) -> &Self {
+	fn calculate_output_gradients(&mut self, target_values: &[f32], act_fn_dx: DerivedFn<f32>) -> &Self {
 		debug_assert_eq!(self.count_outputs(), target_values.len());
 		debug_assert_eq!(self.count_gradients(), target_values.len() + 1); // no calculation for bias!
 
@@ -176,7 +177,7 @@ impl ConvNeuralLayer {
 	}
 
 	/// Applies the given activation function on all gradients of this layer.
-	fn apply_activation(&mut self, act_fn_dx: fn(f32) -> f32) {
+	fn apply_activation(&mut self, act_fn_dx: DerivedFn<f32>) {
 		debug_assert_eq!(self.count_gradients(), self.count_outputs() + 1);
 
 		for (mut gradient, output) in Zip::new((self.gradients.iter_mut(),
@@ -189,7 +190,7 @@ impl ConvNeuralLayer {
 	/// using the given activation function.
 	/// This also computes the gradient for the bias neuron.
 	/// Returns readable reference to self to allow chaining.
-	fn propagate_gradients(&mut self, prev: &ConvNeuralLayer, act_fn_dx: fn(f32) -> f32) -> &Self {
+	fn propagate_gradients(&mut self, prev: &ConvNeuralLayer, act_fn_dx: DerivedFn<f32>) -> &Self {
 		debug_assert_eq!(prev.count_rows(), prev.count_gradients() - 1);
 		debug_assert_eq!(prev.count_columns(), self.count_gradients());
 
@@ -327,7 +328,7 @@ impl ConvNeuralNet {
 	}
 
 	fn propagate_gradients(&mut self, target_values: &[f32]) {
-		let act_fn_dx = self.config.act_fn.derived_ptr(); // because of borrow checker bugs
+		let act_fn_dx = self.config.act_fn.derived_fn(); // because of borrow checker bugs
 
 		if let Some((&mut ref mut last, ref mut tail)) = self.layers.split_last_mut() {
 			tail.iter_mut()
@@ -356,7 +357,7 @@ impl Prophet for ConvNeuralNet {
 	type Elem = f32;
 
 	fn predict<'b, 'a: 'b>(&'a mut self, input: &'b [Self::Elem]) -> &'b [Self::Elem] {
-		let act_fn = self.config.act_fn.base_ptr(); // cannot be used in the fold as self.activation_fn
+		let act_fn = self.config.act_fn.base_fn(); // cannot be used in the fold as self.activation_fn
 		self.layers.iter_mut()
 			.fold(input, |out, layer| layer.feed_forward(out, act_fn))
 	}

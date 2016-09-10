@@ -77,5 +77,5 @@ pub mod prelude {
 	pub use conv_neural_net::{ConvNeuralNet};
 	pub use error_stats::{ErrorStats};
 	pub use learn_config::{LearnConfig};
-	pub use activation_fn::{ActivationFn};
+	pub use activation_fn::{BaseFn, DerivedFn, ActivationFn};
 }

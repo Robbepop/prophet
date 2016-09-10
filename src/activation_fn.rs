@@ -10,11 +10,12 @@ macro_rules! fn_ptr_wrapper {
 		/// a base function and its derivate.
 		/// This enforces a strict type system that prevents certain errors
 		/// and prevents usage of a wrong function within the pair.
-		pub struct $name<T>{
+		#[derive(Copy, Clone, Debug, PartialEq)]
+		pub struct $name<T: Float>{
 			fn_ptr: fn(T) -> T
 		}
 
-		impl<T> From<fn(T) -> T> for $name<T> {
+		impl<T: Float> From<fn(T) -> T> for $name<T> {
 			fn from(fn_ptr: fn(T) -> T) -> Self {
 				$name{
 					fn_ptr: fn_ptr
@@ -22,7 +23,7 @@ macro_rules! fn_ptr_wrapper {
 			}
 		}
 
-		impl<T> Deref for $name<T> {
+		impl<T: Float> Deref for $name<T> {
 		    type Target = fn(T) -> T;
 
 		    fn deref(&self) -> &Self::Target {
@@ -43,9 +44,9 @@ fn_ptr_wrapper!(DerivedFn);
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ActivationFn<F: Float> {
 	/// the base function
-	base: fn(F) -> F,
+	base: BaseFn<F>,
 	/// the derivation of the base function
-	derived: fn(F) -> F,
+	derived: DerivedFn<F>,
 	/// a string representation of the function
 	repr: &'static str
 }
@@ -151,122 +152,34 @@ pub fn gaussian_fn_dx<F: Float>(x: F) -> F {
 }
 
 impl<F: Float> ActivationFn<F> {
+	/// Creates a new activation function with a base function and its derivation.
+	/// 
+	/// Similar to ```::custom``` but does not require a ```repr``` field.
+	fn from_fn_ptr(base: fn(F) -> F, derived: fn(F) -> F, repr: &'static str) -> Self {
+		ActivationFn{
+			base: BaseFn{fn_ptr: base},
+			derived: DerivedFn{fn_ptr: derived},
+			repr: repr
+		}
+	}
+
 	/// Used to create custom pairs of activation functions for users
 	/// who wish to use an activation function that is not already covered by this library.
 	pub fn custom(base: fn(F) -> F, derived: fn(F) -> F) -> Self {
 		ActivationFn{
-			base: base,
-			derived: derived,
+			base: BaseFn{fn_ptr: base},
+			derived: DerivedFn{fn_ptr: derived},
 			repr: "custom"
 		}
 	}
 
-	/// Convenience constructor for the identity activation function.
-	pub fn identity() -> Self {
-		ActivationFn{
-			base: identity_fn,
-			derived: identity_fn_dx,
-			repr: "Identity"
-		}
-	}
-
-	/// Convenience constructor for the binary step activation function.
-	pub fn binary_step() -> Self {
-		ActivationFn{
-			base: binary_step_fn,
-			derived: binary_step_fn_dx,
-			repr: "Binary Step"
-		}
-	}
-
-	/// Convenience constructor for the arcus tangens activation function.
-	pub fn arctan() -> Self {
-		ActivationFn{
-			base: arctan_fn,
-			derived: arctan_fn_dx,
-			repr: "Arcus Tangens (arctan)"
-		}
-	}
-
-	/// Convenience constructor for the tangens hyperbolicus (tanh) activation function.
-	pub fn tanh() -> Self {
-		ActivationFn{
-			base: tanh_fn,
-			derived: tanh_fn_dx,
-			repr: "Tangens Hyperbolicus (tanh)"
-		}
-	}
-
-	/// Convenience constructor for the logistic or sigmoid activation function.
-	pub fn logistic() -> Self {
-		ActivationFn{
-			base: logistic_fn,
-			derived: logistic_fn_dx,
-			repr: "Logistic/Sigmoid"
-		}
-	}
-
-	/// Convenience constructor for the soft sign activation function.
-	pub fn softsign() -> Self {
-		ActivationFn{
-			base: softsign_fn,
-			derived: softsign_fn_dx,
-			repr: "SoftSign"
-		}
-	}
-
-	/// Convenience constructor for the ReLU activation function.
-	pub fn relu() -> Self {
-		ActivationFn{
-			base: relu_fn,
-			derived: relu_fn_dx,
-			repr: "ReLU"
-		}
-	}
-
-	/// Convenience constructor for the soft plus activation function.
-	pub fn softplus() -> Self {
-		ActivationFn{
-			base: softplus_fn,
-			derived: softplus_fn_dx,
-			repr: "SoftPlus"
-		}
-	}
-
-	/// Convenience constructor for the bent identity activation function.
-	pub fn bent_identity() -> Self {
-		ActivationFn{
-			base: bent_identity_fn,
-			derived: bent_identity_fn_dx,
-			repr: "Bent Identity"
-		}
-	}
-
-	/// Convenience constructor for the sinusoid activation function.
-	pub fn sinusoid() -> Self {
-		ActivationFn{
-			base: sinusoid_fn,
-			derived: sinusoid_fn_dx,
-			repr: "Sinusoid"
-		}
-	}
-
-	/// Convenience constructor for the gaussian activation function.
-	pub fn gaussian() -> Self {
-		ActivationFn{
-			base: gaussian_fn,
-			derived: gaussian_fn_dx,
-			repr: "Gaussian"
-		}
-	}
-
-	/// Returns the function pointer to the base function.
-	pub fn base_ptr(&self) -> fn(F) -> F {
+	/// Returns the base function.
+	pub fn base_fn(&self) -> BaseFn<F> {
 		self.base
 	}
 
-	/// Returns the function pointer to the derivation of the base function.
-	pub fn derived_ptr(&self) -> fn(F) -> F {
+	/// Returns the derivation function.
+	pub fn derived_fn(&self) -> DerivedFn<F> {
 		self.derived
 	}
 
@@ -278,6 +191,61 @@ impl<F: Float> ActivationFn<F> {
 	/// Forwards `x` to the derivation of the base function and returns its result.
 	pub fn derived(&self, x: F) -> F {
 		(self.derived)(x)
+	}
+
+	/// Convenience constructor for the identity activation function.
+	pub fn identity() -> Self {
+		ActivationFn::from_fn_ptr(identity_fn, identity_fn_dx, "Identity")
+	}
+
+	/// Convenience constructor for the binary step activation function.
+	pub fn binary_step() -> Self {
+		ActivationFn::from_fn_ptr(binary_step_fn, binary_step_fn_dx, "Binary Step")
+	}
+
+	/// Convenience constructor for the arcus tangens activation function.
+	pub fn arctan() -> Self {
+		ActivationFn::from_fn_ptr(arctan_fn, arctan_fn_dx, "Arcus Tangens (arctan)")
+	}
+
+	/// Convenience constructor for the tangens hyperbolicus (tanh) activation function.
+	pub fn tanh() -> Self {
+		ActivationFn::from_fn_ptr(tanh_fn, tanh_fn_dx, "Tangens Hyperbolicus (tanh)")
+	}
+
+	/// Convenience constructor for the logistic or sigmoid activation function.
+	pub fn logistic() -> Self {
+		ActivationFn::from_fn_ptr(logistic_fn, logistic_fn_dx, "Logistic/Sigmoid")
+	}
+
+	/// Convenience constructor for the soft sign activation function.
+	pub fn softsign() -> Self {
+		ActivationFn::from_fn_ptr(softsign_fn, softsign_fn_dx, "SoftSign")
+	}
+
+	/// Convenience constructor for the ReLU activation function.
+	pub fn relu() -> Self {
+		ActivationFn::from_fn_ptr(relu_fn, relu_fn_dx, "ReLU")
+	}
+
+	/// Convenience constructor for the soft plus activation function.
+	pub fn softplus() -> Self {
+		ActivationFn::from_fn_ptr(softplus_fn, softplus_fn_dx, "SoftPlus")
+	}
+
+	/// Convenience constructor for the bent identity activation function.
+	pub fn bent_identity() -> Self {
+		ActivationFn::from_fn_ptr(bent_identity_fn, bent_identity_fn_dx, "Bent Identity")
+	}
+
+	/// Convenience constructor for the sinusoid activation function.
+	pub fn sinusoid() -> Self {
+		ActivationFn::from_fn_ptr(sinusoid_fn, sinusoid_fn_dx, "Sinusoid")
+	}
+
+	/// Convenience constructor for the gaussian activation function.
+	pub fn gaussian() -> Self {
+		ActivationFn::from_fn_ptr(gaussian_fn, gaussian_fn_dx, "Gaussian")
 	}
 }
 
