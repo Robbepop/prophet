@@ -1,4 +1,4 @@
-//! An implementation of a convolutional neural network that can be used to learn from target data
+//! An implementation of a neural network that can be used to learn from target data
 //! and to predict results after feeding it some training data.
 
 use std::vec::Vec;
@@ -19,7 +19,7 @@ use activation_fn::{BaseFn, DerivedFn};
 type Array1D<F> = Array<F, Ix>;
 type Array2D<F> = Array<F, (Ix, Ix)>;
 
-/// A layer within a convolutional neural net.
+/// A fully connected layer within a neural net.
 /// 
 /// The layer constists of a weights and a delta-weights matrix with equal dimensions
 /// and an output and gradients vector of equal size.
@@ -51,7 +51,7 @@ struct ConvNeuralLayer {
 	gradients:     Array1D<f32>
 }
 
-/// A convolutional neural net.
+/// A neural net.
 /// 
 /// Can be trained with testing data and afterwards be used to predict results.
 /// 

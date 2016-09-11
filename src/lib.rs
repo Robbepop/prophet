@@ -2,7 +2,7 @@
 
 //! A neural net implementation focused on performance.
 //!
-//! This library features a simple interface to a convolutional neural net,
+//! This library features a simple interface to a neural net,
 //! which exists mainly of two functions that are defined as traits within the module ```neural_net```.
 //!
 //! A neural network can be trained by giving it some input data and some expected target values.
