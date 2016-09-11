@@ -37,7 +37,7 @@
 //! 	0.5,                 // learning_momentum
 //! 	ActivationFn::tanh() // activation function + derivate
 //! );
-//! let mut net = ConvNeuralNet::new(config, &[2, 3, 2, 1]);
+//! let mut net = NeuralNet::new(config, &[2, 3, 2, 1]);
 //! // layer_sizes: - input layer which expects two values
 //! //              - two hidden layers with 3 and 2 neurons
 //! //              - output layer with one neuron
@@ -66,7 +66,7 @@ extern crate time;
 
 pub mod traits;
 pub mod activation_fn;
-pub mod conv_neural_net;
+pub mod neural_net;
 pub mod error_stats;
 pub mod learn_config;
 
@@ -74,7 +74,7 @@ pub mod learn_config;
 /// create, train and use neural networks.
 pub mod prelude {
 	pub use traits::{Prophet, Disciple};
-	pub use conv_neural_net::{ConvNeuralNet};
+	pub use neural_net::{NeuralNet};
 	pub use error_stats::{ErrorStats};
 	pub use learn_config::{LearnConfig};
 	pub use activation_fn::{BaseFn, DerivedFn, ActivationFn};

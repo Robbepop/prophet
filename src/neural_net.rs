@@ -44,7 +44,7 @@ type Array2D<F> = Array<F, (Ix, Ix)>;
 /// 
 /// Besides that this design allows to completely avoid heap memory allocations after 
 /// setting up the objects initially.
-struct ConvNeuralLayer {
+struct FullyConnectedLayer {
 	weights:       Array2D<f32>,
 	delta_weights: Array2D<f32>,
 	outputs:       Array1D<f32>,
@@ -61,9 +61,9 @@ struct ConvNeuralLayer {
 /// For example when the user uses ```predict``` from ```NeuralNet``` this
 /// object organizes the input data throughout all of its owned layers and pipes
 /// the result in the last layer back to the user.
-pub struct ConvNeuralNet {
-	/// the layers within this ```ConvNeuralNet```
-	layers: Vec<ConvNeuralLayer>,
+pub struct NeuralNet {
+	/// the layers within this ```NeuralNet```
+	layers: Vec<FullyConnectedLayer>,
 
 	/// the config that handles all the parameters to tune the learning process
 	pub config: LearnConfig,
@@ -72,8 +72,8 @@ pub struct ConvNeuralNet {
 	error_stats: ErrorStats
 }
 
-impl ConvNeuralLayer {
-	/// Creates a ConvNeuralLayer by consuming the given vector vec.
+impl FullyConnectedLayer {
+	/// Creates a FullyConnectedLayer by consuming the given vector vec.
 	/// vec is required to also include the weights for the bias neuron!
 	/// 
 	/// This constructor should only be used internally for testing purpose
@@ -83,7 +83,7 @@ impl ConvNeuralLayer {
 		let shape = Shape::from((outputs, inputs));
 		// Need one more gradient for the bias neuron.
 		let count_gradients = outputs + 1;
-		ConvNeuralLayer{
+		FullyConnectedLayer{
 			weights: Array2D::from_shape_vec(shape, vec).unwrap(),
 			delta_weights: Array2D::default(shape),
 			outputs: Array::default(outputs),
@@ -91,7 +91,7 @@ impl ConvNeuralLayer {
 		}
 	}
 
-	/// Creates a ConvNeuralLayer with randomized weights.
+	/// Creates a FullyConnectedLayer with randomized weights.
 	/// Implicitely creates weights for the bias neuron,
 	/// so the dimensions of the weights matrix is equal to
 	/// (output)x(input+1).
@@ -106,7 +106,7 @@ impl ConvNeuralLayer {
 			.take(elems)
 			.map(|Open01(val)| val)
 			.collect::<Vec<f32>>();
-		ConvNeuralLayer::from_vec(inputs, outputs, buffer)
+		FullyConnectedLayer::from_vec(inputs, outputs, buffer)
 	}
 
 	fn count_rows(&self) -> Ix { let (rows, _) = self.weights.dim(); rows }
@@ -190,7 +190,7 @@ impl ConvNeuralLayer {
 	/// using the given activation function.
 	/// This also computes the gradient for the bias neuron.
 	/// Returns readable reference to self to allow chaining.
-	fn propagate_gradients(&mut self, prev: &ConvNeuralLayer, act_fn_dx: DerivedFn<f32>) -> &Self {
+	fn propagate_gradients(&mut self, prev: &FullyConnectedLayer, act_fn_dx: DerivedFn<f32>) -> &Self {
 		debug_assert_eq!(prev.count_rows(), prev.count_gradients() - 1);
 		debug_assert_eq!(prev.count_columns(), self.count_gradients());
 
@@ -241,21 +241,21 @@ impl ConvNeuralLayer {
 
 
 
-impl ConvNeuralNet {
+impl NeuralNet {
 	fn from_vec(
 		learn_config: LearnConfig,
-		layers: Vec<ConvNeuralLayer>
+		layers: Vec<FullyConnectedLayer>
 	)
 		-> Self
 	{
-		ConvNeuralNet{
+		NeuralNet{
 			layers: layers,
 			config: learn_config,
 			error_stats: ErrorStats::default()
 		}
 	}
 
-	/// Creates a new instance of a ```ConvNeuralNet```.
+	/// Creates a new instance of a ```NeuralNet```.
 	/// 
 	///  - ```layer_sizes``` define the count of neurons (without bias) per neural layer.
 	///  - ```learning_rate``` and ```learning_momentum``` describe the acceleration and momentum
@@ -276,7 +276,7 @@ impl ConvNeuralNet {
 	/// 	0.4,                            // learning_momentum
 	/// 	ActivationFn::tanh() // activation function + derivate
 	/// );
-	/// let mut net = ConvNeuralNet::new(config, &[2, 4, 3, 1]);
+	/// let mut net = NeuralNet::new(config, &[2, 4, 3, 1]);
 	/// // layer_sizes: - input layer which expects two values
 	/// //              - two hidden layers with 4 and 3 neurons
 	/// //              - output layer with one neuron
@@ -302,12 +302,12 @@ impl ConvNeuralNet {
 	{
 		let buffer = layer_sizes.windows(2)
 			.map(|inout| (inout[0], inout[1]))
-			.map(|(inputs, outputs)| ConvNeuralLayer::random(inputs, outputs))
-			.collect::<Vec<ConvNeuralLayer>>();
-		ConvNeuralNet::from_vec(config, buffer)
+			.map(|(inputs, outputs)| FullyConnectedLayer::random(inputs, outputs))
+			.collect::<Vec<FullyConnectedLayer>>();
+		NeuralNet::from_vec(config, buffer)
 	}
 
-	fn output_layer(&self) -> &ConvNeuralLayer {
+	fn output_layer(&self) -> &FullyConnectedLayer {
 		self.layers.last().unwrap()
 	}
 
@@ -353,7 +353,7 @@ impl ConvNeuralNet {
 	}
 }
 
-impl Prophet for ConvNeuralNet {
+impl Prophet for NeuralNet {
 	type Elem = f32;
 
 	fn predict<'b, 'a: 'b>(&'a mut self, input: &'b [Self::Elem]) -> &'b [Self::Elem] {
@@ -363,7 +363,7 @@ impl Prophet for ConvNeuralNet {
 	}
 }
 
-impl Disciple for ConvNeuralNet {
+impl Disciple for NeuralNet {
 	type Elem = f32;
 
 	fn train(&mut self, input: &[Self::Elem], target_values: &[Self::Elem]) -> ErrorStats {
@@ -384,13 +384,13 @@ mod tests {
 		ActivationFn
 	};
 	use super::{
-		ConvNeuralNet
+		NeuralNet
 	};
 
 	#[test]
 	fn train_xor() {
 		let config  = LearnConfig::new(0.15, 0.4, ActivationFn::<f32>::tanh());
-		let mut net = ConvNeuralNet::new(config, &[2, 4, 3, 1]);
+		let mut net = NeuralNet::new(config, &[2, 4, 3, 1]);
 		let t =  1.0;
 		let f = -1.0;
 		let print = false;
@@ -414,7 +414,7 @@ mod tests {
 	#[test]
 	fn train_constant() {
 		let config  = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::identity());
-		let mut net = ConvNeuralNet::new(config, &[1, 1]);
+		let mut net = NeuralNet::new(config, &[1, 1]);
 		let mut vx = vec![0.0; 1];
 		let print = false;
 		for _ in 0..100 {
@@ -434,7 +434,7 @@ mod tests {
 	#[test]
 	fn train_and() {
 		let config  = LearnConfig::new(0.15, 0.5, ActivationFn::<f32>::tanh());
-		let mut net = ConvNeuralNet::new(config, &[2, 3, 3, 1]);
+		let mut net = NeuralNet::new(config, &[2, 3, 3, 1]);
 		let f = -1.0;
 		let t =  1.0;
 		let print = false;
@@ -459,7 +459,7 @@ mod tests {
 	fn train_triple_add() {
 		use rand::*;
 		let config  = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::identity());
-		let mut net = ConvNeuralNet::new(config, &[3, 1]);
+		let mut net = NeuralNet::new(config, &[3, 1]);
 		let mut gen     = thread_rng();
 		let print   = false;
 		for _ in 0..200 {
@@ -480,7 +480,7 @@ mod tests {
 	fn bench_giant() {
 		use time::precise_time_ns;
 		let config  = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::tanh());
-		let mut net = ConvNeuralNet::new(config, &[2, 500, 500, 1]);
+		let mut net = NeuralNet::new(config, &[2, 500, 500, 1]);
 		let f = -1.0;
 		let t =  1.0;
 		let iterations = 100;
