@@ -3,7 +3,7 @@
 //! A neural net implementation focused on performance.
 //!
 //! This library features a simple interface to a neural net,
-//! which exists mainly of two functions that are defined as traits within the module ```neural_net```.
+//! which exists mainly of two functions that are defined as traits within the module ```traits```.
 //!
 //! A neural network can be trained by giving it some input data and some expected target values.
 //! This is called managed learning because the user of the library has to feed the network with the
@@ -12,7 +12,7 @@
 //! 
 //! ```rust,no_run
 //! # use prophet::error_stats::ErrorStats;
-//! # trait NeuralNet {
+//! # trait Disciple {
 //! 	fn train(&mut self, input: &[f32], expected: &[f32]) -> ErrorStats;
 //! # }
 //! ```
@@ -20,7 +20,7 @@
 //! After a successful training session, the user might be able to use the neural net to predict expected values.
 //! 
 //! ```rust,no_run
-//! # trait TrainableNeuralNet {
+//! # trait Prophet {
 //! 	fn predict(&mut self, input: &[f32]) -> &[f32];
 //! # }
 //! ```
