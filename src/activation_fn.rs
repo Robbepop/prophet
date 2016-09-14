@@ -52,101 +52,101 @@ pub struct ActivationFn<F: Float> {
 }
 
 /// Identity: *ƒ(x) = x*
-pub fn identity_fn<F: Float>(x: F) -> F { x }
+fn identity_fn<F: Float>(x: F) -> F { x }
 /// Derivation of the Identity: *ƒ(x) = 1*
-pub fn identity_fn_dx<F: Float>(_: F) -> F { F::one() }
+fn identity_fn_dx<F: Float>(_: F) -> F { F::one() }
 
 /// 
 /// Binary Step:  
 /// *ƒ(x) = 0* **if** *x < 0*  
 /// *ƒ(x) = 1* **if** *x ≥ 0*
-pub fn binary_step_fn<F: Float>(x: F) -> F {
+fn binary_step_fn<F: Float>(x: F) -> F {
 	if x < F::zero() { F::zero() } else { F::one() }
 }
 /// Derivation of Binary Step: *ƒ(x) = 0, x ≠ 0*
-pub fn binary_step_fn_dx<F: Float>(x: F) -> F {
+fn binary_step_fn_dx<F: Float>(x: F) -> F {
 	if x != F::zero() { F::zero() } else { F::infinity() }
 }
 
 /// Logistic or Sigmoid
-pub fn logistic_fn<F: Float>(x: F) -> F {
+fn logistic_fn<F: Float>(x: F) -> F {
 	softplus_fn_dx(x)
 }
 /// Derivation of Logistic or Sigmoid
-pub fn logistic_fn_dx<F: Float>(x: F) -> F {
+fn logistic_fn_dx<F: Float>(x: F) -> F {
 	logistic_fn(x) * (F::one() - logistic_fn(x))
 }
 
 /// Tangens Hyperbolicus (**tanh**): *ƒ(x) = tanh(x)*
-pub fn tanh_fn<F: Float>(x: F) -> F {
+fn tanh_fn<F: Float>(x: F) -> F {
 	x.tanh()
 }
 /// Derivation of Tangens Hyperbolicus (**tanh⁻¹**): *ƒ(x) = 1 - tanh²(x)*
-pub fn tanh_fn_dx<F: Float>(x: F) -> F {
+fn tanh_fn_dx<F: Float>(x: F) -> F {
 	let fx = tanh_fn(x);
 	F::one() - fx*fx
 }
 
 /// Arcus Tangens (**atan**): *ƒ(x) = atan(x)*
-pub fn arctan_fn<F: Float>(x: F) -> F {
+fn arctan_fn<F: Float>(x: F) -> F {
 	x.atan()
 }
 /// Derivation of Arcus Tangens (**atan⁻¹**): *ƒ(x) = (x² + 1)⁻¹*
-pub fn arctan_fn_dx<F: Float>(x: F) -> F {
+fn arctan_fn_dx<F: Float>(x: F) -> F {
 	F::one() / (x*x + F::one())
 }
 
 /// SoftSign: *ƒ(x) = x ⋅ (1 + |x|)⁻¹*
-pub fn softsign_fn<F: Float>(x: F) -> F { x / (F::one() + x.abs()) }
+fn softsign_fn<F: Float>(x: F) -> F { x / (F::one() + x.abs()) }
 /// Derivation of SoftSign: *ƒ(x) = ( (1 + |x|)² )⁻¹*
-pub fn softsign_fn_dx<F: Float>(x: F) -> F { let dx = F::one() + x.abs(); F::one() / (dx*dx) }
+fn softsign_fn_dx<F: Float>(x: F) -> F { let dx = F::one() + x.abs(); F::one() / (dx*dx) }
 
 ///   
 /// ReLU:  
 /// *ƒ(x) = 0* **if** *x < 0*  
 /// *ƒ(x) = x* **else**
-pub fn relu_fn<F: Float>(x: F) -> F { if x < F::zero() { F::zero() } else { x } }
+fn relu_fn<F: Float>(x: F) -> F { if x < F::zero() { F::zero() } else { x } }
 ///   
 /// Derivation of ReLU:  
 /// *ƒ(x) = 0* **if** *x < 0*  
 /// *ƒ(x) = 1* **else**
-pub fn relu_fn_dx<F: Float>(x: F) -> F { if x < F::zero() { F::zero() } else { F::one() } }
+fn relu_fn_dx<F: Float>(x: F) -> F { if x < F::zero() { F::zero() } else { F::one() } }
 
 /// SoftPlus: *ƒ(x) = __ln__(1 + eˣ)*
-pub fn softplus_fn<F: Float>(x: F) -> F {
+fn softplus_fn<F: Float>(x: F) -> F {
 	x.exp().ln_1p()
 }
 /// Derivation of SoftPlus: *ƒ(x) = (1 + e⁻ˣ)⁻¹*
-pub fn softplus_fn_dx<F: Float>(x: F) -> F {
+fn softplus_fn_dx<F: Float>(x: F) -> F {
 	F::one() / (F::one() + (-x).exp())
 }
 
 /// Bent Identity: *ƒ(x) = ½(__sqrt__(x² + 1) - 1) + x*
-pub fn bent_identity_fn<F: Float>(x: F) -> F {
+fn bent_identity_fn<F: Float>(x: F) -> F {
 	let two = F::from(2.0).unwrap();
 	(((x*x) + F::one()).sqrt() - F::one()) / two + x
 }
 /// Derivation of Bent Identity: *ƒ(x) = x ⋅ (2 * __sqrt__(x² + 1))⁻¹ + 1*
-pub fn bent_identity_fn_dx<F: Float>(x: F) -> F {
+fn bent_identity_fn_dx<F: Float>(x: F) -> F {
 	let two = F::from(2.0).unwrap();
 	x / (two * ((x * x) + F::one()).sqrt()) + F::one()
 }
 
 /// Sinusoid: *ƒ(x) = __sin__(x)*
-pub fn sinusoid_fn<F: Float>(x: F) -> F {
+fn sinusoid_fn<F: Float>(x: F) -> F {
 	x.sin()
 }
 /// Derivation of Sinusoid: *ƒ(x) = __cos__(x)*
-pub fn sinusoid_fn_dx<F: Float>(x: F) -> F {
+fn sinusoid_fn_dx<F: Float>(x: F) -> F {
 	x.cos()
 }
 
 /// Gaussian:  *ƒ(x) = e⁻ˣˣ*
-pub fn gaussian_fn<F: Float>(x: F) -> F {
+fn gaussian_fn<F: Float>(x: F) -> F {
 	(-x * x).exp()
 }
 /// Derivation of Gaussian:  *ƒ(x) = -2xe⁻ˣˣ*
-pub fn gaussian_fn_dx<F: Float>(x: F) -> F {
+fn gaussian_fn_dx<F: Float>(x: F) -> F {
 	let two = F::from(2.0).unwrap();
 	-two * x * gaussian_fn(x)
 }
