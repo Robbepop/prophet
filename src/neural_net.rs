@@ -486,7 +486,7 @@ mod tests {
 		let mut net = NeuralNet::new(config, &[2, 1000, 1000, 1]);
 		let f = -1.0;
 		let t =  1.0;
-		let iterations = 3;
+		let iterations = 50;
 		let print = false;
 		let start = precise_time_ns();
 		for _ in 0..iterations {
