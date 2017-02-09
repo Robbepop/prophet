@@ -5,11 +5,8 @@ use std::fmt;
 use std::ops::Deref;
 
 macro_rules! fn_ptr_wrapper {
-    ($name:ident) => {
-		/// Represents a base or derived function for an activation function pair of
-		/// a base function and its derivate.
-		/// This enforces a strict type system that prevents certain errors
-		/// and prevents usage of a wrong function within the pair.
+	($(#[$attr:meta])* struct $name:ident) => {
+		$(#[$attr])*
 		#[derive(Copy, Clone, Debug, PartialEq)]
 		pub struct $name<T: Float>{
 			fn_ptr: fn(T) -> T
@@ -24,18 +21,23 @@ macro_rules! fn_ptr_wrapper {
 		}
 
 		impl<T: Float> Deref for $name<T> {
-		    type Target = fn(T) -> T;
+			type Target = fn(T) -> T;
 
-		    fn deref(&self) -> &Self::Target {
-		        &self.fn_ptr
-		    }
+			fn deref(&self) -> &Self::Target {
+				&self.fn_ptr
+			}
 		}
-    };
+	}
 }
 
-fn_ptr_wrapper!(BaseFn);
-fn_ptr_wrapper!(DerivedFn);
-
+fn_ptr_wrapper!(
+	/// Represents the base function part of an activation function pair.
+	struct BaseFn
+);
+fn_ptr_wrapper!(
+	/// Represents the derived function part of an activation function pair.
+	struct DerivedFn
+);
 
 /// Represents the pair of an activation function and its derivate.
 /// 

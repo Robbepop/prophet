@@ -6,7 +6,8 @@ use std::vec::Vec;
 use rand::*;
 use ndarray::prelude::*;
 use ndarray::{Shape};
-use itertools::{Zip};
+use itertools::multizip;
+use itertools::Itertools;
 
 use learn_config::{LearnConfig};
 use error_stats::{ErrorStats};
@@ -16,8 +17,8 @@ use traits::{
 };
 use activation_fn::{BaseFn, DerivedFn};
 
-type Array1D<F> = Array<F, Ix>;
-type Array2D<F> = Array<F, (Ix, Ix)>;
+type Array1D<F> = Array<F, Ix1>;
+type Array2D<F> = Array<F, Ix2>;
 
 /// A fully connected layer within a neural net.
 /// 
@@ -44,6 +45,7 @@ type Array2D<F> = Array<F, (Ix, Ix)>;
 /// 
 /// Besides that this design allows to completely avoid heap memory allocations after 
 /// setting up the objects initially.
+#[derive(Debug, Clone, PartialEq)]
 struct FullyConnectedLayer {
 	weights:       Array2D<f32>,
 	delta_weights: Array2D<f32>,
@@ -80,7 +82,7 @@ impl FullyConnectedLayer {
 	/// and is not meant to be used outside of this crate.
 	fn from_vec(inputs: Ix, outputs: Ix, vec: Vec<f32>) -> Self {
 		assert!(inputs >= 2 && outputs >= 1);
-		let shape = Shape::from((outputs, inputs));
+		let shape = Shape::from(Dim([outputs, inputs]));
 		// Need one more gradient for the bias neuron.
 		let count_gradients = outputs + 1;
 		FullyConnectedLayer{
@@ -140,10 +142,10 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(self.count_rows(), self.count_outputs());
 		debug_assert_eq!(self.count_columns(), input.len() + 1);
 
-		for (weights_row, output) in Zip::new((self.weights.outer_iter(),
+		for (weights_row, output) in multizip((self.weights.outer_iter(),
 			                                   self.outputs.iter_mut())) {
 			*output = activation_fn(
-				Zip::new((weights_row.iter(),
+				multizip((weights_row.iter(),
 				          input.iter().chain(&[1.0])))
 					.fold(0.0, |sum, (w, i)| sum + w*i));
 		};
@@ -156,7 +158,7 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(self.count_outputs(), target_values.len());
 		debug_assert_eq!(self.count_gradients(), target_values.len() + 1); // no calculation for bias!
 
-		for (gradient, target, &output) in Zip::new(
+		for (gradient, target, &output) in multizip(
 			(self.gradients.iter_mut(), target_values.iter(), self.outputs.iter()))
 		{
 			*gradient = (target - output) * act_fn_dx(output);
@@ -180,7 +182,7 @@ impl FullyConnectedLayer {
 	fn apply_activation(&mut self, act_fn_dx: DerivedFn<f32>) {
 		debug_assert_eq!(self.count_gradients(), self.count_outputs() + 1);
 
-		for (mut gradient, output) in Zip::new((self.gradients.iter_mut(),
+		for (mut gradient, output) in multizip((self.gradients.iter_mut(),
 		                                        self.outputs.iter().chain(&[1.0]))) {
 			*gradient *= act_fn_dx(*output);
 		}
@@ -196,10 +198,10 @@ impl FullyConnectedLayer {
 
 		self.reset_gradients();
 
-		for (prev_weights_row, prev_gradient) in Zip::new((prev.weights.outer_iter(),
+		for (prev_weights_row, prev_gradient) in multizip((prev.weights.outer_iter(),
 		                                                   prev.gradients.iter()))
 		{
-			for (mut gradient, weight) in Zip::new((self.gradients.iter_mut(),
+			for (mut gradient, weight) in multizip((self.gradients.iter_mut(),
 			                                        prev_weights_row.iter()))
 			{
 				*gradient += weight * prev_gradient;
@@ -220,10 +222,10 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(prev_outputs.len() + 1, self.count_columns());
 		debug_assert_eq!(self.count_gradients(), self.count_rows() + 1);
 
-		for (mut weights_row, mut delta_weights_row, gradient) in Zip::new((self.weights.outer_iter_mut(),
+		for (mut weights_row, mut delta_weights_row, gradient) in multizip((self.weights.outer_iter_mut(),
 		                                                                    self.delta_weights.outer_iter_mut(),
 		                                                                    self.gradients.iter())) {
-			for (prev_output, weight, delta_weight) in Zip::new((prev_outputs.iter().chain(&[1.0]),
+			for (prev_output, weight, delta_weight) in multizip((prev_outputs.iter().chain(&[1.0]),
 			                                                     weights_row.iter_mut(),
 			                                                     delta_weights_row.iter_mut())) {
 				*delta_weight =
@@ -272,8 +274,8 @@ impl NeuralNet {
 	/// use prophet::prelude::*;
 	///
 	/// let config  = LearnConfig::new(
-	/// 	0.15,                           // learning_rate
-	/// 	0.4,                            // learning_momentum
+	/// 	0.15,                // learning_rate
+	/// 	0.4,                 // learning_momentum
 	/// 	ActivationFn::tanh() // activation function + derivate
 	/// );
 	/// let mut net = NeuralNet::new(config, &[2, 4, 3, 1]);
@@ -300,9 +302,10 @@ impl NeuralNet {
 	)
 		-> Self
 	{
-		let buffer = layer_sizes.windows(2)
-			.map(|inout| (inout[0], inout[1]))
-			.map(|(inputs, outputs)| FullyConnectedLayer::random(inputs, outputs))
+		let buffer = layer_sizes
+			.iter()
+			.tuple_windows::<(_, _)>()
+			.map(|(&inputs, &outputs)| FullyConnectedLayer::random(inputs, outputs))
 			.collect::<Vec<FullyConnectedLayer>>();
 		NeuralNet::from_vec(config, buffer)
 	}
@@ -313,7 +316,7 @@ impl NeuralNet {
 
 	fn overall_net_error(&self, target_values: &[f32]) -> f32 {
 		let outputs = self.output_layer().output_as_slice();
-		let sum = Zip::new((outputs.iter(), target_values))
+		let sum = multizip((outputs.iter(), target_values))
 			.map(|(output, target)| { let dx = target - output; dx*dx })
 			.sum::<f32>();
 		(sum / outputs.len() as f32).sqrt()
@@ -434,7 +437,7 @@ mod tests {
 	#[test]
 	fn train_and() {
 		let config  = LearnConfig::new(0.15, 0.5, ActivationFn::<f32>::tanh());
-		let mut net = NeuralNet::new(config, &[2, 3, 3, 1]);
+		let mut net = NeuralNet::new(config, &[2, 1]);
 		let f = -1.0;
 		let t =  1.0;
 		let print = false;
@@ -460,7 +463,7 @@ mod tests {
 		use rand::*;
 		let config  = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::identity());
 		let mut net = NeuralNet::new(config, &[3, 1]);
-		let mut gen     = thread_rng();
+		let mut gen = thread_rng();
 		let print   = false;
 		for _ in 0..200 {
 			let a = gen.next_f32();
@@ -470,7 +473,7 @@ mod tests {
 				println!("{} + {} + {} (= {}) => {}", a, b, c, a+b+c, net.train(&[a, b, c], &[a+b+c]));
 			}
 			else {
-				net.train(&[a, b], &[a+b]);
+				net.train(&[a, b, c], &[a+b+c]);
 			}
 		}
 		assert!(net.latest_error_stats().avg_error() < 0.05);
@@ -480,10 +483,10 @@ mod tests {
 	fn bench_giant() {
 		use time::precise_time_ns;
 		let config  = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::tanh());
-		let mut net = NeuralNet::new(config, &[2, 500, 500, 1]);
+		let mut net = NeuralNet::new(config, &[2, 1000, 1000, 1]);
 		let f = -1.0;
 		let t =  1.0;
-		let iterations = 100;
+		let iterations = 3;
 		let print = false;
 		let start = precise_time_ns();
 		for _ in 0..iterations {

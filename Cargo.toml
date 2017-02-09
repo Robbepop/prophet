@@ -1,7 +1,7 @@
 [package]
 
 name = "prophet" # other names: Pulsar
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Robbepop"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
@@ -16,10 +16,10 @@ A neural network implementation with a focus on cache-efficiency and sequential 
 keywords = ["neuronal", "network", "machine", "learning"]
 
 [dependencies]
-rand = "0.3"
-num = "0.1"
-ndarray = "0.6"
-itertools = "0.4"
+rand = "0"
+num = "0"
+ndarray = "0"
+itertools = "0"
 
 [dev-dependencies]
 time = "0.1"

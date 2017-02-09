@@ -12,15 +12,3 @@ Usage
 
  - pull this project into your workspace
  - build and run with cargo
-
-
-Future Plans (in no specific order)
------------------------------------
-
- - convolutional neural network implementation
- - implement neural net generically for ```num::Float``` types
- - improve error handling: less panics, more results
- - enhance interfaces with stronger type safety
- - add usage examples and benchmarks
- - increase test code coverage
- - parallel implementation for large layers
