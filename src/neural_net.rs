@@ -6,6 +6,7 @@ use std::vec::Vec;
 use rand::*;
 use ndarray::prelude::*;
 use ndarray::{Shape};
+// use ndarray_rand::*;
 use itertools::multizip;
 use itertools::Itertools;
 
@@ -182,8 +183,8 @@ impl FullyConnectedLayer {
 	fn apply_activation(&mut self, act_fn_dx: DerivedFn<f32>) {
 		debug_assert_eq!(self.count_gradients(), self.count_outputs() + 1);
 
-		for (mut gradient, output) in multizip((self.gradients.iter_mut(),
-		                                        self.outputs.iter().chain(&[1.0]))) {
+		for (gradient, output) in multizip((self.gradients.iter_mut(),
+		                                    self.outputs.iter().chain(&[1.0]))) {
 			*gradient *= act_fn_dx(*output);
 		}
 	}
@@ -201,8 +202,8 @@ impl FullyConnectedLayer {
 		for (prev_weights_row, prev_gradient) in multizip((prev.weights.outer_iter(),
 		                                                   prev.gradients.iter()))
 		{
-			for (mut gradient, weight) in multizip((self.gradients.iter_mut(),
-			                                        prev_weights_row.iter()))
+			for (gradient, weight) in multizip((self.gradients.iter_mut(),
+			                                    prev_weights_row.iter()))
 			{
 				*gradient += weight * prev_gradient;
 			}
@@ -345,7 +346,8 @@ impl NeuralNet {
 		let learn_rate     = self.config.learn_rate();
 		let learn_momentum = self.config.learn_momentum();
 
-		self.layers.iter_mut()
+		self.layers
+			.iter_mut()
 			.fold(input, |prev_output, layer| layer.update_weights(prev_output, learn_rate, learn_momentum));
 	}
 
@@ -361,7 +363,8 @@ impl Prophet for NeuralNet {
 
 	fn predict<'b, 'a: 'b>(&'a mut self, input: &'b [Self::Elem]) -> &'b [Self::Elem] {
 		let act_fn = self.config.act_fn.base_fn(); // cannot be used in the fold as self.activation_fn
-		self.layers.iter_mut()
+		self.layers
+			.iter_mut()
 			.fold(input, |out, layer| layer.feed_forward(out, act_fn))
 	}
 }
@@ -483,7 +486,7 @@ mod tests {
 	fn bench_giant() {
 		use time::precise_time_ns;
 		let config  = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::tanh());
-		let mut net = NeuralNet::new(config, &[2, 1000, 1000, 1]);
+		let mut net = NeuralNet::new(config, &[2, 500, 500, 1]);
 		let f = -1.0;
 		let t =  1.0;
 		let iterations = 50;

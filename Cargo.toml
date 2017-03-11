@@ -8,18 +8,18 @@ readme = "README.md"
 repository = "https://github.com/robbepop/prophet"
 documentation = "https://docs.rs/prophet"
 #homepage = "https://github.com/robbepop/prophet"
-description = """
-A neural network implementation with a focus on cache-efficiency and sequential performance.
-
-
-"""
+description = """A neural network implementation with a focus on cache-efficiency and sequential performance."""
 keywords = ["neuronal", "network", "machine", "learning"]
 
 [dependencies]
 rand = "0"
 num = "0"
 ndarray = "0"
+# ndarray-rand = "0"
 itertools = "0"
 
 [dev-dependencies]
 time = "0.1"
+
+[features]
+bench = []
