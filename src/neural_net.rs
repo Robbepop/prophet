@@ -481,34 +481,31 @@ mod tests {
 		}
 		assert!(net.latest_error_stats().avg_error() < 0.05);
 	}
+}
 
-	#[test]
-	fn bench_giant() {
-		use time::precise_time_ns;
+
+#[cfg(all(feature = "bench", test))]
+mod bench {
+	use super::*;
+	use test::{Bencher, black_box};
+
+	use traits::*;
+	use learn_config::{LearnConfig};
+	use activation_fn::{ActivationFn};
+	use super::{NeuralNet};
+
+	#[bench]
+	fn bench_giant(bencher: &mut Bencher) {
 		let config  = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::tanh());
-		let mut net = NeuralNet::new(config, &[2, 500, 500, 1]);
+		let mut net = NeuralNet::new(config, &[2, 1000, 1000, 1]);
 		let f = -1.0;
 		let t =  1.0;
-		let iterations = 50;
-		let print = false;
-		let start = precise_time_ns();
-		for _ in 0..iterations {
-			if print {
-				println!("(f, f) => {}"  , net.train(&[f, f], &[f]));
-				println!("(f, t) => {}"  , net.train(&[f, t], &[f]));
-				println!("(t, f) => {}"  , net.train(&[t, f], &[f]));
-				println!("(t, t) => {}\n", net.train(&[t, t], &[t]));
-			}
-			else {
-				net.train(&[f, f], &[f]);
-				net.train(&[f, t], &[f]);
-				net.train(&[t, f], &[f]);
-				net.train(&[t, t], &[t]);
-			}
-		}
-		let duration_ms = (precise_time_ns() - start) / 1_000_000;
-		println!("conv_neural_net::tests::bench_giant::'total req. time': {} ms", duration_ms);
-		println!("conv_neural_net::tests::bench_giant::'req. time per iteration': {} ms", duration_ms / iterations);
-		assert!(net.latest_error_stats().avg_error() < 0.05);
+
+		bencher.iter(|| {
+			net.train(&[f, f], &[f]);
+			net.train(&[f, t], &[f]);
+			net.train(&[t, f], &[f]);
+			net.train(&[t, t], &[t]);
+		});
 	}
 }

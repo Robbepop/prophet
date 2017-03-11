@@ -1,3 +1,6 @@
+
+#![cfg_attr(all(feature = "bench", test), feature(test))]
+
 #![warn(missing_docs)]
 
 //! A neural net implementation focused on performance.
@@ -62,8 +65,8 @@ extern crate ndarray;
 // extern crate ndarray_rand;
 extern crate itertools;
 
-#[cfg(test)]
-extern crate time;
+#[cfg(all(feature = "bench", test))]
+extern crate test;
 
 pub mod traits;
 pub mod activation_fn;

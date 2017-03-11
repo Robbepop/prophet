@@ -19,8 +19,5 @@ ndarray = "0"
 # ndarray-rand = "0"
 itertools = "0"
 
-[dev-dependencies]
-time = "0.1"
-
 [features]
 bench = []
