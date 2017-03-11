@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/Robbepop/prophet.svg?branch=master)](https://travis-ci.org/Robbepop/prophet)
-<!-- [![Coverage Status](https://coveralls.io/repos/github/Robbepop/string-interner/badge.svg?branch=master)](https://coveralls.io/github/Robbepop/string-interner?branch=master) -->
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Crates.io Version](https://img.shields.io/crates/v/prophet.svg)](https://crates.io/crates/prophet)
+<!-- [![Coverage Status](https://coveralls.io/repos/github/Robbepop/string-interner/badge.svg?branch=master)](https://coveralls.io/github/Robbepop/string-interner?branch=master) -->
 
 PROPHET
 =======
