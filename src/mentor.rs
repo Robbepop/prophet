@@ -4,7 +4,7 @@
 /// The Mentor tries to accelerate the learning rate of the Disciple
 /// by self-configuring the learning parameters during the training session.
 struct Mentor {
-	stats: ErrorStats,
+	stats : ErrorStats,
 	config: LearnConfig
 }
 

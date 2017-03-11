@@ -24,9 +24,9 @@ script:
   - travis-cargo test
   # - travis-cargo --only stable doc
 
-after_success:
+# after_success:
   # - travis-cargo --only stable doc-upload
-  - travis-cargo --only nightly coveralls --no-sudo --verify
+  # - travis-cargo --only nightly coveralls --no-sudo --verify
 
 env:
   global:
