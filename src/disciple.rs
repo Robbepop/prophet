@@ -2,74 +2,80 @@
 //! which form the basis for topologies of neural networks.
 
 use std::slice::Iter;
-use std::fmt;
-use std::fmt::Display;
-use std::fmt::Formatter;
-use std::error::Error;
+use std::marker::PhantomData;
 
-/// Errors that can happen during operations performed on Disciple objects.
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum DiscipleError {
-	/// Error indicating that too few layers were given during Disciple construction.
-	TooFewLayers(usize),
-	/// Error indicating that too few input neurons were specified during Disciple construction.
-	TooFewInputNeurons(usize),
-	/// Error indicating that too few output neurons were specified during Disciple construction.
-	TooFewOutputNeurons(usize)
+/// This is the current compile-time state of the `Disciple`.
+/// Used for compile-time checking of construction constrains.
+/// E.g. to make it impossible to define multiple output layers,
+/// no input-layers etc..
+pub trait InitializationState {}
+
+mod state {
+	/// States that the `Disciple` is under construction and may mutate.
+	pub struct UnderConstruction();
+
+	/// States that the construction of the `Disciple` is finished.
+	/// No further modifications are possible!
+	pub struct Finished();
+
+	impl super::InitializationState for UnderConstruction {}
+	impl super::InitializationState for Finished {}
+}
+use self::state::{UnderConstruction, Finished};
+
+/// Represents the neural network topology.
+/// 
+/// This is in fact a compile-time-checked builder for neural network topologies.
+/// Can be used by `Mentor` types to train it and become a trained neural network
+/// with which the user can predict data.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Disciple<S: InitializationState> {
+	layer_sizes: Vec<usize>,
+	phantom: PhantomData<S>
 }
 
-/// Result type for disciple operations.
-pub type DiscipleResult<T> = Result<T, DiscipleError>;
+impl Disciple<UnderConstruction> {
+	/// Creates a new `Disciple` with the given amount of input neurons.
+	/// 
+	/// Bias-Neurons are not included in the given number!
+	pub fn with_input(size: usize) -> Disciple<UnderConstruction> {
+		Disciple{
+			layer_sizes: vec![size],
+			phantom    : PhantomData::default()
+		}
+	}
 
-impl Display for DiscipleError {
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		use self::DiscipleError::*;
-		match *self {
-			TooFewLayers(count_layers) => write!(f,
-				"Too few layers specified! Only {} were given.", count_layers),
-			TooFewInputNeurons(count_inputs) => write!(f,
-				"Too few input neurons specified! Only {} were given.", count_inputs),
-			TooFewOutputNeurons(count_outputs) => write!(f,
-				"Too few output neurons specified! Only {} were given.", count_outputs)
+	/// Adds a hidden layer to this `Disciple` with the given amount of neurons.
+	/// 
+	/// Bias-Neurons are not included in the given number!
+	pub fn add_layer(mut self, size: usize) -> Disciple<UnderConstruction> {
+		self.layer_sizes.push(size);
+		self
+	}
+
+	/// Adds some hidden layers to this `Disciple` with the given amount of neurons.
+	/// 
+	/// Bias-Neurons are not included in the given number!
+	pub fn add_layers(mut self, sizes: &[usize]) -> Disciple<UnderConstruction> {
+		for &size in sizes {
+			self.layer_sizes.push(size);
+		}
+		self
+	}
+
+	/// Finishes constructing a `Disciple` by defining its output layer neurons.
+	/// 
+	/// Bias-Neurons are not included in the given number!
+	pub fn with_output(mut self, size: usize) -> Disciple<Finished> {
+		self.layer_sizes.push(size);
+		Disciple{
+			layer_sizes: self.layer_sizes,
+			phantom    : PhantomData::default()
 		}
 	}
 }
 
-impl Error for DiscipleError {
-	fn description(&self) -> &str {
-		"Error during construction of a Disciple object."
-	}
-
-	fn cause(&self) -> Option<&Error> {
-		None
-	}
-}
-
-/// Disciples represent a topological structure for a neural network.
-/// They can be trained to become fully qualified Prophet's that may predict data.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Disciple {
-	layer_sizes: Vec<usize>
-}
-
-impl Disciple {
-	/// Creates a new Disciple instance with a topology defined
-	/// as the given vector of layer sizes.
-	pub fn from_vec(layer_sizes: Vec<usize>) -> DiscipleResult<Self> {
-		use self::DiscipleError::*;
-		let count_layers = layer_sizes.len();
-		match count_layers {
-			0...1 => Err(TooFewLayers(count_layers)),
-			_     => {
-				let &count_inputs  = layer_sizes.first().unwrap_or(&0);
-				let &count_outputs = layer_sizes.last().unwrap_or(&0);
-				if      count_inputs  == 0 { Err(TooFewInputNeurons(count_inputs))   }
-				else if count_outputs == 0 { Err(TooFewOutputNeurons(count_outputs)) }
-				else { Ok(Disciple{ layer_sizes: layer_sizes }) }
-			}
-		}
-	}
-
+impl Disciple<Finished> {
 	/// Iterates over the layer sizes of this Disciple's topology definition.
 	pub fn iter_layer_sizes<'a>(&'a self) -> Iter<'a, usize> {
 		self.layer_sizes.iter()
@@ -81,12 +87,18 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn from_vec_result() {
-		use super::DiscipleError::*;
-		assert_eq!(Disciple::from_vec(Vec::new()), Err(TooFewLayers(0)));
-		assert_eq!(Disciple::from_vec(vec!(1; 1)), Err(TooFewLayers(1)));
-		assert_eq!(Disciple::from_vec(vec!(0, 1)), Err(TooFewInputNeurons(0)));
-		assert_eq!(Disciple::from_vec(vec!(1, 0)), Err(TooFewOutputNeurons(0)));
-		assert_eq!(Disciple::from_vec(vec!(1, 1)), Ok(Disciple{ layer_sizes: vec!(1, 1) }));
+	fn construction() {
+		let dis = Disciple::with_input(2)
+			.add_layer(5)
+			.add_layers(&[10, 10])
+			.with_output(5);
+		let mut it  = dis
+			.iter_layer_sizes()
+			.map(|&size| size);
+		assert_eq!(it.next(), Some(2));
+		assert_eq!(it.next(), Some(5));
+		assert_eq!(it.next(), Some(10));
+		assert_eq!(it.next(), Some(10));
+		assert_eq!(it.next(), Some(5));
 	}
 }
