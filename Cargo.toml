@@ -10,6 +10,7 @@ documentation = "https://docs.rs/prophet"
 #homepage = "https://github.com/robbepop/prophet"
 description = """A neural network implementation with a focus on cache-efficiency and sequential performance."""
 keywords = ["neuronal", "network", "machine", "learning"]
+categories = ["science"]
 
 [dependencies]
 rand = "0"
