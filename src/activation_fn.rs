@@ -412,16 +412,16 @@ mod tests {
 	#[test]
 	fn sinusoid_activation_fn() {
 		let act_fn_pair = ActivationFn::<f32>::sinusoid();
-		assert_eq!(act_fn_pair.base(-1.0), -0.84147096);
-		assert_eq!(act_fn_pair.base(-0.5), -0.47942555);
-		assert_eq!(act_fn_pair.base( 0.0), 0.0);
-		assert_eq!(act_fn_pair.base( 0.5), 0.47942555);
-		assert_eq!(act_fn_pair.base( 1.0), 0.84147096);
-		assert_eq!(act_fn_pair.derived(-1.0), 0.5403023);
-		assert_eq!(act_fn_pair.derived(-0.5), 0.87758255);
-		assert_eq!(act_fn_pair.derived( 0.0), 1.0);
-		assert_eq!(act_fn_pair.derived( 0.5), 0.87758255);
-		assert_eq!(act_fn_pair.derived( 1.0), 0.5403023);
+		relative_eq!(act_fn_pair.base(-1.0), -0.84147096);
+		relative_eq!(act_fn_pair.base(-0.5), -0.47942555);
+		relative_eq!(act_fn_pair.base( 0.0), 0.0);
+		relative_eq!(act_fn_pair.base( 0.5), 0.47942555);
+		relative_eq!(act_fn_pair.base( 1.0), 0.84147096);
+		relative_eq!(act_fn_pair.derived(-1.0), 0.5403023);
+		relative_eq!(act_fn_pair.derived(-0.5), 0.87758255);
+		relative_eq!(act_fn_pair.derived( 0.0), 1.0);
+		relative_eq!(act_fn_pair.derived( 0.5), 0.87758255);
+		relative_eq!(act_fn_pair.derived( 1.0), 0.5403023);
 	}
 
 	#[test]

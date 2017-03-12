@@ -68,6 +68,10 @@ extern crate itertools;
 #[cfg(all(feature = "bench", test))]
 extern crate test;
 
+#[cfg(test)]
+#[macro_use]
+extern crate approx;
+
 pub mod traits;
 pub mod activation_fn;
 pub mod neural_net;
