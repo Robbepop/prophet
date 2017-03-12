@@ -78,7 +78,7 @@ pub mod neural_net;
 pub mod error_stats;
 pub mod learn_config;
 
-pub mod disciple;
+// mod disciple;
 
 /// The prophet prelude publicly imports all propet modules the user needs in order to
 /// create, train and use neural networks.
