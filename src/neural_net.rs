@@ -127,13 +127,15 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(self.count_rows(), self.count_outputs());
 		debug_assert_eq!(self.count_columns(), input.len() + 1);
 
-		for (weights_row, output) in multizip((self.weights.outer_iter(),
-			                                   self.outputs.iter_mut())) {
-			*output = activation_fn(
-				multizip((weights_row.iter(),
-				          input.iter().chain(&[1.0])))
-					.fold(0.0, |sum, (w, i)| sum + w*i));
-		};
+		multizip((self.outputs.iter_mut(), self.weights.outer_iter()))
+			.foreach(|(output, weights_row)| {
+				*output = activation_fn(
+					multizip((weights_row.iter(), input.iter().chain(&[1.0])))
+						.map(|(w, i)| w*i)
+						.sum()
+				) 
+			});
+
 		self.output_as_slice()
 	}
 
@@ -143,11 +145,11 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(self.count_outputs(), target_values.len());
 		debug_assert_eq!(self.count_gradients(), target_values.len() + 1); // no calculation for bias!
 
-		for (gradient, target, &output) in multizip(
-			(self.gradients.iter_mut(), target_values.iter(), self.outputs.iter()))
-		{
-			*gradient = (target - output) * act_fn_dx(output);
-		}
+		multizip((self.gradients.iter_mut(), target_values.iter(), self.outputs.iter()))
+			.foreach(|(gradient, target, &output)| {
+				*gradient = (target - output) * act_fn_dx(output)
+			});
+
 		// gradient of bias should be set equal to zero during object initialization already.
 		self
 	}
@@ -156,10 +158,7 @@ impl FullyConnectedLayer {
 	/// This is required as initialization step before propagating gradients
 	/// for the efficient implementation of this library.
 	fn reset_gradients(&mut self) {
-		for gradient in self.gradients.iter_mut() {
-			*gradient = 0.0;
-		}
-
+		self.gradients.fill(0.0);
 		debug_assert!(self.gradients.iter().all(|&g| g == 0.0));
 	}
 
@@ -167,10 +166,8 @@ impl FullyConnectedLayer {
 	fn apply_activation(&mut self, act_fn_dx: DerivedFn<f32>) {
 		debug_assert_eq!(self.count_gradients(), self.count_outputs() + 1);
 
-		for (gradient, output) in multizip((self.gradients.iter_mut(),
-		                                    self.outputs.iter().chain(&[1.0]))) {
-			*gradient *= act_fn_dx(*output);
-		}
+		multizip((self.gradients.iter_mut(), self.outputs.iter().chain(&[1.0])))
+			.foreach(|(gradient, &output)| *gradient *= act_fn_dx(output));
 	}
 
 	/// Back propagate gradients from the previous layer (in reversed order) to this layer
@@ -183,15 +180,13 @@ impl FullyConnectedLayer {
 
 		self.reset_gradients();
 
-		for (prev_weights_row, prev_gradient) in multizip((prev.weights.outer_iter(),
-		                                                   prev.gradients.iter()))
-		{
-			for (gradient, weight) in multizip((self.gradients.iter_mut(),
-			                                    prev_weights_row.iter()))
-			{
-				*gradient += weight * prev_gradient;
-			}
-		}
+		multizip((prev.weights.outer_iter(), prev.gradients.iter()))
+			.foreach(|(prev_weights_row, prev_gradient)| {
+				multizip((self.gradients.iter_mut(), prev_weights_row.iter()))
+					.foreach(|(gradient, weight)| {
+						*gradient += weight * prev_gradient
+					})
+			});
 
 		self.apply_activation(act_fn_dx);
 		self // for chaining in a fold expression
