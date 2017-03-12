@@ -13,11 +13,11 @@ keywords = ["neuronal", "network", "machine", "learning"]
 categories = ["science"]
 
 [dependencies]
-rand = "0"
-num = "0"
-ndarray = "0"
+rand = "0.3"
+num = "0.1"
+ndarray = "0.8"
 # ndarray-rand = "0"
-itertools = "0"
+itertools = "0.5"
 
 [dev-dependencies]
 approx = "0.1.1"
