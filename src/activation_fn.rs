@@ -103,12 +103,11 @@ fn softsign_fn<F: Float>(x: F) -> F { x / (F::one() + x.abs()) }
 /// Derivation of SoftSign: *ƒ(x) = ( (1 + |x|)² )⁻¹*
 fn softsign_fn_dx<F: Float>(x: F) -> F { let dx = F::one() + x.abs(); F::one() / (dx*dx) }
 
-///   
 /// ReLU:  
 /// *ƒ(x) = 0* **if** *x < 0*  
 /// *ƒ(x) = x* **else**
 fn relu_fn<F: Float>(x: F) -> F { if x < F::zero() { F::zero() } else { x } }
-///   
+
 /// Derivation of ReLU:  
 /// *ƒ(x) = 0* **if** *x < 0*  
 /// *ƒ(x) = 1* **else**
