@@ -202,20 +202,18 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(prev_outputs.len() + 1, self.count_columns());
 		debug_assert_eq!(self.count_gradients(), self.count_rows() + 1);
 
-		for (mut weights_row, mut delta_weights_row, gradient) in multizip((self.weights.outer_iter_mut(),
-		                                                                    self.delta_weights.outer_iter_mut(),
-		                                                                    self.gradients.iter())) {
-			for (prev_output, weight, delta_weight) in multizip((prev_outputs.iter().chain(&[1.0]),
-			                                                     weights_row.iter_mut(),
-			                                                     delta_weights_row.iter_mut())) {
-				*delta_weight =
-					// Individual input, magnified by the gradient and train rate
-					train_rate * prev_output * gradient
-					// Also add momentum which is a fraction of the previous delta weight
-					+ learning_momentum * *delta_weight;
-				*weight += *delta_weight;
-			}
-		}
+		multizip((self.weights.outer_iter_mut(), self.delta_weights.outer_iter_mut(), self.gradients.iter()))
+			.foreach(|(mut weights_row, mut delta_weights_row, gradient)| {
+				multizip((prev_outputs.iter().chain(&[1.0]), weights_row.iter_mut(), delta_weights_row.iter_mut()))
+					.foreach(|(prev_output, weight, delta_weight)| {
+						*delta_weight =
+							// Individual input, magnified by the gradient and train rate
+							train_rate * prev_output * gradient
+							// Also add momentum which is a fraction of the previous delta weight
+							+ learning_momentum * *delta_weight;
+						*weight += *delta_weight;
+					})
+			});
 
 		self.output_as_slice()
 	}
