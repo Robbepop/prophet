@@ -16,7 +16,7 @@ categories = ["science"]
 rand = "0.3"
 num = "0.1"
 ndarray = "0.8"
-# ndarray-rand = "0"
+ndarray-rand = "0.4"
 itertools = "0.5"
 
 [dev-dependencies]

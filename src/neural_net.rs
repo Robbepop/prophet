@@ -3,12 +3,11 @@
 
 use std::vec::Vec;
 
-use rand::*;
+use rand::distributions::Range;
+use ndarray_rand::RandomExt;
 use ndarray::prelude::*;
 use ndarray::{Shape};
-// use ndarray_rand::*;
-use itertools::multizip;
-use itertools::Itertools;
+use itertools::{multizip, Itertools};
 
 use learn_config::{LearnConfig};
 use error_stats::{ErrorStats};
@@ -17,9 +16,6 @@ use traits::{
 	Disciple
 };
 use activation_fn::{BaseFn, DerivedFn};
-
-type Array1D<F> = Array<F, Ix1>;
-type Array2D<F> = Array<F, Ix2>;
 
 /// A fully connected layer within a neural net.
 /// 
@@ -48,10 +44,10 @@ type Array2D<F> = Array<F, Ix2>;
 /// setting up the objects initially.
 #[derive(Debug, Clone, PartialEq)]
 struct FullyConnectedLayer {
-	weights:       Array2D<f32>,
-	delta_weights: Array2D<f32>,
-	outputs:       Array1D<f32>,
-	gradients:     Array1D<f32>
+	weights:       Array2<f32>,
+	delta_weights: Array2<f32>,
+	outputs:       Array1<f32>,
+	gradients:     Array1<f32>
 }
 
 /// A neural net.
@@ -76,40 +72,28 @@ pub struct NeuralNet {
 }
 
 impl FullyConnectedLayer {
-	/// Creates a FullyConnectedLayer by consuming the given vector vec.
-	/// vec is required to also include the weights for the bias neuron!
-	/// 
-	/// This constructor should only be used internally for testing purpose
-	/// and is not meant to be used outside of this crate.
-	fn from_vec(inputs: Ix, outputs: Ix, vec: Vec<f32>) -> Self {
-		assert!(inputs >= 2 && outputs >= 1);
-		let shape = Shape::from(Dim([outputs, inputs]));
-		// Need one more gradient for the bias neuron.
-		let count_gradients = outputs + 1;
-		FullyConnectedLayer{
-			weights: Array2D::from_shape_vec(shape, vec).unwrap(),
-			delta_weights: Array2D::default(shape),
-			outputs: Array::default(outputs),
-			gradients: Array::zeros(count_gradients)
-		}
-	}
-
 	/// Creates a FullyConnectedLayer with randomized weights.
+	/// 
 	/// Implicitely creates weights for the bias neuron,
 	/// so the dimensions of the weights matrix is equal to
 	/// (output)x(input+1).
+	/// 
 	/// The weights are randomized within the open interval (0,1).
 	/// This excludes 0.0 and 1.0 as weights.
 	/// Other optional intervals may come with a future update!
 	fn random(inputs: Ix, outputs: Ix) -> Self {
 		assert!(inputs >= 1 && outputs >= 1);
-		let inputs = inputs + 1; // implicitely add bias!
-		let elems = inputs * outputs;
-		let buffer = thread_rng().gen_iter::<Open01<f32>>()
-			.take(elems)
-			.map(|Open01(val)| val)
-			.collect::<Vec<f32>>();
-		FullyConnectedLayer::from_vec(inputs, outputs, buffer)
+
+		let inputs          = inputs  + 1; // implicitely add bias!
+		let count_gradients = outputs + 1;
+		let shape           = Shape::from(Dim([outputs, inputs]));
+
+		FullyConnectedLayer{
+			weights:       Array2::random(shape, Range::new(0.0, 1.0)),
+			delta_weights: Array2::default(shape),
+			outputs:       Array1::default(outputs),
+			gradients:     Array1::zeros(count_gradients)
+		}
 	}
 
 	fn count_rows(&self) -> Ix { let (rows, _) = self.weights.dim(); rows }
