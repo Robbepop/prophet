@@ -3,11 +3,9 @@ TODO-LIST
 
 This is the list of spontaneous things that are planned for the next update:
 
- - improve comments of ActivationFn constructors of supported activation functions.
- - improve error handling and implement prophet::Error struct and prophet::ErrorType enum.
- - rewrite NeuralNetwork so that you cannot let it predict data before it hasn't learned anything.
- - convolutional neural network implementation
- - implement neural net generically for ```num::Float``` types
- - parallel implementation for large layers
- - implement serialization and deserialization for neural network instances
- 
+ - Parallelization based on Rayon or Volkano.
+ - Improved layer architecture to support convolutional layers.
+ - Generic float type support (e.g. for future `f16`, `f32`, `f64`, `f128`)
+ - Rewrite NeuralNetwork so that you cannot let it predict data before it hasn't learned anything.
+ - Serialization and deserialization for neural networks via Serde.
+ - Improved error handling: Less panics, more Results!

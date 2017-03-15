@@ -60,6 +60,7 @@ struct FullyConnectedLayer {
 /// For example when the user uses ```predict``` from ```NeuralNet``` this
 /// object organizes the input data throughout all of its owned layers and pipes
 /// the result in the last layer back to the user.
+#[derive(Debug, Clone)]
 pub struct NeuralNet {
 	/// the layers within this ```NeuralNet```
 	layers: Vec<FullyConnectedLayer>,
@@ -219,9 +220,15 @@ impl FullyConnectedLayer {
 	}
 }
 
-
+use ::topology::*;
+use activation_fn::{
+	ActivationFn
+};
 
 impl NeuralNet {
+	/// Creates a new neural network from a given vector of fully connected layers.
+	/// 
+	/// This constructor should only be used internally!
 	fn from_vec(
 		learn_config: LearnConfig,
 		layers: Vec<FullyConnectedLayer>
@@ -233,6 +240,16 @@ impl NeuralNet {
 			config: learn_config,
 			error_stats: ErrorStats::default()
 		}
+	}
+
+	/// Creates a new neural network of fully connected layers from a given topology.
+	fn from_topology(topology: Topology<Finished>) -> Self {
+		let buffer = topology
+			.iter_layer_sizes()
+			.tuple_windows::<(_, _)>()
+			.map(|(&inputs, &outputs)| FullyConnectedLayer::random(inputs, outputs))
+			.collect::<Vec<FullyConnectedLayer>>();
+		NeuralNet::from_vec(LearnConfig::new(0.3, 0.5, ActivationFn::tanh()), buffer)
 	}
 
 	/// Creates a new instance of a ```NeuralNet```.
@@ -274,6 +291,7 @@ impl NeuralNet {
 	/// // the latest ```avg_error``` is to ```0.0```:
 	/// assert!(net.latest_error_stats().avg_error() < 0.05);
 	/// ```
+	#[deprecated]
 	pub fn new(
 		config: LearnConfig,
 		layer_sizes: &[Ix]
@@ -332,6 +350,12 @@ impl NeuralNet {
 		let latest_error = self.overall_net_error(target_values);
 		self.error_stats.update(latest_error);
 		self.error_stats
+	}
+}
+
+impl From<Topology<Finished>> for NeuralNet {
+	fn from(topology: Topology<Finished>) -> Self {
+		NeuralNet::from_topology(topology)
 	}
 }
 

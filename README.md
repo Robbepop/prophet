@@ -11,10 +11,3 @@ A simple neural net implementation written in Rust with a focus on cache-efficie
 Take a look into the [documentation](https://docs.rs/prophet) to get to know how to use it!
 
 Link to [crates.io](https://crates.io/crates/prophet).
-
-Future Plans
-------------
-
- - Parallelization with Vulkan.
- - Improved layer architecture to support convolutional layers.
- - Generic float type support (e.g. for future `f16`, `f32`, `f64`, `f128`)

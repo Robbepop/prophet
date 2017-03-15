@@ -266,146 +266,146 @@ mod tests {
 		use super::{logistic_fn, logistic_fn_dx};
 		let custom_sigmoid = ActivationFn::<f32>::custom(logistic_fn, logistic_fn_dx);
 		let predef_sigmoid = ActivationFn::<f32>::logistic();
-		assert_eq!(custom_sigmoid.base(-1.0), predef_sigmoid.base(-1.0));
-		assert_eq!(custom_sigmoid.base(-0.5), predef_sigmoid.base(-0.5));
-		assert_eq!(custom_sigmoid.base( 0.0), predef_sigmoid.base( 0.0));
-		assert_eq!(custom_sigmoid.base( 0.5), predef_sigmoid.base( 0.5));
-		assert_eq!(custom_sigmoid.base( 1.0), predef_sigmoid.base( 1.0));
+		relative_eq!(custom_sigmoid.base(-1.0), predef_sigmoid.base(-1.0));
+		relative_eq!(custom_sigmoid.base(-0.5), predef_sigmoid.base(-0.5));
+		relative_eq!(custom_sigmoid.base( 0.0), predef_sigmoid.base( 0.0));
+		relative_eq!(custom_sigmoid.base( 0.5), predef_sigmoid.base( 0.5));
+		relative_eq!(custom_sigmoid.base( 1.0), predef_sigmoid.base( 1.0));
 	}
 
 	#[test]
 	fn identity_activation_fn() {
 		let act_fn_pair = ActivationFn::<f32>::identity();
-		assert_eq!(act_fn_pair.base(-1.0), -1.0);
-		assert_eq!(act_fn_pair.base(-0.5), -0.5);
-		assert_eq!(act_fn_pair.base( 0.0),  0.0);
-		assert_eq!(act_fn_pair.base( 0.5),  0.5);
-		assert_eq!(act_fn_pair.base( 1.0),  1.0);
-		assert_eq!(act_fn_pair.derived(-1.0), 1.0);
-		assert_eq!(act_fn_pair.derived(-0.5), 1.0);
-		assert_eq!(act_fn_pair.derived( 0.0), 1.0);
-		assert_eq!(act_fn_pair.derived( 0.5), 1.0);
-		assert_eq!(act_fn_pair.derived( 1.0), 1.0);
+		relative_eq!(act_fn_pair.base(-1.0), -1.0);
+		relative_eq!(act_fn_pair.base(-0.5), -0.5);
+		relative_eq!(act_fn_pair.base( 0.0),  0.0);
+		relative_eq!(act_fn_pair.base( 0.5),  0.5);
+		relative_eq!(act_fn_pair.base( 1.0),  1.0);
+		relative_eq!(act_fn_pair.derived(-1.0), 1.0);
+		relative_eq!(act_fn_pair.derived(-0.5), 1.0);
+		relative_eq!(act_fn_pair.derived( 0.0), 1.0);
+		relative_eq!(act_fn_pair.derived( 0.5), 1.0);
+		relative_eq!(act_fn_pair.derived( 1.0), 1.0);
 	}
 
 	#[test]
 	fn binary_step_activation_fn() {
 		let act_fn_pair = ActivationFn::<f32>::binary_step();
-		assert_eq!(act_fn_pair.base(-1.0), 0.0);
-		assert_eq!(act_fn_pair.base(-0.5), 0.0);
-		assert_eq!(act_fn_pair.base( 0.0), 1.0);
-		assert_eq!(act_fn_pair.base( 0.5), 1.0);
-		assert_eq!(act_fn_pair.base( 1.0), 1.0);
-		assert_eq!(act_fn_pair.derived(-1.0), 0.0);
-		assert_eq!(act_fn_pair.derived(-0.5), 0.0);
-		assert_eq!(act_fn_pair.derived( 0.0), <f32>::infinity());
-		assert_eq!(act_fn_pair.derived( 0.5), 0.0);
-		assert_eq!(act_fn_pair.derived( 1.0), 0.0);
+		relative_eq!(act_fn_pair.base(-1.0), 0.0);
+		relative_eq!(act_fn_pair.base(-0.5), 0.0);
+		relative_eq!(act_fn_pair.base( 0.0), 1.0);
+		relative_eq!(act_fn_pair.base( 0.5), 1.0);
+		relative_eq!(act_fn_pair.base( 1.0), 1.0);
+		relative_eq!(act_fn_pair.derived(-1.0), 0.0);
+		relative_eq!(act_fn_pair.derived(-0.5), 0.0);
+		relative_eq!(act_fn_pair.derived( 0.0), <f32>::infinity());
+		relative_eq!(act_fn_pair.derived( 0.5), 0.0);
+		relative_eq!(act_fn_pair.derived( 1.0), 0.0);
 	}
 
 	#[test]
 	fn logistic_activation_fn() {
 		let act_fn_pair = ActivationFn::<f32>::logistic();
-		assert_eq!(act_fn_pair.base(-1.0), 0.26894143);
-		assert_eq!(act_fn_pair.base(-0.5), 0.37754068);
-		assert_eq!(act_fn_pair.base( 0.0), 0.5);
-		assert_eq!(act_fn_pair.base( 0.5), 0.62245935);
-		assert_eq!(act_fn_pair.base( 1.0), 0.7310586);
-		assert_eq!(act_fn_pair.derived(-1.0), 0.19661194);
-		assert_eq!(act_fn_pair.derived(-0.5), 0.23500371);
-		assert_eq!(act_fn_pair.derived( 0.0), 0.25);
-		assert_eq!(act_fn_pair.derived( 0.5), 0.23500371);
-		assert_eq!(act_fn_pair.derived( 1.0), 0.19661193);
+		relative_eq!(act_fn_pair.base(-1.0), 0.26894143);
+		relative_eq!(act_fn_pair.base(-0.5), 0.37754068);
+		relative_eq!(act_fn_pair.base( 0.0), 0.5);
+		relative_eq!(act_fn_pair.base( 0.5), 0.62245935);
+		relative_eq!(act_fn_pair.base( 1.0), 0.7310586);
+		relative_eq!(act_fn_pair.derived(-1.0), 0.19661194);
+		relative_eq!(act_fn_pair.derived(-0.5), 0.23500371);
+		relative_eq!(act_fn_pair.derived( 0.0), 0.25);
+		relative_eq!(act_fn_pair.derived( 0.5), 0.23500371);
+		relative_eq!(act_fn_pair.derived( 1.0), 0.19661193);
 	}
 
 	#[test]
 	fn arctan_activation_fn() {
 		let act_fn_pair = ActivationFn::<f32>::arctan();
-		assert_eq!(act_fn_pair.base(-1.0), -0.7853982);
-		assert_eq!(act_fn_pair.base(-0.5), -0.4636476);
-		assert_eq!(act_fn_pair.base( 0.0),  0.0);
-		assert_eq!(act_fn_pair.base( 0.5),  0.4636476);
-		assert_eq!(act_fn_pair.base( 1.0),  0.7853982);
-		assert_eq!(act_fn_pair.derived(-1.0), 0.5);
-		assert_eq!(act_fn_pair.derived(-0.5), 0.8);
-		assert_eq!(act_fn_pair.derived( 0.0), 1.0);
-		assert_eq!(act_fn_pair.derived( 0.5), 0.8);
-		assert_eq!(act_fn_pair.derived( 1.0), 0.5);
+		relative_eq!(act_fn_pair.base(-1.0), -0.7853982);
+		relative_eq!(act_fn_pair.base(-0.5), -0.4636476);
+		relative_eq!(act_fn_pair.base( 0.0),  0.0);
+		relative_eq!(act_fn_pair.base( 0.5),  0.4636476);
+		relative_eq!(act_fn_pair.base( 1.0),  0.7853982);
+		relative_eq!(act_fn_pair.derived(-1.0), 0.5);
+		relative_eq!(act_fn_pair.derived(-0.5), 0.8);
+		relative_eq!(act_fn_pair.derived( 0.0), 1.0);
+		relative_eq!(act_fn_pair.derived( 0.5), 0.8);
+		relative_eq!(act_fn_pair.derived( 1.0), 0.5);
 	}
 
 	#[test]
 	fn tanh_activation_fn() {
 		let act_fn_pair = ActivationFn::<f32>::tanh();
-		assert_eq!(act_fn_pair.base(-1.0), -0.7615942);
-		assert_eq!(act_fn_pair.base(-0.5), -0.46211717);
-		assert_eq!(act_fn_pair.base( 0.0),  0.0);
-		assert_eq!(act_fn_pair.base( 0.5),  0.46211717);
-		assert_eq!(act_fn_pair.base( 1.0),  0.7615942);
-		assert_eq!(act_fn_pair.derived(-1.0), 0.41997433);
-		assert_eq!(act_fn_pair.derived(-0.5), 0.7864477);
-		assert_eq!(act_fn_pair.derived( 0.0), 1.0);
-		assert_eq!(act_fn_pair.derived( 0.5), 0.7864477);
-		assert_eq!(act_fn_pair.derived( 1.0), 0.41997433);
+		relative_eq!(act_fn_pair.base(-1.0), -0.7615942);
+		relative_eq!(act_fn_pair.base(-0.5), -0.46211717);
+		relative_eq!(act_fn_pair.base( 0.0),  0.0);
+		relative_eq!(act_fn_pair.base( 0.5),  0.46211717);
+		relative_eq!(act_fn_pair.base( 1.0),  0.7615942);
+		relative_eq!(act_fn_pair.derived(-1.0), 0.41997433);
+		relative_eq!(act_fn_pair.derived(-0.5), 0.7864477);
+		relative_eq!(act_fn_pair.derived( 0.0), 1.0);
+		relative_eq!(act_fn_pair.derived( 0.5), 0.7864477);
+		relative_eq!(act_fn_pair.derived( 1.0), 0.41997433);
 	}
 
 	#[test]
 	fn softsign_activation_fn() {
 		let act_fn_pair = ActivationFn::<f32>::softsign();
-		assert_eq!(act_fn_pair.base(-1.0), -0.5);
-		assert_eq!(act_fn_pair.base(-0.5), -0.33333334);
-		assert_eq!(act_fn_pair.base( 0.0),  0.0);
-		assert_eq!(act_fn_pair.base( 0.5),  0.33333334);
-		assert_eq!(act_fn_pair.base( 1.0),  0.5);
-		assert_eq!(act_fn_pair.derived(-1.0), 0.25);
-		assert_eq!(act_fn_pair.derived(-0.5), 0.44444445);
-		assert_eq!(act_fn_pair.derived( 0.0), 1.0);
-		assert_eq!(act_fn_pair.derived( 0.5), 0.44444445);
-		assert_eq!(act_fn_pair.derived( 1.0), 0.25);
+		relative_eq!(act_fn_pair.base(-1.0), -0.5);
+		relative_eq!(act_fn_pair.base(-0.5), -0.33333334);
+		relative_eq!(act_fn_pair.base( 0.0),  0.0);
+		relative_eq!(act_fn_pair.base( 0.5),  0.33333334);
+		relative_eq!(act_fn_pair.base( 1.0),  0.5);
+		relative_eq!(act_fn_pair.derived(-1.0), 0.25);
+		relative_eq!(act_fn_pair.derived(-0.5), 0.44444445);
+		relative_eq!(act_fn_pair.derived( 0.0), 1.0);
+		relative_eq!(act_fn_pair.derived( 0.5), 0.44444445);
+		relative_eq!(act_fn_pair.derived( 1.0), 0.25);
 	}
 
 	#[test]
 	fn relu_activation_fn() {
 		let act_fn_pair = ActivationFn::<f32>::relu();
-		assert_eq!(act_fn_pair.base(-1.0), 0.0);
-		assert_eq!(act_fn_pair.base(-0.5), 0.0);
-		assert_eq!(act_fn_pair.base( 0.0), 0.0);
-		assert_eq!(act_fn_pair.base( 0.5), 0.5);
-		assert_eq!(act_fn_pair.base( 1.0), 1.0);
-		assert_eq!(act_fn_pair.derived(-1.0), 0.0);
-		assert_eq!(act_fn_pair.derived(-0.5), 0.0);
-		assert_eq!(act_fn_pair.derived( 0.0), 1.0);
-		assert_eq!(act_fn_pair.derived( 0.5), 1.0);
-		assert_eq!(act_fn_pair.derived( 1.0), 1.0);
+		relative_eq!(act_fn_pair.base(-1.0), 0.0);
+		relative_eq!(act_fn_pair.base(-0.5), 0.0);
+		relative_eq!(act_fn_pair.base( 0.0), 0.0);
+		relative_eq!(act_fn_pair.base( 0.5), 0.5);
+		relative_eq!(act_fn_pair.base( 1.0), 1.0);
+		relative_eq!(act_fn_pair.derived(-1.0), 0.0);
+		relative_eq!(act_fn_pair.derived(-0.5), 0.0);
+		relative_eq!(act_fn_pair.derived( 0.0), 1.0);
+		relative_eq!(act_fn_pair.derived( 0.5), 1.0);
+		relative_eq!(act_fn_pair.derived( 1.0), 1.0);
 	}
 
 	#[test]
 	fn softplus_activation_fn() {
 		let act_fn_pair = ActivationFn::<f32>::softplus();
-		assert_eq!(act_fn_pair.base(-1.0), 0.3132617);
-		assert_eq!(act_fn_pair.base(-0.5), 0.474077);
-		assert_eq!(act_fn_pair.base( 0.0), 0.6931472);
-		assert_eq!(act_fn_pair.base( 0.5), 0.974077);
-		assert_eq!(act_fn_pair.base( 1.0), 1.3132616);
-		assert_eq!(act_fn_pair.derived(-1.0), 0.26894143);
-		assert_eq!(act_fn_pair.derived(-0.5), 0.37754068);
-		assert_eq!(act_fn_pair.derived( 0.0), 0.5);
-		assert_eq!(act_fn_pair.derived( 0.5), 0.62245935);
-		assert_eq!(act_fn_pair.derived( 1.0), 0.7310586);
+		relative_eq!(act_fn_pair.base(-1.0), 0.3132617);
+		relative_eq!(act_fn_pair.base(-0.5), 0.474077);
+		relative_eq!(act_fn_pair.base( 0.0), 0.6931472);
+		relative_eq!(act_fn_pair.base( 0.5), 0.974077);
+		relative_eq!(act_fn_pair.base( 1.0), 1.3132616);
+		relative_eq!(act_fn_pair.derived(-1.0), 0.26894143);
+		relative_eq!(act_fn_pair.derived(-0.5), 0.37754068);
+		relative_eq!(act_fn_pair.derived( 0.0), 0.5);
+		relative_eq!(act_fn_pair.derived( 0.5), 0.62245935);
+		relative_eq!(act_fn_pair.derived( 1.0), 0.7310586);
 	}
 
 	#[test]
 	fn bent_identity_activation_fn() {
 		let act_fn_pair = ActivationFn::<f32>::bent_identity();
-		assert_eq!(act_fn_pair.base(-1.0), -0.79289323);
-		assert_eq!(act_fn_pair.base(-0.5), -0.440983);
-		assert_eq!(act_fn_pair.base( 0.0),  0.0);
-		assert_eq!(act_fn_pair.base( 0.5),  0.559017);
-		assert_eq!(act_fn_pair.base( 1.0),  1.2071068);
-		assert_eq!(act_fn_pair.derived(-1.0), 0.6464466);
-		assert_eq!(act_fn_pair.derived(-0.5), 0.7763932);
-		assert_eq!(act_fn_pair.derived( 0.0), 1.0);
-		assert_eq!(act_fn_pair.derived( 0.5), 1.2236068);
-		assert_eq!(act_fn_pair.derived( 1.0), 1.3535534);
+		relative_eq!(act_fn_pair.base(-1.0), -0.79289323);
+		relative_eq!(act_fn_pair.base(-0.5), -0.440983);
+		relative_eq!(act_fn_pair.base( 0.0),  0.0);
+		relative_eq!(act_fn_pair.base( 0.5),  0.559017);
+		relative_eq!(act_fn_pair.base( 1.0),  1.2071068);
+		relative_eq!(act_fn_pair.derived(-1.0), 0.6464466);
+		relative_eq!(act_fn_pair.derived(-0.5), 0.7763932);
+		relative_eq!(act_fn_pair.derived( 0.0), 1.0);
+		relative_eq!(act_fn_pair.derived( 0.5), 1.2236068);
+		relative_eq!(act_fn_pair.derived( 1.0), 1.3535534);
 	}
 
 	#[test]
@@ -426,15 +426,15 @@ mod tests {
 	#[test]
 	fn gaussian_activation_fn() {
 		let act_fn_pair = ActivationFn::<f32>::gaussian();
-		assert_eq!(act_fn_pair.base(-1.0), 0.36787945);
-		assert_eq!(act_fn_pair.base(-0.5), 0.7788008);
-		assert_eq!(act_fn_pair.base( 0.0), 1.0);
-		assert_eq!(act_fn_pair.base( 0.5), 0.7788008);
-		assert_eq!(act_fn_pair.base( 1.0), 0.36787945);
-		assert_eq!(act_fn_pair.derived(-1.0), 0.7357589);
-		assert_eq!(act_fn_pair.derived(-0.5), 0.7788008);
-		assert_eq!(act_fn_pair.derived( 0.0), 0.0);
-		assert_eq!(act_fn_pair.derived( 0.5), -0.7788008);
-		assert_eq!(act_fn_pair.derived( 1.0), -0.7357589);
+		relative_eq!(act_fn_pair.base(-1.0), 0.36787945);
+		relative_eq!(act_fn_pair.base(-0.5), 0.7788008);
+		relative_eq!(act_fn_pair.base( 0.0), 1.0);
+		relative_eq!(act_fn_pair.base( 0.5), 0.7788008);
+		relative_eq!(act_fn_pair.base( 1.0), 0.36787945);
+		relative_eq!(act_fn_pair.derived(-1.0), 0.7357589);
+		relative_eq!(act_fn_pair.derived(-0.5), 0.7788008);
+		relative_eq!(act_fn_pair.derived( 0.0), 0.0);
+		relative_eq!(act_fn_pair.derived( 0.5), -0.7788008);
+		relative_eq!(act_fn_pair.derived( 1.0), -0.7357589);
 	}
 }
