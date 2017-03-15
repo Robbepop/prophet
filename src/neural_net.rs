@@ -107,6 +107,10 @@ impl FullyConnectedLayer {
 		self.outputs.as_slice().unwrap()
 	}
 
+	fn output_view<'a>(&'a self) -> ArrayView1<'a, f32> {
+		self.outputs.view()
+	}
+
 	/// Takes input slice and performs a feed forward procedure
 	/// using the given activation function.
 	/// Output of this operation will be stored within this layer
