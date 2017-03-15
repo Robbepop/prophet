@@ -18,6 +18,7 @@ num = "0.1"
 ndarray = "0.8"
 ndarray-rand = "0.4"
 itertools = "0.5"
+chrono = "0.3"
 
 [dev-dependencies]
 approx = "0.1.1"

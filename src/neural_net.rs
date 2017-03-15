@@ -370,6 +370,18 @@ impl Prophet for NeuralNet {
 	}
 }
 
+// use ::traits::Predict;
+
+// impl<'a> Predict<'a, ArrayView1<'a, f32>> for NeuralNet {
+// 	fn predict(&'a mut self, input: ArrayView1<'a, f32>) -> ArrayView1<'a, f32> {
+// 		let act_fn = self.config.act_fn.base_fn();
+// 		self.layers
+// 			.iter_mut()
+// 			.fold(input.as_slice().unwrap(), |out, layer| layer.feed_forward(out, act_fn))
+// 			.into()
+// 	}
+// }
+
 impl Disciple for NeuralNet {
 	type Elem = f32;
 

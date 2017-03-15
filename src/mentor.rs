@@ -1,5 +1,14 @@
+//! The Mentor is used to create and train neural networks in order to
+//! prevent a situation where a neural network is defined and used to predict
+//! data without any training beforehand to verify a certain metric of quality
+//! for the predicted data.
+//! 
+//! In future versions of this crate it shall be impossible to create new
+//! neural network instances without using a Mentor to train it beforehand.
+
 use ndarray::prelude::*;
 use rand::*;
+use chrono::prelude::*;
 
 use ::topology::*;
 use ::error_stats::*;
@@ -213,10 +222,10 @@ impl SampleScheduler {
 	}
 
 	/// Returns the next sample.
-	fn next(&mut self) -> &Sample {
+	fn next<'a>(&'a mut self) -> SampleView<'a> {
 		let len_samples = self.samples.len();
 		let id = self.scheduler.next(len_samples);
-		&self.samples[id]
+		(&self.samples[id]).into()
 	}
 }
 
@@ -256,6 +265,26 @@ impl<Arr> From<(Arr, Arr)> for Sample
 		Sample{
 			input : from.0.into(),
 			target: from.1.into()
+		}
+	}
+}
+
+/// A sample used to train a disciple during supervised learinng.
+#[derive(Debug, Clone)]
+pub struct SampleView<'a> {
+	/// The input parameter of this `SampleView`.
+	pub input : ArrayView1<'a, f32>,
+
+	/// The expected target values of this `SampleView`.
+	pub target: ArrayView1<'a, f32>
+}
+
+impl<'a> From<&'a Sample> for SampleView<'a>
+{
+	fn from(from: &'a Sample) -> SampleView<'a> {
+		SampleView{
+			input : from.input.view(),
+			target: from.target.view()
 		}
 	}
 }
@@ -359,6 +388,20 @@ impl Topology<Finished> {
     }
 }
 
+/// A very simple type that can count upwards and 
+/// is comparable to other instances of itself.
+/// 
+/// Used by `Mentor` to manage iteration number.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+struct Iteration(u64);
+
+impl Iteration {
+	/// Bumps the iteration count by 1.
+	fn bump(&mut self) {
+		self.0 += 1
+	}
+}
+
 /// A Mentor is an object type that is able to train a Disciple
 /// to become a fully qualified and useable Prophet.
 #[derive(Debug, Clone)]
@@ -368,7 +411,9 @@ struct Mentor {
 	learn_mom : LearnMomentum,
 	criterion : Criterion,
 	disciple  : NeuralNet,
-	scheduler : SampleScheduler
+	scheduler : SampleScheduler,
+	iterations: Iteration,
+	timestamp : DateTime<Local>,
 }
 
 impl Mentor {
@@ -384,8 +429,10 @@ impl From<Builder> for Mentor {
 			learn_rate: builder.learn_rate,
 			learn_mom : builder.learn_mom,
 			criterion : builder.criterion,
-			disciple  : builder.disciple.into(),
-			scheduler : SampleScheduler::from_samples(builder.scheduling, builder.samples)
+			disciple  : NeuralNet::from(builder.disciple),
+			scheduler : SampleScheduler::from_samples(builder.scheduling, builder.samples),
+			iterations: Iteration::default(),
+			timestamp : Local::now()
 		}
 	}
 }

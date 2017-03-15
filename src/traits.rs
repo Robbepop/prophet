@@ -1,7 +1,26 @@
 //! Provides traits to serve as common interface for neural network implementations.
 
+use ndarray::*;
+
 use num::Float;
 use error_stats::ErrorStats;
+
+/// Types that can predict data based on a one-dimensional input data range.
+pub trait Predict<'a, I> {
+	/// Predicts data based on given input data.
+	fn predict(&'a mut self, input: I) -> ArrayView1<'a, f32>;
+}
+
+/// Types that can adjust themselves (learn) from given target values of
+/// a one-dimensional input range of data.
+/// 
+/// This trait should only be used internally!
+trait BackPropagate {
+	/// Propagates deviations based on given target values
+	/// and updates weights to improve on these particular input and target values.
+	fn back_propagate<'b, 'a: 'b, Arr>(&'a mut self, target: Arr)
+		where Arr: Into<ArrayView1<'b, f32>>;
+}
 
 /// Representative for neural network implementations that are only able to predict data,
 /// but have no ability to further improve by training themselves.
