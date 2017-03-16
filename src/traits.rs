@@ -29,7 +29,11 @@ pub trait UpdateWeights<I> {
 	fn update_weights(&mut self, input: I, rate: f32, momentum: f32);
 }
 
+/// Temporarly convenience trait for training a neural network.
+/// Will be replaced by a combination of `Predict`, `UpdateGradients`
+/// and `UpdateWeights` once the new `Mentor` system has landed.
 pub trait Train<I, T> {
+	/// Trains the implementor given the input and its expected values.
 	fn train(&mut self, input: I, target_values: T) -> ErrorStats;
 }
 

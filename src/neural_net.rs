@@ -9,12 +9,10 @@ use ndarray::prelude::*;
 use ndarray::{Shape};
 use itertools::{multizip, Itertools};
 
+use ::traits::{Train, Predict, UpdateGradients, UpdateWeights};
+
 use learn_config::{LearnConfig};
 use error_stats::{ErrorStats};
-use traits::{
-	Prophet,
-	Disciple
-};
 use activation_fn::{BaseFn, DerivedFn};
 
 /// A fully connected layer within a neural net.
@@ -361,8 +359,6 @@ impl From<Topology<Finished>> for NeuralNet {
 	}
 }
 
-use ::traits::{Predict, UpdateGradients, UpdateWeights};
-
 impl<'b> Predict<ArrayView1<'b, f32>> for NeuralNet {
 	fn predict(&mut self, input: ArrayView1<f32>) -> ArrayView1<f32> {
 		let act_fn = self.config.act_fn.base_fn();
@@ -372,7 +368,7 @@ impl<'b> Predict<ArrayView1<'b, f32>> for NeuralNet {
 				      |prev, layer| layer.feed_forward(prev, act_fn))
 		}
 		else {
-			panic!(); // replace with unreachable since there is always at least one layer!
+			panic!("A Neural Net is guaranteed to have at least one layer so this situation should never happen!");
 		}
 	}
 }
@@ -393,8 +389,6 @@ impl<'b> UpdateWeights<ArrayView1<'b, f32>> for NeuralNet {
 	}
 }
 
-use ::traits::{Train};
-
 impl<'a, 'b, A1, A2> Train<A1, A2> for NeuralNet
 	where
 		A1: Into<ArrayView1<'a, f32>>,
@@ -409,17 +403,6 @@ impl<'a, 'b, A1, A2> Train<A1, A2> for NeuralNet
 		self.update_error_stats(target_values)
 	}
 }
-
-// impl Disciple for NeuralNet {
-// 	type Elem = f32;
-
-// 	fn train(&mut self, input: &[Self::Elem], target_values: &[Self::Elem]) -> ErrorStats {
-// 		self.predict(input);
-// 		self.propagate_gradients(target_values);
-// 		self.update_weights(input);
-// 		self.update_error_stats(target_values)
-// 	}
-// }
 
 #[cfg(test)]
 mod tests {
