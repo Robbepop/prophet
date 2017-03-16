@@ -6,20 +6,31 @@ use num::Float;
 use error_stats::ErrorStats;
 
 /// Types that can predict data based on a one-dimensional input data range.
-pub trait Predict<'a, I> {
+pub trait Predict<I> {
 	/// Predicts data based on given input data.
-	fn predict(&'a mut self, input: I) -> ArrayView1<'a, f32>;
+	fn predict(&mut self, input: I) -> ArrayView1<f32>;
 }
 
-/// Types that can adjust themselves (learn) from given target values of
-/// a one-dimensional input range of data.
+/// Types that can propagate through gradient descent.
+/// Used by learning procedures.
 /// 
 /// This trait should only be used internally!
-trait BackPropagate {
-	/// Propagates deviations based on given target values
-	/// and updates weights to improve on these particular input and target values.
-	fn back_propagate<'b, 'a: 'b, Arr>(&'a mut self, target: Arr)
-		where Arr: Into<ArrayView1<'b, f32>>;
+pub trait UpdateGradients<T> {
+	/// Performs gradient descent within the neural network.
+	fn update_gradients(&mut self, target: T);
+}
+
+/// Types that can adjust their internal weights.
+/// Used by learning procedures.
+/// 
+/// This trait should only be used internally!
+pub trait UpdateWeights<I> {
+	/// Updates weights based on the given input data and the current gradients.
+	fn update_weights(&mut self, input: I, rate: f32, momentum: f32);
+}
+
+pub trait Train<I, T> {
+	fn train(&mut self, input: I, target_values: T) -> ErrorStats;
 }
 
 /// Representative for neural network implementations that are only able to predict data,

@@ -102,12 +102,8 @@ impl FullyConnectedLayer {
 	fn count_outputs(&self) -> Ix { self.outputs.dim() }
 	fn count_gradients(&self) -> Ix { self.gradients.dim() }
 
-	/// Returns this layer's output as readable slice.
-	fn output_as_slice(&self) -> &[f32] {
-		self.outputs.as_slice().unwrap()
-	}
-
-	fn output_view<'a>(&'a self) -> ArrayView1<'a, f32> {
+	/// Returns this layer's output as read-only view.
+	fn output_view(&self) -> ArrayView1<f32> {
 		self.outputs.view()
 	}
 
@@ -122,12 +118,12 @@ impl FullyConnectedLayer {
 	///  - weight matrix with m rows and (n+1) columns
 	/// Asserts:
 	///  - output with m elements
-	fn feed_forward<'a>(
-		&'a mut self,
-		input: &[f32],
+	fn feed_forward(
+		&mut self,
+		input: ArrayView1<f32>,
 		activation_fn: BaseFn<f32>
 	)
-		-> &'a [f32]
+		-> ArrayView1<f32>
 	{
 		debug_assert_eq!(self.count_rows(), self.count_outputs());
 		debug_assert_eq!(self.count_columns(), input.len() + 1);
@@ -141,13 +137,18 @@ impl FullyConnectedLayer {
 				) 
 			});
 
-		self.output_as_slice()
+		// self.output_view()
+		self.output_view()
 	}
 
 	/// Used internally in the output layer to initialize gradients for the back propagation phase.
 	/// Sets the gradient for the bias neuron to zero - hopefully this is the correct behaviour.
-	fn calculate_output_gradients(&mut self, target_values: &[f32], act_fn_dx: DerivedFn<f32>) -> &Self {
-		debug_assert_eq!(self.count_outputs(), target_values.len());
+	fn calculate_output_gradients(
+		&mut self,
+		target_values: ArrayView1<f32>,
+		act_fn_dx: DerivedFn<f32>
+	) -> &Self {
+		debug_assert_eq!(self.count_outputs()  , target_values.len());
 		debug_assert_eq!(self.count_gradients(), target_values.len() + 1); // no calculation for bias!
 
 		multizip((self.gradients.iter_mut(), target_values.iter(), self.outputs.iter()))
@@ -180,7 +181,7 @@ impl FullyConnectedLayer {
 	/// This also computes the gradient for the bias neuron.
 	/// Returns readable reference to self to allow chaining.
 	fn propagate_gradients(&mut self, prev: &FullyConnectedLayer, act_fn_dx: DerivedFn<f32>) -> &Self {
-		debug_assert_eq!(prev.count_rows(), prev.count_gradients() - 1);
+		debug_assert_eq!(prev.count_rows()   , prev.count_gradients() - 1);
 		debug_assert_eq!(prev.count_columns(), self.count_gradients());
 
 		self.reset_gradients();
@@ -200,9 +201,10 @@ impl FullyConnectedLayer {
 	/// Updates the connection weights of this layer.
 	/// This operation is usually used after successful computation of gradients.
 	fn update_weights(&mut self,
-	                  prev_outputs: &[f32],
-	                  train_rate: f32,
-	                  learning_momentum: f32) -> &[f32]
+		                          prev_outputs: ArrayView1<f32>,
+		                          train_rate: f32,
+		                          learning_momentum: f32)
+	                              -> ArrayView1<f32>
 	{
 		debug_assert_eq!(prev_outputs.len() + 1, self.count_columns());
 		debug_assert_eq!(self.count_gradients(), self.count_rows() + 1);
@@ -220,7 +222,7 @@ impl FullyConnectedLayer {
 					})
 			});
 
-		self.output_as_slice()
+		self.output_view()
 	}
 }
 
@@ -314,8 +316,10 @@ impl NeuralNet {
 		self.layers.last().unwrap()
 	}
 
-	fn overall_net_error(&self, target_values: &[f32]) -> f32 {
-		let outputs = self.output_layer().output_as_slice();
+	fn overall_net_error(&self,
+	                                 target_values: ArrayView1<f32>)
+	                                 -> f32 {
+		let outputs = self.output_layer().output_view();
 		let sum = multizip((outputs.iter(), target_values))
 			.map(|(output, target)| { let dx = target - output; dx*dx })
 			.sum::<f32>();
@@ -330,7 +334,8 @@ impl NeuralNet {
 		self.error_stats
 	}
 
-	fn propagate_gradients(&mut self, target_values: &[f32]) {
+	fn propagate_gradients(&mut self,
+	                                   target_values: ArrayView1<f32>) {
 		let act_fn_dx = self.config.act_fn.derived_fn(); // because of borrow checker bugs
 
 		if let Some((&mut ref mut last, ref mut tail)) = self.layers.split_last_mut() {
@@ -341,16 +346,9 @@ impl NeuralNet {
 		}
 	}
 
-	fn update_weights(&mut self, input: &[f32]) {
-		let learn_rate     = self.config.learn_rate();
-		let learn_momentum = self.config.learn_momentum();
-
-		self.layers
-			.iter_mut()
-			.fold(input, |prev_output, layer| layer.update_weights(prev_output, learn_rate, learn_momentum));
-	}
-
-	fn update_error_stats(&mut self, target_values: &[f32]) -> ErrorStats {
+	fn update_error_stats(&mut self,
+	                                  target_values: ArrayView1<f32>)
+	                                  -> ErrorStats {
 		let latest_error = self.overall_net_error(target_values);
 		self.error_stats.update(latest_error);
 		self.error_stats
@@ -363,39 +361,65 @@ impl From<Topology<Finished>> for NeuralNet {
 	}
 }
 
-impl Prophet for NeuralNet {
-	type Elem = f32;
+use ::traits::{Predict, UpdateGradients, UpdateWeights};
 
-	fn predict<'b, 'a: 'b>(&'a mut self, input: &'b [Self::Elem]) -> &'b [Self::Elem] {
-		let act_fn = self.config.act_fn.base_fn(); // cannot be used in the fold as self.activation_fn
-		self.layers
-			.iter_mut()
-			.fold(input, |out, layer| layer.feed_forward(out, act_fn))
+impl<'b> Predict<ArrayView1<'b, f32>> for NeuralNet {
+	fn predict(&mut self, input: ArrayView1<f32>) -> ArrayView1<f32> {
+		let act_fn = self.config.act_fn.base_fn();
+		if let Some((first, tail)) = self.layers.split_first_mut() {
+			tail.iter_mut()
+				.fold(first.feed_forward(input, act_fn),
+				      |prev, layer| layer.feed_forward(prev, act_fn))
+		}
+		else {
+			panic!(); // replace with unreachable since there is always at least one layer!
+		}
 	}
 }
 
-// use ::traits::Predict;
+impl<'a> UpdateGradients<ArrayView1<'a, f32>> for NeuralNet {
+	fn update_gradients(&mut self, target_values: ArrayView1<f32>) {
+		self.propagate_gradients(target_values);
+	}
+}
 
-// impl<'a> Predict<'a, ArrayView1<'a, f32>> for NeuralNet {
-// 	fn predict(&'a mut self, input: ArrayView1<'a, f32>) -> ArrayView1<'a, f32> {
-// 		let act_fn = self.config.act_fn.base_fn();
-// 		self.layers
-// 			.iter_mut()
-// 			.fold(input.as_slice().unwrap(), |out, layer| layer.feed_forward(out, act_fn))
-// 			.into()
-// 	}
-// }
+impl<'b> UpdateWeights<ArrayView1<'b, f32>> for NeuralNet {
+	fn update_weights(&mut self, input: ArrayView1<f32>, rate: f32, momentum: f32) {
+		if let Some((first, tail)) = self.layers.split_first_mut() {
+			tail.iter_mut()
+				.fold(first.update_weights(input, rate, momentum),
+				      |prev, layer| layer.update_weights(prev, rate, momentum));
+		}
+	}
+}
 
-impl Disciple for NeuralNet {
-	type Elem = f32;
+use ::traits::{Train};
 
-	fn train(&mut self, input: &[Self::Elem], target_values: &[Self::Elem]) -> ErrorStats {
+impl<'a, 'b, A1, A2> Train<A1, A2> for NeuralNet
+	where
+		A1: Into<ArrayView1<'a, f32>>,
+		A2: Into<ArrayView1<'b, f32>>
+{
+	fn train(&mut self, input: A1, target_values: A2) -> ErrorStats {
+		let input         = input.into();
+		let target_values = target_values.into();
 		self.predict(input);
 		self.propagate_gradients(target_values);
-		self.update_weights(input);
+		self.update_weights(input, 0.3, 0.5);
 		self.update_error_stats(target_values)
 	}
 }
+
+// impl Disciple for NeuralNet {
+// 	type Elem = f32;
+
+// 	fn train(&mut self, input: &[Self::Elem], target_values: &[Self::Elem]) -> ErrorStats {
+// 		self.predict(input);
+// 		self.propagate_gradients(target_values);
+// 		self.update_weights(input);
+// 		self.update_error_stats(target_values)
+// 	}
+// }
 
 #[cfg(test)]
 mod tests {
