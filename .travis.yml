@@ -5,8 +5,7 @@ cache: cargo
 rust:
   - stable
   - beta
-  - nightly-2017-03-04
-  # - nightly
+  - nightly
 
 addons:
   apt:
