@@ -14,6 +14,7 @@ use ::traits::{Train, Predict, UpdateGradients, UpdateWeights};
 use learn_config::{LearnConfig};
 use error_stats::{ErrorStats};
 use activation_fn::{BaseFn, DerivedFn};
+use activation::*;
 
 /// A fully connected layer within a neural net.
 /// 
@@ -45,7 +46,8 @@ struct FullyConnectedLayer {
 	weights:       Array2<f32>,
 	delta_weights: Array2<f32>,
 	outputs:       Array1<f32>,
-	gradients:     Array1<f32>
+	gradients:     Array1<f32>,
+	activation:    Activation
 }
 
 /// A neural net.
@@ -88,10 +90,11 @@ impl FullyConnectedLayer {
 		let shape           = Shape::from(Dim([outputs, inputs]));
 
 		FullyConnectedLayer{
-			weights:       Array2::random(shape, Range::new(0.0, 1.0)),
+			weights      : Array2::random(shape, Range::new(0.0, 1.0)),
 			delta_weights: Array2::default(shape),
-			outputs:       Array1::default(outputs),
-			gradients:     Array1::zeros(count_gradients)
+			outputs      : Array1::default(outputs),
+			gradients    : Array1::zeros(count_gradients),
+			activation   : Activation::Sigmoid
 		}
 	}
 
@@ -135,7 +138,6 @@ impl FullyConnectedLayer {
 				) 
 			});
 
-		// self.output_view()
 		self.output_view()
 	}
 

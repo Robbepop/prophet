@@ -13,8 +13,8 @@ pub enum Activation {
 	/// *ƒ(x) = 1* **if** *x ≥ 0*
 	BinaryStep,
 
-	/// Logistic or Sigmoid
-	Logistic,
+	/// Sigmoid or Logistic function
+	Sigmoid,
 
 	/// Tangens Hyperbolicus (**tanh**): *ƒ(x) = tanh(x)*
 	Tanh,
@@ -51,7 +51,7 @@ impl Activation {
 		match self {
 			Identity     => identity(x),
 			BinaryStep   => binary_step(x),
-			Logistic     => logistic(x),
+			Sigmoid      => sigmoid(x),
 			Tanh         => tanh(x),
 			ArcTan       => arctan(x),
 			SoftSign     => softsign(x),
@@ -70,7 +70,7 @@ impl Activation {
 		match self {
 			Identity     => identity_dx(x),
 			BinaryStep   => binary_step_dx(x),
-			Logistic     => logistic_dx(x),
+			Sigmoid      => sigmoid_dx(x),
 			Tanh         => tanh_dx(x),
 			ArcTan       => arctan_dx(x),
 			SoftSign     => softsign_dx(x),
@@ -103,12 +103,12 @@ mod details {
 	}
 
 	/// Logistic or Sigmoid
-	pub fn logistic<F: NdFloat>(x: F) -> F {
+	pub fn sigmoid<F: NdFloat>(x: F) -> F {
 		softplus_dx(x)
 	}
 	/// Derivation of Logistic or Sigmoid
-	pub fn logistic_dx<F: NdFloat>(x: F) -> F {
-		logistic(x) * (F::one() - logistic(x))
+	pub fn sigmoid_dx<F: NdFloat>(x: F) -> F {
+		sigmoid(x) * (F::one() - sigmoid(x))
 	}
 
 	/// Tangens Hyperbolicus (**tanh**): *ƒ(x) = tanh(x)*
@@ -222,7 +222,7 @@ mod tests {
 
 	#[test]
 	fn logistic() {
-		let act = Activation::Logistic;
+		let act = Activation::Sigmoid;
 		relative_eq!(act.base(-1.0), 0.26894143);
 		relative_eq!(act.base(-0.5), 0.37754068);
 		relative_eq!(act.base( 0.0), 0.5);
