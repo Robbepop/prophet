@@ -86,7 +86,7 @@ pub mod mentor;
 /// The prophet prelude publicly imports all propet modules the user needs in order to
 /// create, train and use neural networks.
 pub mod prelude {
-	pub use traits::{Prophet, Disciple};
+	pub use traits::{Train, Prophet, Disciple};
 	pub use neural_net::{NeuralNet};
 	pub use error_stats::{ErrorStats};
 	pub use learn_config::{LearnConfig};
