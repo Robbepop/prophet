@@ -2,7 +2,7 @@
 //! prevent a situation where a neural network is defined and used to predict
 //! data without any training beforehand to verify a certain metric of quality
 //! for the predicted data.
-//! 
+//!
 //! In future versions of this crate it shall be impossible to create new
 //! neural network instances without using a Mentor to train it beforehand.
 
@@ -37,7 +37,7 @@ pub enum ErrorKind {
 
 	/// Occures when the specified mean squared error
 	/// criterion is invalid.
-	InvalidMeanSquaredError
+	InvalidMeanSquaredError,
 }
 use self::ErrorKind::*;
 
@@ -63,21 +63,19 @@ impl Criterion {
 	fn check_validity(&self) -> Result<()> {
 		use self::Criterion::*;
 		match *self {
-			TimeOut(_)    => Ok(()),
+			TimeOut(_) => Ok(()),
 			Iterations(_) => Ok(()),
 			MeanSquaredError(mse) => {
 				if mse > 0.0 && mse < 1.0 {
 					Ok(())
-				}
-				else {
+				} else {
 					Err(InvalidMeanSquaredError)
 				}
-			},
+			}
 			AvgNetError(avg) => {
 				if avg > 0.0 && avg < 1.0 {
 					Ok(())
-				}
-				else {
+				} else {
 					Err(InvalidAvgNetError)
 				}
 			}
@@ -92,7 +90,7 @@ pub enum LearnRate {
 	Adapt,
 
 	/// Use the given fixed learn rate.
-	Fixed(f64)
+	Fixed(f64),
 }
 
 impl LearnRate {
@@ -104,8 +102,7 @@ impl LearnRate {
 			Fixed(rate) => {
 				if rate > 0.0 && rate < 1.0 {
 					Ok(())
-				}
-				else {
+				} else {
 					Err(InvalidLearnRate)
 				}
 			}
@@ -120,7 +117,7 @@ pub enum LearnMomentum {
 	Adapt,
 
 	/// Use the given fixed learn momentum.
-	Fixed(f64)
+	Fixed(f64),
 }
 
 impl LearnMomentum {
@@ -132,8 +129,7 @@ impl LearnMomentum {
 			Fixed(momentum) => {
 				if momentum > 0.0 && momentum < 1.0 {
 					Ok(())
-				}
-				else {
+				} else {
 					Err(InvalidLearnMomentum)
 				}
 			}
@@ -145,18 +141,18 @@ impl LearnMomentum {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum SchedulingKind {
 	/// Pick samples randomly.
-	/// 
+	///
 	/// This usually is a good approach to defeat sample-pattern learning.
 	Random,
 
 	/// Pick samples in order.
-	/// 
+	///
 	/// This maybe useful for testing purposes.
-	Iterative
+	Iterative,
 }
 
 /// A scheduler for indices with a scheduling strategy.
-/// 
+///
 /// Used by `SampleScheduler` to pick samples with different scheduling strategies.
 #[derive(Clone)]
 pub enum Scheduler {
@@ -164,16 +160,16 @@ pub enum Scheduler {
 	Random(ThreadRng),
 
 	/// Samples iteratively.
-	Iterative(u64)
+	Iterative(u64),
 }
 
-use ::std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Formatter};
 impl Debug for Scheduler {
 	fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
 		use self::Scheduler::*;
 		match self {
 			&Random(_) => write!(f, "Scheduler::Random(_)"),
-			&Iterative(x) => write!(f, "Scheduler::Iterative({})", x)
+			&Iterative(x) => write!(f, "Scheduler::Iterative({})", x),
 		}
 	}
 }
@@ -183,20 +179,20 @@ impl Scheduler {
 	fn from_kind(kind: SchedulingKind) -> Self {
 		use self::SchedulingKind::*;
 		match kind {
-			Random    => Scheduler::Random(thread_rng()),
-			Iterative => Scheduler::Iterative(0)
+			Random => Scheduler::Random(thread_rng()),
+			Iterative => Scheduler::Iterative(0),
 		}
 	}
 
 	/// Returns the next scheduled index.
-	/// 
+	///
 	/// The returned index is then used by the `SampleScheduler`
 	/// to pick the associated sample.
 	fn next(&mut self, num_samples: usize) -> usize {
 		use self::Scheduler::*;
 		match self {
 			&mut Random(ref mut rng) => rng.gen_range(0, num_samples),
-			&mut Iterative(ref mut cur)  => {
+			&mut Iterative(ref mut cur) => {
 				let next = *cur as usize % num_samples;
 				*cur += 1;
 				next
@@ -208,16 +204,16 @@ impl Scheduler {
 /// Organizes the scheduling of samples with different strategies.
 #[derive(Debug, Clone)]
 pub struct SampleScheduler {
-	samples  : Vec<Sample>,
-	scheduler: Scheduler
+	samples: Vec<Sample>,
+	scheduler: Scheduler,
 }
 
 impl SampleScheduler {
 	/// Creates a new `SampleScheduler` from given samples and a scheduling strategy.
 	fn from_samples(kind: SchedulingKind, samples: Vec<Sample>) -> Self {
-		SampleScheduler{
-			samples  : samples,
-			scheduler: Scheduler::from_kind(kind)
+		SampleScheduler {
+			samples: samples,
+			scheduler: Scheduler::from_kind(kind),
 		}
 	}
 
@@ -237,12 +233,12 @@ pub type Result<T> = ::std::result::Result<T, ErrorKind>;
 // /// data.
 // /// The static type of the trainable `Disciple` and the resuting `Prophet`
 // /// has to be known.
-// /// 
+// ///
 // /// Mentors define different criteria under which a disciple is
 // /// meant to be fully (or well-enough) trained to become a prophet.
-// /// 
+// ///
 // /// A naive implementation is the `AvgNetErrorMentor` that simply
-// /// trains its disciple until the average net error decreases below 
+// /// trains its disciple until the average net error decreases below
 // /// a given value. For this the mentor requires some sample training pieces.
 // trait Mentor {
 // 	type D: Disciple;
@@ -252,19 +248,19 @@ pub type Result<T> = ::std::result::Result<T, ErrorKind>;
 #[derive(Debug, Clone)]
 pub struct Sample {
 	/// The input parameter of this `Sample`.
-	pub input : Array1<f32>,
+	pub input: Array1<f32>,
 
 	/// The expected target values of this `Sample`.
-	pub target: Array1<f32>
+	pub target: Array1<f32>,
 }
 
 impl<Arr> From<(Arr, Arr)> for Sample
-	where Arr: Into<Array1<f32>>
+    where Arr: Into<Array1<f32>>
 {
 	fn from(from: (Arr, Arr)) -> Sample {
-		Sample{
-			input : from.0.into(),
-			target: from.1.into()
+		Sample {
+			input: from.0.into(),
+			target: from.1.into(),
 		}
 	}
 }
@@ -273,18 +269,17 @@ impl<Arr> From<(Arr, Arr)> for Sample
 #[derive(Debug, Clone)]
 pub struct SampleView<'a> {
 	/// The input parameter of this `SampleView`.
-	pub input : ArrayView1<'a, f32>,
+	pub input: ArrayView1<'a, f32>,
 
 	/// The expected target values of this `SampleView`.
-	pub target: ArrayView1<'a, f32>
+	pub target: ArrayView1<'a, f32>,
 }
 
-impl<'a> From<&'a Sample> for SampleView<'a>
-{
+impl<'a> From<&'a Sample> for SampleView<'a> {
 	fn from(from: &'a Sample) -> SampleView<'a> {
-		SampleView{
-			input : from.input.view(),
-			target: from.target.view()
+		SampleView {
+			input: from.input.view(),
+			target: from.target.view(),
 		}
 	}
 }
@@ -294,32 +289,32 @@ impl<'a> From<&'a Sample> for SampleView<'a>
 /// until the `go` routine is called.
 #[derive(Debug, Clone)]
 pub struct Builder {
-	err_stats : ErrorStats,
+	err_stats: ErrorStats,
 	learn_rate: LearnRate,
-	learn_mom : LearnMomentum,
-	criterion : Criterion,
+	learn_mom: LearnMomentum,
+	criterion: Criterion,
 	scheduling: SchedulingKind,
-	disciple  : Topology<Finished>,
-	samples   : Vec<Sample>
+	disciple: Topology<Finished>,
+	samples: Vec<Sample>,
 }
 
 impl Builder {
 	/// Creates a new mentor for the given disciple and
 	/// with the given sample collection (training data).
 	pub fn new(disciple: Topology<Finished>, samples: Vec<Sample>) -> Builder {
-		Builder{
-			err_stats : ErrorStats::default(),
+		Builder {
+			err_stats: ErrorStats::default(),
 			learn_rate: LearnRate::Adapt,
-			learn_mom : LearnMomentum::Adapt,
-			criterion : Criterion::AvgNetError(0.05),
+			learn_mom: LearnMomentum::Adapt,
+			criterion: Criterion::AvgNetError(0.05),
 			scheduling: SchedulingKind::Random,
-			disciple  : disciple,
-			samples   : samples
+			disciple: disciple,
+			samples: samples,
 		}
 	}
 
 	/// Use the given criterion.
-	/// 
+	///
 	/// Default criterion is `AvgNetError(0.05)`.
 	pub fn criterion(mut self, criterion: Criterion) -> Builder {
 		self.criterion = criterion;
@@ -327,7 +322,7 @@ impl Builder {
 	}
 
 	/// Use the given learn rate.
-	/// 
+	///
 	/// Default learn rate is adapting behaviour.
 	pub fn learn_rate(mut self, learn_rate: LearnRate) -> Builder {
 		self.learn_rate = learn_rate;
@@ -335,7 +330,7 @@ impl Builder {
 	}
 
 	/// Use the given learn momentum.
-	/// 
+	///
 	/// Default learn momentum is `0.5`.
 	pub fn learn_momentum(mut self, learn_mom: LearnMomentum) -> Builder {
 		self.learn_mom = learn_mom;
@@ -343,7 +338,7 @@ impl Builder {
 	}
 
 	/// Use the given scheduling routine.
-	/// 
+	///
 	/// Default scheduling routine is to pick random samples.
 	pub fn scheduling(mut self, kind: SchedulingKind) -> Builder {
 		self.scheduling = kind;
@@ -352,14 +347,14 @@ impl Builder {
 
 	/// Validate all sample input and target sizes.
 	fn validate_samples(&self) -> Result<()> {
-		let req_inputs  = self.disciple.len_input();
+		let req_inputs = self.disciple.len_input();
 		let req_outputs = self.disciple.len_output();
 		for sample in self.samples.iter() {
 			if sample.input.len() != req_inputs {
-				return Err(InvalidSampleInputSize)
+				return Err(InvalidSampleInputSize);
 			}
 			if sample.target.len() != req_outputs {
-				return Err(InvalidSampleTargetSize)
+				return Err(InvalidSampleTargetSize);
 			}
 		}
 		Ok(())
@@ -368,9 +363,9 @@ impl Builder {
 	/// Checks invariants about the given settings for the learning procedure
 	/// such as checking if learn rate is within bounds or the samples are
 	/// of correct sizes for the underlying neural network etc.
-	/// 
+	///
 	/// Then starts the learning procedure and returns the fully trained
-	/// neural network (Prophet) that is capable to predict data if no 
+	/// neural network (Prophet) that is capable to predict data if no
 	/// errors occured while training it.
 	pub fn go(self) -> Result<NeuralNet> {
 		self.criterion.check_validity()?;
@@ -382,15 +377,15 @@ impl Builder {
 }
 
 impl Topology<Finished> {
-    /// Iterates over the layer sizes of this Disciple's topology definition.
-    pub fn train(self, samples: Vec<Sample>) -> Builder {
-        Builder::new(self, samples)
-    }
+	/// Iterates over the layer sizes of this Disciple's topology definition.
+	pub fn train(self, samples: Vec<Sample>) -> Builder {
+		Builder::new(self, samples)
+	}
 }
 
-/// A very simple type that can count upwards and 
+/// A very simple type that can count upwards and
 /// is comparable to other instances of itself.
-/// 
+///
 /// Used by `Mentor` to manage iteration number.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 struct Iteration(u64);
@@ -406,14 +401,14 @@ impl Iteration {
 /// to become a fully qualified and useable Prophet.
 #[derive(Debug, Clone)]
 struct Mentor {
-	err_stats : ErrorStats,
+	err_stats: ErrorStats,
 	learn_rate: LearnRate,
-	learn_mom : LearnMomentum,
-	criterion : Criterion,
-	disciple  : NeuralNet,
-	scheduler : SampleScheduler,
+	learn_mom: LearnMomentum,
+	criterion: Criterion,
+	disciple: NeuralNet,
+	scheduler: SampleScheduler,
 	iterations: Iteration,
-	timestamp : DateTime<Local>,
+	timestamp: DateTime<Local>,
 }
 
 impl Mentor {
@@ -424,15 +419,15 @@ impl Mentor {
 
 impl From<Builder> for Mentor {
 	fn from(builder: Builder) -> Mentor {
-		Mentor{
-			err_stats : builder.err_stats,
+		Mentor {
+			err_stats: builder.err_stats,
 			learn_rate: builder.learn_rate,
-			learn_mom : builder.learn_mom,
-			criterion : builder.criterion,
-			disciple  : NeuralNet::from(builder.disciple),
-			scheduler : SampleScheduler::from_samples(builder.scheduling, builder.samples),
+			learn_mom: builder.learn_mom,
+			criterion: builder.criterion,
+			disciple: NeuralNet::from(builder.disciple),
+			scheduler: SampleScheduler::from_samples(builder.scheduling, builder.samples),
 			iterations: Iteration::default(),
-			timestamp : Local::now()
+			timestamp: Local::now(),
 		}
 	}
 }

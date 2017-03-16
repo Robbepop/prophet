@@ -11,17 +11,19 @@
 //! A neural network can be trained by giving it some input data and some expected target values.
 //! This is called managed learning because the user of the library has to feed the network with the
 //! expected results.
-//! After several iterations the neural net might improve itself and will eventually improve at predicting the expected results.
-//! 
+//! After several iterations the neural net might improve itself
+//! and will eventually improve at predicting the expected results.
+//!
 //! ```rust,no_run
 //! # use prophet::error_stats::ErrorStats;
 //! # trait Disciple {
 //! 	fn train(&mut self, input: &[f32], expected: &[f32]) -> ErrorStats;
 //! # }
 //! ```
-//! 
-//! After a successful training session, the user might be able to use the neural net to predict expected values.
-//! 
+//!
+//! After a successful training session, the user might be able
+//! to use the neural net to predict expected values.
+//!
 //! ```rust,no_run
 //! # trait Prophet {
 //! 	fn predict(&mut self, input: &[f32]) -> &[f32];
@@ -29,7 +31,7 @@
 //! ```
 //!
 //! # Example
-//! 
+//!
 //! The code below demonstrates how to train a neural net to be a logical-OR operator.
 //!
 //! ```rust
@@ -44,7 +46,7 @@
 //! // layer_sizes: - input layer which expects two values
 //! //              - two hidden layers with 3 and 2 neurons
 //! //              - output layer with one neuron
-//! 
+//!
 //! // now train the neural net how to be an OR-operator
 //! let f = -1.0; // represents false
 //! let t =  1.0; // represents true
@@ -86,9 +88,9 @@ pub mod mentor;
 /// The prophet prelude publicly imports all propet modules the user needs in order to
 /// create, train and use neural networks.
 pub mod prelude {
-	pub use traits::{Train, Prophet, Disciple};
-	pub use neural_net::{NeuralNet};
-	pub use error_stats::{ErrorStats};
-	pub use learn_config::{LearnConfig};
+	pub use traits::{Train};
+	pub use neural_net::NeuralNet;
+	pub use error_stats::ErrorStats;
+	pub use learn_config::LearnConfig;
 	pub use activation_fn::{BaseFn, DerivedFn, ActivationFn};
 }

@@ -8,21 +8,21 @@ use std::fmt;
 pub struct ErrorStats {
 	net_error: f32,
 	avg_error: f32,
-	avg_smoothing_factor: f32
+	avg_smoothing_factor: f32,
 }
 
 impl ErrorStats {
 	/// Creates a new instance of ```ErrorStats```.
-	/// 
+	///
 	/// # Panics
-	/// 
+	///
 	/// If the given smoothing factor is ∉ *(0, 1)*.
 	pub fn new(avg_smoothing_factor: f32) -> Self {
 		assert!(0.0 < avg_smoothing_factor && avg_smoothing_factor < 1.0);
-		ErrorStats{
+		ErrorStats {
 			net_error: 0.0,
 			avg_error: 0.0,
-			avg_smoothing_factor: avg_smoothing_factor
+			avg_smoothing_factor: avg_smoothing_factor,
 		}
 	}
 
@@ -34,7 +34,8 @@ impl ErrorStats {
 		// self.avg_error =
 		// 	(self.avg_error * self.avg_smoothing_factor + self.net_error) /
 		// 	(self.avg_smoothing_factor + 1.0);
-		self.avg_error = self.avg_smoothing_factor * self.avg_error + (1.0 - self.avg_smoothing_factor) * self.net_error;
+		self.avg_error = self.avg_smoothing_factor * self.avg_error +
+		                 (1.0 - self.avg_smoothing_factor) * self.net_error;
 	}
 
 	/// Returns the latest net error that was updated via the ```update``` method.
@@ -44,7 +45,7 @@ impl ErrorStats {
 
 	/// Returns the average error that is a calculation concerning the latest
 	/// net errors with which this ```ErrorStats``` was updated.
-	/// 
+	///
 	/// This provides a good indication of how well the neural network has learned
 	/// over the last accumulation of iterations.
 	pub fn avg_error(&self) -> f32 {
@@ -54,18 +55,21 @@ impl ErrorStats {
 
 impl Default for ErrorStats {
 	fn default() -> Self {
-		ErrorStats{
+		ErrorStats {
 			net_error: 0.0,
 			avg_error: 0.0,
-			avg_smoothing_factor: 0.95
+			avg_smoothing_factor: 0.95,
 		}
 	}
 }
 
 impl fmt::Display for ErrorStats {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "( net_error = {}, avg_error = {} )", self.net_error, self.avg_error)
-    }
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f,
+		       "( net_error = {}, avg_error = {} )",
+		       self.net_error,
+		       self.avg_error)
+	}
 }
 
 #[cfg(test)]
