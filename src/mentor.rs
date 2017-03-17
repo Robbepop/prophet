@@ -10,9 +10,9 @@ use ndarray::prelude::*;
 use rand::*;
 use chrono::prelude::*;
 
-use ::topology::*;
-use ::error_stats::*;
-use ::neural_net::*;
+use topology::*;
+use error_stats::*;
+use neural_net::*;
 
 /// Possible errors during mentoring.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -294,14 +294,14 @@ pub struct Builder {
 	learn_mom: LearnMomentum,
 	criterion: Criterion,
 	scheduling: SchedulingKind,
-	disciple: Topology<Finished>,
+	disciple: Topology,
 	samples: Vec<Sample>,
 }
 
 impl Builder {
 	/// Creates a new mentor for the given disciple and
 	/// with the given sample collection (training data).
-	pub fn new(disciple: Topology<Finished>, samples: Vec<Sample>) -> Builder {
+	pub fn new(disciple: Topology, samples: Vec<Sample>) -> Builder {
 		Builder {
 			err_stats: ErrorStats::default(),
 			learn_rate: LearnRate::Adapt,
@@ -376,7 +376,7 @@ impl Builder {
 	}
 }
 
-impl Topology<Finished> {
+impl Topology {
 	/// Iterates over the layer sizes of this Disciple's topology definition.
 	pub fn train(self, samples: Vec<Sample>) -> Builder {
 		Builder::new(self, samples)
@@ -401,14 +401,14 @@ impl Iteration {
 /// to become a fully qualified and useable Prophet.
 #[derive(Debug, Clone)]
 struct Mentor {
-	err_stats: ErrorStats,
+	err_stats : ErrorStats,
 	learn_rate: LearnRate,
-	learn_mom: LearnMomentum,
-	criterion: Criterion,
-	disciple: NeuralNet,
-	scheduler: SampleScheduler,
+	learn_mom : LearnMomentum,
+	criterion : Criterion,
+	disciple  : NeuralNet,
+	scheduler : SampleScheduler,
 	iterations: Iteration,
-	timestamp: DateTime<Local>,
+	timestamp : DateTime<Local>,
 }
 
 impl Mentor {

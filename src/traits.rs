@@ -1,8 +1,6 @@
 //! Provides traits to serve as common interface for neural network implementations.
 
 use ndarray::*;
-
-use num::Float;
 use error_stats::ErrorStats;
 
 /// Types that can predict data based on a one-dimensional input data range.

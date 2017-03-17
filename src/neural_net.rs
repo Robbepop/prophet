@@ -16,6 +16,9 @@ use error_stats::ErrorStats;
 use activation_fn::{BaseFn, DerivedFn};
 use activation::*;
 
+use topology::*;
+use activation_fn::ActivationFn;
+
 /// A fully connected layer within a neural net.
 ///
 /// The layer constists of a weights and a delta-weights matrix with equal dimensions
@@ -82,7 +85,7 @@ impl FullyConnectedLayer {
 	/// The weights are randomized within the open interval (0,1).
 	/// This excludes 0.0 and 1.0 as weights.
 	/// Other optional intervals may come with a future update!
-	fn random(inputs: Ix, outputs: Ix) -> Self {
+	fn random(inputs: Ix, outputs: Ix, activation: Activation) -> Self {
 		assert!(inputs >= 1 && outputs >= 1);
 
 		let inputs = inputs + 1; // implicitely add bias!
@@ -94,7 +97,7 @@ impl FullyConnectedLayer {
 			delta_weights: Array2::default(shape),
 			outputs: Array1::default(outputs),
 			gradients: Array1::zeros(count_gradients),
-			activation: Activation::Sigmoid,
+			activation: activation,
 		}
 	}
 
@@ -232,9 +235,6 @@ impl FullyConnectedLayer {
 	}
 }
 
-use ::topology::*;
-use activation_fn::ActivationFn;
-
 impl NeuralNet {
 	/// Creates a new neural network from a given vector of fully connected layers.
 	///
@@ -248,10 +248,11 @@ impl NeuralNet {
 	}
 
 	/// Creates a new neural network of fully connected layers from a given topology.
-	fn from_topology(topology: Topology<Finished>) -> Self {
-		let buffer = topology.iter_layer_sizes()
-			.tuple_windows::<(_, _)>()
-			.map(|(&inputs, &outputs)| FullyConnectedLayer::random(inputs, outputs))
+	fn from_topology(topology: Topology) -> Self {
+		let buffer = topology.iter_layers()
+			// .tuple_windows::<(_, _)>()
+			// .map(|(&inputs, &outputs)| FullyConnectedLayer::random(inputs, outputs))
+			.map(|&layer| FullyConnectedLayer::random(layer.inputs, layer.outputs, layer.activation))
 			.collect::<Vec<FullyConnectedLayer>>();
 		NeuralNet::from_vec(LearnConfig::new(0.3, 0.5, ActivationFn::tanh()), buffer)
 	}
@@ -295,11 +296,10 @@ impl NeuralNet {
 	/// // the latest ```avg_error``` is to ```0.0```:
 	/// assert!(net.latest_error_stats().avg_error() < 0.05);
 	/// ```
-	#[deprecated]
 	pub fn new(config: LearnConfig, layer_sizes: &[Ix]) -> Self {
 		let buffer = layer_sizes.iter()
 			.tuple_windows::<(_, _)>()
-			.map(|(&inputs, &outputs)| FullyConnectedLayer::random(inputs, outputs))
+			.map(|(&inputs, &outputs)| FullyConnectedLayer::random(inputs, outputs, Activation::Identity))
 			.collect::<Vec<FullyConnectedLayer>>();
 		NeuralNet::from_vec(config, buffer)
 	}
@@ -345,8 +345,8 @@ impl NeuralNet {
 	}
 }
 
-impl From<Topology<Finished>> for NeuralNet {
-	fn from(topology: Topology<Finished>) -> Self {
+impl From<Topology> for NeuralNet {
+	fn from(topology: Topology) -> Self {
 		NeuralNet::from_topology(topology)
 	}
 }
@@ -389,7 +389,7 @@ impl<'a, 'b, A1, A2> Train<A1, A2> for NeuralNet
 		let input = input.into();
 		let target_values = target_values.into();
 		self.predict(input);
-		self.propagate_gradients(target_values);
+		self.update_gradients(target_values);
 		self.update_weights(input, 0.3, 0.5);
 		self.update_error_stats(target_values)
 	}
