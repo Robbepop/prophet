@@ -139,7 +139,7 @@ impl LearnMomentum {
 
 /// Sample scheduling strategy while learning.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum SchedulingKind {
+pub enum Scheduling {
 	/// Pick samples randomly.
 	///
 	/// This usually is a good approach to defeat sample-pattern learning.
@@ -176,8 +176,8 @@ impl Debug for Scheduler {
 
 impl Scheduler {
 	/// Creates a new `Scheduler` from a given scheduling strategy.
-	fn from_kind(kind: SchedulingKind) -> Self {
-		use self::SchedulingKind::*;
+	fn from_kind(kind: Scheduling) -> Self {
+		use self::Scheduling::*;
 		match kind {
 			Random => Scheduler::Random(thread_rng()),
 			Iterative => Scheduler::Iterative(0),
@@ -210,7 +210,7 @@ pub struct SampleScheduler {
 
 impl SampleScheduler {
 	/// Creates a new `SampleScheduler` from given samples and a scheduling strategy.
-	fn from_samples(kind: SchedulingKind, samples: Vec<Sample>) -> Self {
+	fn from_samples(kind: Scheduling, samples: Vec<Sample>) -> Self {
 		SampleScheduler {
 			samples: samples,
 			scheduler: Scheduler::from_kind(kind),
@@ -293,7 +293,7 @@ pub struct Builder {
 	learn_rate: LearnRate,
 	learn_mom: LearnMomentum,
 	criterion: Criterion,
-	scheduling: SchedulingKind,
+	scheduling: Scheduling,
 	disciple: Topology,
 	samples: Vec<Sample>,
 }
@@ -307,7 +307,7 @@ impl Builder {
 			learn_rate: LearnRate::Adapt,
 			learn_mom: LearnMomentum::Adapt,
 			criterion: Criterion::AvgNetError(0.05),
-			scheduling: SchedulingKind::Random,
+			scheduling: Scheduling::Random,
 			disciple: disciple,
 			samples: samples,
 		}
@@ -340,7 +340,7 @@ impl Builder {
 	/// Use the given scheduling routine.
 	///
 	/// Default scheduling routine is to pick random samples.
-	pub fn scheduling(mut self, kind: SchedulingKind) -> Builder {
+	pub fn scheduling(mut self, kind: Scheduling) -> Builder {
 		self.scheduling = kind;
 		self
 	}
