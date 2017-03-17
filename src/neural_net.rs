@@ -351,8 +351,11 @@ impl From<Topology> for NeuralNet {
 	}
 }
 
-impl<'b> Predict<ArrayView1<'b, f32>> for NeuralNet {
-	fn predict(&mut self, input: ArrayView1<f32>) -> ArrayView1<f32> {
+impl<'b, A> Predict<A> for NeuralNet
+	where A: Into<ArrayView1<'b, f32>>
+{
+	fn predict(&mut self, input: A) -> ArrayView1<f32> {
+		let input  = input.into();
 		let act_fn = self.config.act_fn.base_fn();
 		if let Some((first, tail)) = self.layers.split_first_mut() {
 			tail.iter_mut()
@@ -365,14 +368,19 @@ impl<'b> Predict<ArrayView1<'b, f32>> for NeuralNet {
 	}
 }
 
-impl<'a> UpdateGradients<ArrayView1<'a, f32>> for NeuralNet {
-	fn update_gradients(&mut self, target_values: ArrayView1<f32>) {
-		self.propagate_gradients(target_values);
+impl<'a, A> UpdateGradients<A> for NeuralNet
+	where A: Into<ArrayView1<'a, f32>>
+{
+	fn update_gradients(&mut self, target_values: A) {
+		self.propagate_gradients(target_values.into());
 	}
 }
 
-impl<'b> UpdateWeights<ArrayView1<'b, f32>> for NeuralNet {
-	fn update_weights(&mut self, input: ArrayView1<f32>, rate: f32, momentum: f32) {
+impl<'b, A> UpdateWeights<A> for NeuralNet
+	where A: Into<ArrayView1<'b, f32>>
+{
+	fn update_weights(&mut self, input: A, rate: f32, momentum: f32) {
+		let input = input.into();
 		if let Some((first, tail)) = self.layers.split_first_mut() {
 			tail.iter_mut()
 				.fold(first.update_weights(input, rate, momentum),
@@ -385,13 +393,13 @@ impl<'a, 'b, A1, A2> Train<A1, A2> for NeuralNet
 	where A1: Into<ArrayView1<'a, f32>>,
 	      A2: Into<ArrayView1<'b, f32>>
 {
-	fn train(&mut self, input: A1, target_values: A2) -> ErrorStats {
-		let input = input.into();
-		let target_values = target_values.into();
+	fn train(&mut self, input: A1, target: A2) -> ErrorStats {
+		let input  = input.into();
+		let target = target.into();
 		self.predict(input);
-		self.update_gradients(target_values);
+		self.update_gradients(target);
 		self.update_weights(input, 0.3, 0.5);
-		self.update_error_stats(target_values)
+		self.update_error_stats(target)
 	}
 }
 
