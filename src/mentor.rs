@@ -9,6 +9,9 @@
 use ndarray::prelude::*;
 use rand::*;
 use chrono::prelude::*;
+// use chrono::Duration;
+
+use std::time::{SystemTime, Duration};
 
 use topology::*;
 use error_stats::*;
@@ -44,8 +47,8 @@ use self::ErrorKind::*;
 /// Cirterias after which the learning process holds.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Criterion {
-	/// Stop after the given amount of milliseconds.
-	TimeOut(u64),
+	/// Stop after the given duration of time.
+	TimeOut(Duration),
 
 	/// Stop after the given amount of learning iterations.
 	Iterations(u64),
@@ -218,7 +221,7 @@ impl SampleScheduler {
 	}
 
 	/// Returns the next sample.
-	fn next<'a>(&'a mut self) -> SampleView<'a> {
+	fn next(&mut self) -> SampleView {
 		let len_samples = self.samples.len();
 		let id = self.scheduler.next(len_samples);
 		(&self.samples[id]).into()
@@ -473,18 +476,87 @@ impl Iteration {
 /// to become a fully qualified and useable Prophet.
 #[derive(Debug, Clone)]
 struct Mentor {
-	deviation : Deviation,
-	learn_rate: LearnRate,
-	learn_mom : LearnMomentum,
-	criterion : Criterion,
+	cfg       : Config,
 	disciple  : NeuralNet,
 	scheduler : SampleScheduler,
+	deviation : Deviation,
 	iterations: Iteration,
-	timestamp : DateTime<Local>,
+	starttime : SystemTime,
+	learn_rate: f32,
+	learn_mom : f32
 }
 
+/// Config parameters for mentor objects used throughtout a training session.
+#[derive(Debug, Copy, Clone)]
+struct Config {
+	pub learn_rate: LearnRate,
+	pub learn_mom : LearnMomentum,
+	pub criterion : Criterion
+}
+
+use traits::{Predict, UpdateGradients, UpdateWeights};
+
 impl Mentor {
-	fn train(self) -> Result<NeuralNet> {
+	fn is_done(&self) -> bool {
+		use mentor::Criterion::*;
+		match self.cfg.criterion {
+			TimeOut(duration) => {
+				return self.starttime.elapsed().unwrap() >= duration
+			},
+			Iterations(limit) => {
+				return self.iterations.0 == limit
+			},
+			LatestMSE(target) => {
+				return self.deviation.latest_mse() <= target
+			}
+			RecentMSE(target) => {
+				return self.deviation.recent_mse() <= target
+			}
+		}
+		false
+	}
+
+	fn session(&mut self) {
+		let sample = self.scheduler.next();
+		{
+			let output = self.disciple.predict(sample.input);
+			self.deviation.update(output, sample.target);
+		}
+		self.disciple.update_gradients(sample.target);
+		self.disciple.update_weights(sample.input, self.learn_rate, self.learn_mom);
+		self.iterations.bump();
+	}
+
+	fn update_learn_rate(&mut self) {
+		use self::LearnRate::*;
+		match self.cfg.learn_rate {
+			Adapt => {
+				// not yet implemented
+			}
+			Fixed(_) => {
+				// nothing to do here!
+			}
+		}
+	}
+
+	fn update_learn_momentum(&mut self) {
+		use self::LearnMomentum::*;
+		match self.cfg.learn_mom {
+			Adapt => {
+				// not yet implemented
+			}
+			Fixed(_) => {
+				// nothing to do here!
+			}
+		}
+	}
+
+	fn train(mut self) -> Result<NeuralNet> {
+		while !self.is_done() {
+			self.update_learn_rate();
+			self.update_learn_momentum();
+			self.session()
+		}
 		Ok(self.disciple)
 	}
 }
@@ -492,14 +564,28 @@ impl Mentor {
 impl From<Builder> for Mentor {
 	fn from(builder: Builder) -> Mentor {
 		Mentor {
-			deviation : builder.deviation,
-			learn_rate: builder.learn_rate,
-			learn_mom : builder.learn_mom,
-			criterion : builder.criterion,
-			disciple  : NeuralNet::from(builder.disciple),
-			scheduler : SampleScheduler::from_samples(builder.scheduling, builder.samples),
+			disciple : NeuralNet::from(builder.disciple),
+			scheduler: SampleScheduler::from_samples(builder.scheduling, builder.samples),
+
+			cfg: Config{
+				learn_rate: builder.learn_rate,
+				learn_mom : builder.learn_mom,
+				criterion : builder.criterion
+			},
+
+			learn_rate: match builder.learn_rate {
+				LearnRate::Adapt    => 0.3,
+				LearnRate::Fixed(r) => r as f32
+			},
+
+			learn_mom: match builder.learn_mom {
+				LearnMomentum::Adapt    => 0.5,
+				LearnMomentum::Fixed(m) => m as f32
+			},
+
 			iterations: Iteration::default(),
-			timestamp : Local::now(),
+			starttime : SystemTime::now(),
+			deviation : builder.deviation,
 		}
 	}
 }
