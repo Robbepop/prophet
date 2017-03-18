@@ -8,13 +8,10 @@
 
 use ndarray::prelude::*;
 use rand::*;
-use chrono::prelude::*;
-// use chrono::Duration;
 
 use std::time::{SystemTime, Duration};
 
 use topology::*;
-use error_stats::*;
 use neural_net::*;
 
 /// Possible errors during mentoring.
@@ -501,19 +498,18 @@ impl Mentor {
 		use mentor::Criterion::*;
 		match self.cfg.criterion {
 			TimeOut(duration) => {
-				return self.starttime.elapsed().unwrap() >= duration
+				self.starttime.elapsed().unwrap() >= duration
 			},
 			Iterations(limit) => {
-				return self.iterations.0 == limit
+				self.iterations.0 == limit
 			},
 			LatestMSE(target) => {
-				return self.deviation.latest_mse() <= target
+				self.deviation.latest_mse() <= target
 			}
 			RecentMSE(target) => {
-				return self.deviation.recent_mse() <= target
+				self.deviation.recent_mse() <= target
 			}
 		}
-		false
 	}
 
 	fn session(&mut self) {

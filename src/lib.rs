@@ -66,7 +66,6 @@ extern crate num;
 extern crate ndarray;
 extern crate ndarray_rand;
 extern crate itertools;
-extern crate chrono;
 
 #[cfg(all(feature = "bench", test))]
 extern crate test;

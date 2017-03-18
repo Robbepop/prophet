@@ -9,10 +9,10 @@ use activation::Activation;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Layer{
 	/// Number of input neurons to this layer.
-	pub inputs    : usize,
+	pub inputs: usize,
 
 	/// Numer of output neurons from this layer.
-	pub outputs   : usize,
+	pub outputs: usize,
 
 	/// Activation function for this layer.
 	pub activation: Activation
