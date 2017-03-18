@@ -33,11 +33,11 @@ pub enum ErrorKind {
 
 	/// Occures when the specified average net error
 	/// criterion is invalid.
-	InvalidAvgNetError,
+	InvalidRecentMSE,
 
 	/// Occures when the specified mean squared error
 	/// criterion is invalid.
-	InvalidMeanSquaredError,
+	InvalidLatestMSE,
 }
 use self::ErrorKind::*;
 
@@ -50,12 +50,12 @@ pub enum Criterion {
 	/// Stop after the given amount of learning iterations.
 	Iterations(u64),
 
-	/// Stop when the mean square error drops below the given value.
-	MeanSquaredError(f64),
+	/// Stop when the latest mean square error drops below the given value.
+	LatestMSE(f64),
 
-	/// Stop as soon as the average net error (on MSE basis)
+	/// Stop as soon as the recent mean squared error
 	/// drops below the given value.
-	AvgNetError(f64),
+	RecentMSE(f64),
 }
 
 impl Criterion {
@@ -65,18 +65,18 @@ impl Criterion {
 		match *self {
 			TimeOut(_) => Ok(()),
 			Iterations(_) => Ok(()),
-			MeanSquaredError(mse) => {
+			LatestMSE(mse) => {
 				if mse > 0.0 && mse < 1.0 {
 					Ok(())
 				} else {
-					Err(InvalidMeanSquaredError)
+					Err(InvalidLatestMSE)
 				}
 			}
-			AvgNetError(avg) => {
-				if avg > 0.0 && avg < 1.0 {
+			RecentMSE(recent) => {
+				if recent > 0.0 && recent < 1.0 {
 					Ok(())
 				} else {
-					Err(InvalidAvgNetError)
+					Err(InvalidRecentMSE)
 				}
 			}
 		}
@@ -204,7 +204,7 @@ impl Scheduler {
 /// Organizes the scheduling of samples with different strategies.
 #[derive(Debug, Clone)]
 pub struct SampleScheduler {
-	samples: Vec<Sample>,
+	samples  : Vec<Sample>,
 	scheduler: Scheduler,
 }
 
@@ -289,13 +289,13 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 /// until the `go` routine is called.
 #[derive(Debug, Clone)]
 pub struct Builder {
-	err_stats: ErrorStats,
+	deviation : Deviation,
 	learn_rate: LearnRate,
-	learn_mom: LearnMomentum,
-	criterion: Criterion,
+	learn_mom : LearnMomentum,
+	criterion : Criterion,
 	scheduling: Scheduling,
-	disciple: Topology,
-	samples: Vec<Sample>,
+	disciple  : Topology,
+	samples   : Vec<Sample>,
 }
 
 impl Builder {
@@ -303,13 +303,13 @@ impl Builder {
 	/// with the given sample collection (training data).
 	pub fn new(disciple: Topology, samples: Vec<Sample>) -> Builder {
 		Builder {
-			err_stats: ErrorStats::default(),
+			deviation : Deviation::default(),
 			learn_rate: LearnRate::Adapt,
-			learn_mom: LearnMomentum::Adapt,
-			criterion: Criterion::AvgNetError(0.05),
+			learn_mom : LearnMomentum::Adapt,
+			criterion : Criterion::RecentMSE(0.05),
 			scheduling: Scheduling::Random,
-			disciple: disciple,
-			samples: samples,
+			disciple  : disciple,
+			samples   : samples,
 		}
 	}
 
@@ -383,6 +383,78 @@ impl Topology {
 	}
 }
 
+/// Handles deviations of predicted and target values of
+/// the neural network under training.
+/// 
+/// This is especially useful when using `MeanSquaredError`
+/// or `AvgNetError` criterions.
+#[derive(Debug, Copy, Clone)]
+struct Deviation {
+	latest_mse   : f64,
+	recent_mse   : f64,
+	recent_factor: f64,
+}
+
+impl Deviation {
+	/// Creates a new deviation instance.
+	///
+	/// ***Panics*** If the given smoothing factor is ∉ *(0, 1)*.
+	pub fn new(recent_factor: f64) -> Self {
+		assert!(0.0 < recent_factor && recent_factor < 1.0);
+		Deviation{
+			latest_mse   : 0.0,
+			recent_mse   : 0.0,
+			recent_factor: recent_factor,
+		}
+	}
+
+	/// Calculates mean squared error based on the given actual and expected data.
+	fn update_mse<F>(&mut self, actual: ArrayView1<F>, expected: ArrayView1<F>)
+		where F: NdFloat
+	{
+		use std::ops::Div;
+		use itertools::multizip;
+		self.latest_mse = multizip((actual.iter(), expected.iter()))
+			.map(|(&actual, &expected)| {
+				let dx = expected - actual;
+				(dx * dx).to_f64().unwrap()
+			})
+			.sum::<f64>()
+			.div(actual.len() as f64)
+			.sqrt();
+	}
+
+	/// Calculates recent mean squared error based on the recent factor smoothing.
+	fn update_recent_mse(&mut self) {
+		self.recent_mse = self.recent_factor * self.recent_mse
+			+ (1.0 - self.recent_factor) * self.latest_mse;
+	}
+
+	/// Updates the current mean squared error and associated data.
+	pub fn update<F>(&mut self, actual: ArrayView1<F>, expected: ArrayView1<F>)
+		where F: NdFloat
+	{
+		self.update_mse(actual, expected);
+		self.update_recent_mse();
+	}
+
+	/// Gets the latest mean squared error.
+	pub fn latest_mse(&self) -> f64 {
+		self.latest_mse
+	}
+
+	/// Gets the recent mean squared error.
+	pub fn recent_mse(&self) -> f64 {
+		self.recent_mse
+	}
+}
+
+impl Default for Deviation {
+	fn default() -> Self {
+		Deviation::new(0.95)
+	}
+}
+
 /// A very simple type that can count upwards and
 /// is comparable to other instances of itself.
 ///
@@ -401,7 +473,7 @@ impl Iteration {
 /// to become a fully qualified and useable Prophet.
 #[derive(Debug, Clone)]
 struct Mentor {
-	err_stats : ErrorStats,
+	deviation : Deviation,
 	learn_rate: LearnRate,
 	learn_mom : LearnMomentum,
 	criterion : Criterion,
@@ -420,14 +492,14 @@ impl Mentor {
 impl From<Builder> for Mentor {
 	fn from(builder: Builder) -> Mentor {
 		Mentor {
-			err_stats: builder.err_stats,
+			deviation : builder.deviation,
 			learn_rate: builder.learn_rate,
-			learn_mom: builder.learn_mom,
-			criterion: builder.criterion,
-			disciple: NeuralNet::from(builder.disciple),
-			scheduler: SampleScheduler::from_samples(builder.scheduling, builder.samples),
+			learn_mom : builder.learn_mom,
+			criterion : builder.criterion,
+			disciple  : NeuralNet::from(builder.disciple),
+			scheduler : SampleScheduler::from_samples(builder.scheduling, builder.samples),
 			iterations: Iteration::default(),
-			timestamp: Local::now(),
+			timestamp : Local::now(),
 		}
 	}
 }
