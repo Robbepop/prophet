@@ -13,6 +13,7 @@ use std::time::{SystemTime, Duration};
 
 use topology::*;
 use neural_net::*;
+use traits::{LearnRate, LearnMomentum};
 
 /// Possible errors during mentoring.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -90,7 +91,7 @@ pub enum LearnRateCfg {
 	Adapt,
 
 	/// Use the given fixed learn rate.
-	Fixed(f64),
+	Fixed(LearnRate),
 }
 
 impl LearnRateCfg {
@@ -100,7 +101,7 @@ impl LearnRateCfg {
 		match *self {
 			Adapt => Ok(()),
 			Fixed(rate) => {
-				if rate > 0.0 && rate < 1.0 {
+				if rate.0 > 0.0 && rate.0 < 1.0 {
 					Ok(())
 				} else {
 					Err(InvalidLearnRate)
@@ -117,7 +118,7 @@ pub enum LearnMomentumCfg {
 	Adapt,
 
 	/// Use the given fixed learn momentum.
-	Fixed(f64),
+	Fixed(LearnMomentum),
 }
 
 impl LearnMomentumCfg {
@@ -127,7 +128,7 @@ impl LearnMomentumCfg {
 		match *self {
 			Adapt => Ok(()),
 			Fixed(momentum) => {
-				if momentum > 0.0 && momentum < 1.0 {
+				if momentum.0 > 0.0 && momentum.0 < 1.0 {
 					Ok(())
 				} else {
 					Err(InvalidLearnMomentum)
@@ -479,8 +480,8 @@ struct Mentor {
 	deviation : Deviation,
 	iterations: Iteration,
 	starttime : SystemTime,
-	learn_rate: f32,
-	learn_mom : f32
+	learn_rate: LearnRate,
+	learn_mom : LearnMomentum
 }
 
 /// Config parameters for mentor objects used throughtout a training session.
@@ -570,13 +571,13 @@ impl From<Builder> for Mentor {
 			},
 
 			learn_rate: match builder.learn_rate {
-				LearnRateCfg::Adapt    => 0.3,
-				LearnRateCfg::Fixed(r) => r as f32
+				LearnRateCfg::Adapt    => LearnRate::default(),
+				LearnRateCfg::Fixed(r) => r
 			},
 
 			learn_mom: match builder.learn_mom {
-				LearnMomentumCfg::Adapt    => 0.5,
-				LearnMomentumCfg::Fixed(m) => m as f32
+				LearnMomentumCfg::Adapt    => LearnMomentum::default(),
+				LearnMomentumCfg::Fixed(m) => m
 			},
 
 			iterations: Iteration::default(),

@@ -9,7 +9,7 @@ use ndarray::prelude::*;
 use ndarray::Shape;
 use itertools::{multizip, Itertools};
 
-use traits::{Train, Predict, UpdateGradients, UpdateWeights};
+use traits::{LearnRate, LearnMomentum, Train, Predict, UpdateGradients, UpdateWeights};
 
 use learn_config::LearnConfig;
 use error_stats::ErrorStats;
@@ -208,8 +208,8 @@ impl FullyConnectedLayer {
 	/// This operation is usually used after successful computation of gradients.
 	fn update_weights(&mut self,
 	                  prev_outputs: ArrayView1<f32>,
-	                  train_rate: f32,
-	                  learning_momentum: f32)
+	                  learn_rate  : LearnRate,
+	                  learn_mom   : LearnMomentum)
 	                  -> ArrayView1<f32> {
 		debug_assert_eq!(prev_outputs.len() + 1, self.count_columns());
 		debug_assert_eq!(self.count_gradients(), self.count_rows() + 1);
@@ -224,9 +224,9 @@ impl FullyConnectedLayer {
 					.foreach(|(prev_output, weight, delta_weight)| {
 						*delta_weight =
 							// Individual input, magnified by the gradient and train rate
-							train_rate * prev_output * gradient
+							learn_rate.0 * prev_output * gradient
 							// Also add momentum which is a fraction of the previous delta weight
-							+ learning_momentum * *delta_weight;
+							+ learn_mom.0 * *delta_weight;
 						*weight += *delta_weight;
 					})
 			});
@@ -382,7 +382,7 @@ impl<'a, A> UpdateGradients<A> for NeuralNet
 impl<'b, A> UpdateWeights<A> for NeuralNet
 	where A: Into<ArrayView1<'b, f32>>
 {
-	fn update_weights(&mut self, input: A, rate: f32, momentum: f32) {
+	fn update_weights(&mut self, input: A, rate: LearnRate, momentum: LearnMomentum) {
 		let input = input.into();
 		if let Some((first, tail)) = self.layers.split_first_mut() {
 			tail.iter_mut()
@@ -401,7 +401,7 @@ impl<'a, 'b, A1, A2> Train<A1, A2> for NeuralNet
 		let target = target.into();
 		self.predict(input);
 		self.update_gradients(target);
-		self.update_weights(input, 0.3, 0.5);
+		self.update_weights(input, LearnRate::default(), LearnMomentum::default());
 		self.update_error_stats(target)
 	}
 }
@@ -537,9 +537,11 @@ mod tests {
 #[cfg(all(feature = "bench", test))]
 mod bench {
 	use super::*;
-	use test::{Bencher, black_box};
+	use test::{
+		Bencher,
+		// black_box
+	};
 
-	use traits::*;
 	use learn_config::LearnConfig;
 	use activation_fn::ActivationFn;
 	use super::NeuralNet;
