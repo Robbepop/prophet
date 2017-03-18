@@ -156,7 +156,7 @@ pub enum Scheduling {
 ///
 /// Used by `SampleScheduler` to pick samples with different scheduling strategies.
 #[derive(Clone)]
-pub enum Scheduler {
+enum Scheduler {
 	/// Samples randomly.
 	Random(ThreadRng),
 
@@ -204,7 +204,7 @@ impl Scheduler {
 
 /// Organizes the scheduling of samples with different strategies.
 #[derive(Debug, Clone)]
-pub struct SampleScheduler {
+struct SampleScheduler {
 	samples  : Vec<Sample>,
 	scheduler: Scheduler,
 }

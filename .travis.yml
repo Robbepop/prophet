@@ -7,29 +7,33 @@ rust:
   - beta
   - nightly
 
-addons:
-  apt:
-    packages:
-    - libcurl4-openssl-dev
-    - libelf-dev
-    - libdw-dev
-    - binutils-dev # optional: only required for the --verify flag of coveralls
+matrix:
+  allow_failures:
+    - rust: nightly
 
-before_script:
-  - pip install 'travis-cargo<0.2' --user
-  - export PATH=$HOME/.local/bin:$PATH
+# addons:
+#   apt:
+#     packages:
+#     - libcurl4-openssl-dev
+#     - libelf-dev
+#     - libdw-dev
+#     - binutils-dev # optional: only required for the --verify flag of coveralls
 
-script:
-  - travis-cargo build
-  - travis-cargo test
-  # - travis-cargo --only stable doc
+# before_script:
+#   - pip install 'travis-cargo<0.2' --user
+#   - export PATH=$HOME/.local/bin:$PATH
 
-# after_success:
-  # - travis-cargo --only stable doc-upload
-  # - travis-cargo --only nightly coveralls --no-sudo --verify
+# script:
+#   - travis-cargo build
+#   - travis-cargo test
+#   # - travis-cargo --only stable doc
 
-env:
-  global:
-    - TRAVIS_CARGO_NIGHTLY_FEATURE=""
-    # setting TRAVIS_CARGO_NIGHTLY_FEATURE globally to empty string magically
-    # avoids errors with nightly features of cargo.
+# # after_success:
+#   # - travis-cargo --only stable doc-upload
+#   # - travis-cargo --only nightly coveralls --no-sudo --verify
+
+# env:
+#   global:
+#     - TRAVIS_CARGO_NIGHTLY_FEATURE=""
+#     # setting TRAVIS_CARGO_NIGHTLY_FEATURE globally to empty string magically
+#     # avoids errors with nightly features of cargo.
