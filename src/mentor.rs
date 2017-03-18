@@ -85,7 +85,7 @@ impl Criterion {
 
 /// Learning rate configuration.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum LearnRate {
+pub enum LearnRateCfg {
 	/// Automatically adapt learn rate during learning.
 	Adapt,
 
@@ -93,10 +93,10 @@ pub enum LearnRate {
 	Fixed(f64),
 }
 
-impl LearnRate {
+impl LearnRateCfg {
 	/// Checks if this learn rate is valid.
 	fn check_validity(&self) -> Result<()> {
-		use self::LearnRate::*;
+		use self::LearnRateCfg::*;
 		match *self {
 			Adapt => Ok(()),
 			Fixed(rate) => {
@@ -112,7 +112,7 @@ impl LearnRate {
 
 /// Learning momentum configuration.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum LearnMomentum {
+pub enum LearnMomentumCfg {
 	/// Automatically adapt learn momentum during learning.
 	Adapt,
 
@@ -120,10 +120,10 @@ pub enum LearnMomentum {
 	Fixed(f64),
 }
 
-impl LearnMomentum {
+impl LearnMomentumCfg {
 	/// Checks if this learn momentum is valid.
 	fn check_validity(&self) -> Result<()> {
-		use self::LearnMomentum::*;
+		use self::LearnMomentumCfg::*;
 		match *self {
 			Adapt => Ok(()),
 			Fixed(momentum) => {
@@ -290,8 +290,8 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 #[derive(Debug, Clone)]
 pub struct Builder {
 	deviation : Deviation,
-	learn_rate: LearnRate,
-	learn_mom : LearnMomentum,
+	learn_rate: LearnRateCfg,
+	learn_mom : LearnMomentumCfg,
 	criterion : Criterion,
 	scheduling: Scheduling,
 	disciple  : Topology,
@@ -304,8 +304,8 @@ impl Builder {
 	pub fn new(disciple: Topology, samples: Vec<Sample>) -> Builder {
 		Builder {
 			deviation : Deviation::default(),
-			learn_rate: LearnRate::Adapt,
-			learn_mom : LearnMomentum::Adapt,
+			learn_rate: LearnRateCfg::Adapt,
+			learn_mom : LearnMomentumCfg::Adapt,
 			criterion : Criterion::RecentMSE(0.05),
 			scheduling: Scheduling::Random,
 			disciple  : disciple,
@@ -324,7 +324,7 @@ impl Builder {
 	/// Use the given learn rate.
 	///
 	/// Default learn rate is adapting behaviour.
-	pub fn learn_rate(mut self, learn_rate: LearnRate) -> Builder {
+	pub fn learn_rate(mut self, learn_rate: LearnRateCfg) -> Builder {
 		self.learn_rate = learn_rate;
 		self
 	}
@@ -332,7 +332,7 @@ impl Builder {
 	/// Use the given learn momentum.
 	///
 	/// Default learn momentum is `0.5`.
-	pub fn learn_momentum(mut self, learn_mom: LearnMomentum) -> Builder {
+	pub fn learn_momentum(mut self, learn_mom: LearnMomentumCfg) -> Builder {
 		self.learn_mom = learn_mom;
 		self
 	}
@@ -486,8 +486,8 @@ struct Mentor {
 /// Config parameters for mentor objects used throughtout a training session.
 #[derive(Debug, Copy, Clone)]
 struct Config {
-	pub learn_rate: LearnRate,
-	pub learn_mom : LearnMomentum,
+	pub learn_rate: LearnRateCfg,
+	pub learn_mom : LearnMomentumCfg,
 	pub criterion : Criterion
 }
 
@@ -524,7 +524,7 @@ impl Mentor {
 	}
 
 	fn update_learn_rate(&mut self) {
-		use self::LearnRate::*;
+		use self::LearnRateCfg::*;
 		match self.cfg.learn_rate {
 			Adapt => {
 				// not yet implemented
@@ -536,7 +536,7 @@ impl Mentor {
 	}
 
 	fn update_learn_momentum(&mut self) {
-		use self::LearnMomentum::*;
+		use self::LearnMomentumCfg::*;
 		match self.cfg.learn_mom {
 			Adapt => {
 				// not yet implemented
@@ -570,13 +570,13 @@ impl From<Builder> for Mentor {
 			},
 
 			learn_rate: match builder.learn_rate {
-				LearnRate::Adapt    => 0.3,
-				LearnRate::Fixed(r) => r as f32
+				LearnRateCfg::Adapt    => 0.3,
+				LearnRateCfg::Fixed(r) => r as f32
 			},
 
 			learn_mom: match builder.learn_mom {
-				LearnMomentum::Adapt    => 0.5,
-				LearnMomentum::Fixed(m) => m as f32
+				LearnMomentumCfg::Adapt    => 0.5,
+				LearnMomentumCfg::Fixed(m) => m as f32
 			},
 
 			iterations: Iteration::default(),
