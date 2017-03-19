@@ -417,20 +417,20 @@ mod tests {
 	#[test]
 	fn train_xor_new() {
 		use activation::Activation::Tanh;
-		let top = Topology::with_input(2)
-			.add_layer(4, Tanh)
-			.add_layer(3, Tanh)
-			.with_output(1, Tanh);
+		let top = Topology::input(2)
+			.layer(4, Tanh)
+			.layer(3, Tanh)
+			.output(1, Tanh);
 		let mut net = NeuralNet::from(top);
 
 		let t = 1.0;
 		let f = -1.0;
-		let print = true;
+		let print = false;
 		for _ in 0..200 {
 			if print {
-				println!("(f,f) => {}", net.train(&[f, f], &[f]));
-				println!("(f,t) => {}", net.train(&[f, t], &[t]));
-				println!("(t,f) => {}", net.train(&[t, f], &[t]));
+				println!("(f,f) => {}"  , net.train(&[f, f], &[f]));
+				println!("(f,t) => {}"  , net.train(&[f, t], &[t]));
+				println!("(t,f) => {}"  , net.train(&[t, f], &[t]));
 				println!("(t,t) => {}\n", net.train(&[t, t], &[f]));
 			} else {
 				net.train(&[f, f], &[f]);
@@ -451,9 +451,9 @@ mod tests {
 		let print = false;
 		for _ in 0..200 {
 			if print {
-				println!("(f,f) => {}", net.train(&[f, f], &[f]));
-				println!("(f,t) => {}", net.train(&[f, t], &[t]));
-				println!("(t,f) => {}", net.train(&[t, f], &[t]));
+				println!("(f,f) => {}"  , net.train(&[f, f], &[f]));
+				println!("(f,t) => {}"  , net.train(&[f, t], &[t]));
+				println!("(t,f) => {}"  , net.train(&[t, f], &[t]));
 				println!("(t,t) => {}\n", net.train(&[t, t], &[f]));
 			} else {
 				net.train(&[f, f], &[f]);
@@ -493,9 +493,9 @@ mod tests {
 		let print = false;
 		for _ in 0..200 {
 			if print {
-				println!("(f, f) => {}", net.train(&[f, f], &[f]));
-				println!("(f, t) => {}", net.train(&[f, t], &[f]));
-				println!("(t, f) => {}", net.train(&[t, f], &[f]));
+				println!("(f, f) => {}"  , net.train(&[f, f], &[f]));
+				println!("(f, t) => {}"  , net.train(&[f, t], &[f]));
+				println!("(t, f) => {}"  , net.train(&[t, f], &[f]));
 				println!("(t, t) => {}\n", net.train(&[t, t], &[t]));
 			} else {
 				net.train(&[f, f], &[f]);

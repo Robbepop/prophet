@@ -67,11 +67,13 @@ extern crate ndarray;
 extern crate ndarray_rand;
 extern crate itertools;
 
+#[macro_use]
+extern crate log;
+
 #[cfg(all(feature = "bench", test))]
 extern crate test;
 
-#[cfg(test)]
-#[macro_use]
+#[cfg(test)] #[macro_use]
 extern crate approx;
 
 pub mod traits;
@@ -80,6 +82,7 @@ pub mod neural_net;
 pub mod error_stats;
 pub mod learn_config;
 
+pub mod errors;
 pub mod activation;
 pub mod topology;
 pub mod mentor;
@@ -92,4 +95,6 @@ pub mod prelude {
 	pub use error_stats::ErrorStats;
 	pub use learn_config::LearnConfig;
 	pub use activation_fn::{BaseFn, DerivedFn, ActivationFn};
+	pub use mentor::*;
+	pub use errors::{Result, ErrorKind};
 }

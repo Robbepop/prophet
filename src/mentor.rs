@@ -11,36 +11,17 @@ use rand::*;
 
 use std::time::{SystemTime, Duration};
 
+use errors::Result;
+use errors::ErrorKind::*;
 use topology::*;
 use neural_net::*;
-use traits::{LearnRate, LearnMomentum};
-
-/// Possible errors during mentoring.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum ErrorKind {
-	/// Occures when invalid sample input sizes are recognized.
-	InvalidSampleInputSize,
-
-	/// Occures when invalid sample target sizes are recognized.
-	InvalidSampleTargetSize,
-
-	/// Occures when the learning rate is not within the valid
-	/// range of `(0,1)`.
-	InvalidLearnRate,
-
-	/// Occures when the learning momentum is not within the
-	/// valid range of `(0,1)`.
-	InvalidLearnMomentum,
-
-	/// Occures when the specified average net error
-	/// criterion is invalid.
-	InvalidRecentMSE,
-
-	/// Occures when the specified mean squared error
-	/// criterion is invalid.
-	InvalidLatestMSE,
-}
-use self::ErrorKind::*;
+use traits::{
+	LearnRate,
+	LearnMomentum,
+	Predict,
+	UpdateGradients,
+	UpdateWeights
+};
 
 /// Cirterias after which the learning process holds.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -86,7 +67,7 @@ impl Criterion {
 
 /// Learning rate configuration.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum LearnRateCfg {
+pub enum LearnRateConfig {
 	/// Automatically adapt learn rate during learning.
 	Adapt,
 
@@ -94,10 +75,10 @@ pub enum LearnRateCfg {
 	Fixed(LearnRate),
 }
 
-impl LearnRateCfg {
+impl LearnRateConfig {
 	/// Checks if this learn rate is valid.
 	fn check_validity(&self) -> Result<()> {
-		use self::LearnRateCfg::*;
+		use self::LearnRateConfig::*;
 		match *self {
 			Adapt => Ok(()),
 			Fixed(rate) => {
@@ -113,7 +94,7 @@ impl LearnRateCfg {
 
 /// Learning momentum configuration.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum LearnMomentumCfg {
+pub enum LearnMomentumConfig {
 	/// Automatically adapt learn momentum during learning.
 	Adapt,
 
@@ -121,10 +102,10 @@ pub enum LearnMomentumCfg {
 	Fixed(LearnMomentum),
 }
 
-impl LearnMomentumCfg {
+impl LearnMomentumConfig {
 	/// Checks if this learn momentum is valid.
 	fn check_validity(&self) -> Result<()> {
-		use self::LearnMomentumCfg::*;
+		use self::LearnMomentumConfig::*;
 		match *self {
 			Adapt => Ok(()),
 			Fixed(momentum) => {
@@ -135,6 +116,27 @@ impl LearnMomentumCfg {
 				}
 			}
 		}
+	}
+}
+
+/// Logging interval for logging stats during the learning process.
+/// 
+/// Default logging configuration is to never log anything.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum LogConfig {
+	/// Never log anything.
+	Never,
+
+	/// Log in intervals based on the given duration.
+	TimeSteps(Duration),
+
+	/// Log every given number of training iterations.
+	Iterations(u64)
+}
+
+impl Default for LogConfig {
+	fn default() -> Self {
+		LogConfig::Never
 	}
 }
 
@@ -164,12 +166,11 @@ enum Scheduler {
 	Iterative(u64),
 }
 
-use std::fmt::{Debug, Formatter};
-impl Debug for Scheduler {
-	fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
+impl ::std::fmt::Debug for Scheduler {
+	fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
 		use self::Scheduler::*;
 		match self {
-			&Random(_) => write!(f, "Scheduler::Random(_)"),
+			&Random(_)    => write!(f, "Scheduler::Random(_)"),
 			&Iterative(x) => write!(f, "Scheduler::Iterative({})", x),
 		}
 	}
@@ -226,9 +227,6 @@ impl SampleScheduler {
 	}
 }
 
-/// Result type that are returned by some `Mentor` functionalities.
-pub type Result<T> = ::std::result::Result<T, ErrorKind>;
-
 // /// Mentors are objects that train a given disciple structure
 // /// resulting in a prophet structure that can be used to predict
 // /// data.
@@ -245,7 +243,7 @@ pub type Result<T> = ::std::result::Result<T, ErrorKind>;
 // 	type D: Disciple;
 // 	type P: Prophet;
 
-/// A sample used to train a disciple during supervised learinng.
+/// A sample used to train a disciple during supervised learning.
 #[derive(Debug, Clone)]
 pub struct Sample {
 	/// The input parameter of this `Sample`.
@@ -255,18 +253,19 @@ pub struct Sample {
 	pub target: Array1<f32>,
 }
 
-impl<Arr> From<(Arr, Arr)> for Sample
-    where Arr: Into<Array1<f32>>
+impl<A1, A2> From<(A1, A2)> for Sample
+    where A1: Into<Vec<f32>>,
+          A2: Into<Vec<f32>>
 {
-	fn from(from: (Arr, Arr)) -> Sample {
+	fn from(from: (A1, A2)) -> Sample {
 		Sample {
-			input: from.0.into(),
-			target: from.1.into(),
+			input : Array1::from_vec(from.0.into()),
+			target: Array1::from_vec(from.1.into()),
 		}
 	}
 }
 
-/// A sample used to train a disciple during supervised learinng.
+/// A sample used to train a disciple during supervised learning.
 #[derive(Debug, Clone)]
 pub struct SampleView<'a> {
 	/// The input parameter of this `SampleView`.
@@ -291,12 +290,13 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 #[derive(Debug, Clone)]
 pub struct Builder {
 	deviation : Deviation,
-	learn_rate: LearnRateCfg,
-	learn_mom : LearnMomentumCfg,
+	learn_rate: LearnRateConfig,
+	learn_mom : LearnMomentumConfig,
 	criterion : Criterion,
 	scheduling: Scheduling,
 	disciple  : Topology,
 	samples   : Vec<Sample>,
+	log_config: LogConfig
 }
 
 impl Builder {
@@ -305,12 +305,13 @@ impl Builder {
 	pub fn new(disciple: Topology, samples: Vec<Sample>) -> Builder {
 		Builder {
 			deviation : Deviation::default(),
-			learn_rate: LearnRateCfg::Adapt,
-			learn_mom : LearnMomentumCfg::Adapt,
+			learn_rate: LearnRateConfig::Adapt,
+			learn_mom : LearnMomentumConfig::Adapt,
 			criterion : Criterion::RecentMSE(0.05),
 			scheduling: Scheduling::Random,
 			disciple  : disciple,
 			samples   : samples,
+			log_config: LogConfig::Never
 		}
 	}
 
@@ -322,19 +323,27 @@ impl Builder {
 		self
 	}
 
-	/// Use the given learn rate.
+	/// Use the given fixed learn rate.
 	///
 	/// Default learn rate is adapting behaviour.
-	pub fn learn_rate(mut self, learn_rate: LearnRateCfg) -> Builder {
-		self.learn_rate = learn_rate;
+	/// 
+	/// ***Panics*** if given learn rate is invalid!
+	pub fn learn_rate(mut self, learn_rate: f64) -> Builder {
+		self.learn_rate = LearnRateConfig::Fixed(
+			LearnRate::from_f64(learn_rate)
+				.expect("expected valid learn rate"));
 		self
 	}
 
-	/// Use the given learn momentum.
+	/// Use the given fixed learn momentum.
 	///
-	/// Default learn momentum is `0.5`.
-	pub fn learn_momentum(mut self, learn_mom: LearnMomentumCfg) -> Builder {
-		self.learn_mom = learn_mom;
+	/// Default learn momentum is fixed at `0.5`.
+	/// 
+	/// ***Panics*** if given learn momentum is invalid
+	pub fn learn_momentum(mut self, learn_momentum: f64) -> Builder {
+		self.learn_mom = LearnMomentumConfig::Fixed(
+			LearnMomentum::from_f64(learn_momentum)
+				.expect("expected valid learn momentum"));
 		self
 	}
 
@@ -343,6 +352,14 @@ impl Builder {
 	/// Default scheduling routine is to pick random samples.
 	pub fn scheduling(mut self, kind: Scheduling) -> Builder {
 		self.scheduling = kind;
+		self
+	}
+
+	/// Use the given logging configuration.
+	/// 
+	/// Default logging configuration is to never log anything.
+	pub fn log_config(mut self, config: LogConfig) -> Builder {
+		self.log_config = config;
 		self
 	}
 
@@ -481,18 +498,84 @@ struct Mentor {
 	iterations: Iteration,
 	starttime : SystemTime,
 	learn_rate: LearnRate,
-	learn_mom : LearnMomentum
+	learn_mom : LearnMomentum,
+	logger    : Logger
 }
 
 /// Config parameters for mentor objects used throughtout a training session.
 #[derive(Debug, Copy, Clone)]
 struct Config {
-	pub learn_rate: LearnRateCfg,
-	pub learn_mom : LearnMomentumCfg,
+	pub learn_rate: LearnRateConfig,
+	pub learn_mom : LearnMomentumConfig,
 	pub criterion : Criterion
 }
 
-use traits::{Predict, UpdateGradients, UpdateWeights};
+/// Status during the learning process.
+#[derive(Debug, Copy, Clone)]
+pub struct Stats {
+	/// Number of samples learned so far.
+	pub iterations  : u64,
+
+	/// Time passed since beginning of the training.
+	pub elapsed_time: Duration,
+
+	/// The latest mean squared error.
+	pub latest_mse  : f64,
+
+	/// The recent mean squared error.
+	pub recent_mse  : f64
+}
+
+/// Logger facility for stats logging during the learning process.
+#[derive(Debug, Clone)]
+enum Logger {
+	Never,
+	TimeSteps{
+		last_log: SystemTime,
+		interval: Duration
+	},
+	Iterations(u64)
+}
+
+impl From<LogConfig> for Logger {
+	fn from(config: LogConfig) -> Self {
+		use self::LogConfig::*;
+		match config {
+			Never => Logger::Never,
+			TimeSteps(duration) => Logger::TimeSteps{
+				last_log: SystemTime::now(),
+				interval: duration
+			},
+			Iterations(interval) => Logger::Iterations(interval)
+		}
+	}
+}
+
+impl Logger {
+	fn log(stats: Stats) {
+		info!("{:?}\n", stats);
+	}
+
+	fn try_log(&mut self, stats: Stats) {
+		use self::Logger::*;
+		match self {
+			&mut TimeSteps{ref mut last_log, interval} => {
+				if last_log.elapsed().expect("expected valid duration") >= interval {
+					Self::log(stats);
+					*last_log = SystemTime::now();
+				}
+			},
+			&mut Iterations(interval) => {
+				if stats.iterations % interval == 0 {
+					Self::log(stats)
+				}
+			},
+			_ => {
+				// nothing to do here!
+			}
+		}
+	}
+}
 
 impl Mentor {
 	fn is_done(&self) -> bool {
@@ -514,18 +597,21 @@ impl Mentor {
 	}
 
 	fn session(&mut self) {
-		let sample = self.scheduler.next();
 		{
-			let output = self.disciple.predict(sample.input);
-			self.deviation.update(output, sample.target);
+			let sample = self.scheduler.next();
+			{
+				let output = self.disciple.predict(sample.input);
+				self.deviation.update(output, sample.target);
+			}
+			self.disciple.update_gradients(sample.target);
+			self.disciple.update_weights(sample.input, self.learn_rate, self.learn_mom);
+			self.iterations.bump();
 		}
-		self.disciple.update_gradients(sample.target);
-		self.disciple.update_weights(sample.input, self.learn_rate, self.learn_mom);
-		self.iterations.bump();
+		self.try_log();
 	}
 
 	fn update_learn_rate(&mut self) {
-		use self::LearnRateCfg::*;
+		use self::LearnRateConfig::*;
 		match self.cfg.learn_rate {
 			Adapt => {
 				// not yet implemented
@@ -537,7 +623,7 @@ impl Mentor {
 	}
 
 	fn update_learn_momentum(&mut self) {
-		use self::LearnMomentumCfg::*;
+		use self::LearnMomentumConfig::*;
 		match self.cfg.learn_mom {
 			Adapt => {
 				// not yet implemented
@@ -548,11 +634,26 @@ impl Mentor {
 		}
 	}
 
+	fn stats(&self) -> Stats {
+		Stats{
+			iterations  : self.iterations.0,
+			elapsed_time: self.starttime.elapsed().expect("time must be valid!"),
+			latest_mse  : self.deviation.latest_mse(),
+			recent_mse  : self.deviation.recent_mse()
+		}
+	}
+
+	fn try_log(&mut self) {
+		let stats = self.stats();
+		self.logger.try_log(stats)
+	}
+
 	fn train(mut self) -> Result<NeuralNet> {
-		while !self.is_done() {
+		loop {
 			self.update_learn_rate();
 			self.update_learn_momentum();
-			self.session()
+			self.session();
+			if self.is_done() { break }
 		}
 		Ok(self.disciple)
 	}
@@ -571,18 +672,121 @@ impl From<Builder> for Mentor {
 			},
 
 			learn_rate: match builder.learn_rate {
-				LearnRateCfg::Adapt    => LearnRate::default(),
-				LearnRateCfg::Fixed(r) => r
+				LearnRateConfig::Adapt    => LearnRate::default(),
+				LearnRateConfig::Fixed(r) => r
 			},
 
 			learn_mom: match builder.learn_mom {
-				LearnMomentumCfg::Adapt    => LearnMomentum::default(),
-				LearnMomentumCfg::Fixed(m) => m
+				LearnMomentumConfig::Adapt    => LearnMomentum::default(),
+				LearnMomentumConfig::Fixed(m) => m
 			},
 
 			iterations: Iteration::default(),
 			starttime : SystemTime::now(),
 			deviation : builder.deviation,
+
+			logger: Logger::from(builder.log_config)
 		}
+	}
+}
+
+/// Creates a vector of samples.
+/// 
+/// Given the following definitions
+/// 
+/// ```rust,no_run
+/// let t =  1.0;
+/// let f = -1.0;
+/// ```
+/// ... this macro invokation ...
+/// 
+/// ```rust
+/// # #[macro_use]
+/// # extern crate prophet;
+/// # use prophet::prelude::*;
+/// # fn main() {
+/// # let t =  1.0;
+/// # let f = -1.0;
+/// let samples = samples![
+/// 	[f, f] => [f],
+/// 	[t, f] => [t],
+/// 	[f, t] => [t],
+/// 	[t, t] => [f]
+/// ];
+/// # }
+/// ```
+/// 
+/// ... will expand to this
+/// 
+/// ```rust,no_run
+/// # #[macro_use]
+/// # extern crate prophet;
+/// # use prophet::prelude::*;
+/// # fn main() {
+/// # let t =  1.0;
+/// # let f = -1.0;
+/// let samples = vec![
+/// 	Sample::from((vec![f, f], vec![f])),
+/// 	Sample::from((vec![t, f], vec![t])),
+/// 	Sample::from((vec![f, t], vec![t])),
+/// 	Sample::from((vec![t, t], vec![f])),
+/// ];
+/// # }
+/// ```
+#[macro_export]
+macro_rules! samples {
+	[
+		$(
+			[ $($i:expr),+ ] => [ $($e:expr),+ ]
+		),+
+	] => {
+		vec![$(
+			Sample::from(
+				(
+					vec![$($i),+],
+					vec![$($e),+]
+				)
+			)
+		),+]
+	};
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn xor() {
+		use activation::Activation::Tanh;
+		use mentor::Criterion::LatestMSE;
+		use mentor::LogConfig;
+		use traits::Train;
+
+		let t =  1.0;
+		let f = -1.0;
+		let samples = samples![
+			[f, f] => [f],
+			[t, f] => [t],
+			[f, t] => [t],
+			[t, t] => [f]
+		];
+
+		let mut net = Topology::input(2)
+			.layer(4, Tanh)
+			.layer(3, Tanh)
+			.output(1, Tanh)
+
+			.train(samples.clone())
+			.learn_rate(0.1)
+			.criterion(LatestMSE(0.001))
+			.log_config(LogConfig::Iterations(10))
+			.go()
+			.unwrap();
+
+		// let mse = Deviation::default();
+
+		let recent_mse = net.train(samples[0].input.view(), samples[0].target.view()).avg_error();
+		println!("recent_mse = {}", recent_mse);
+		assert!(recent_mse < 0.01);
 	}
 }

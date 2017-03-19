@@ -48,7 +48,7 @@ pub struct Topology {
 
 impl Topology {
 	/// Creates a new topology.
-	pub fn with_input(size: usize) -> TopologyBuilder {
+	pub fn input(size: usize) -> TopologyBuilder {
 		TopologyBuilder{
 			last  : size,
 			layers: vec![]
@@ -89,16 +89,16 @@ impl TopologyBuilder {
 
 	/// Adds a hidden layer to this topology with the given amount of neurons.
 	///
-	/// Bias-Neurons are not included in the given number!
-	pub fn add_layer(mut self, layer_size: usize, act: Activation) -> TopologyBuilder {
+	/// Bias-Neurons are implicitely added!
+	pub fn layer(mut self, layer_size: usize, act: Activation) -> TopologyBuilder {
 		self.push_layer(layer_size, act);
 		self
 	}
 
 	/// Adds some hidden layers to this topology with the given amount of neurons.
 	///
-	/// Bias-Neurons are not included in the given number!
-	pub fn add_layers(mut self, layers: &[(usize, Activation)]) -> TopologyBuilder {
+	/// Bias-Neurons are implicitely added!
+	pub fn layers(mut self, layers: &[(usize, Activation)]) -> TopologyBuilder {
 		for &layer in layers {
 			self.push_layer(layer.0, layer.1);
 		}
@@ -107,8 +107,8 @@ impl TopologyBuilder {
 
 	/// Finishes constructing a topology by defining its output layer neurons.
 	///
-	/// Bias-Neurons are not included in the given number!
-	pub fn with_output(mut self, layer_size: usize, act: Activation) -> Topology {
+	/// Bias-Neurons are implicitely added!
+	pub fn output(mut self, layer_size: usize, act: Activation) -> Topology {
 		self.push_layer(layer_size, act);
 		Topology {
 			layers: self.layers,
@@ -123,13 +123,13 @@ mod tests {
 	#[test]
 	fn construction() {
 		use self::Activation::*;
-		let dis = Topology::with_input(2)
-			.add_layer(5, Sigmoid)
-			.add_layers(&[
+		let dis = Topology::input(2)
+			.layer(5, Sigmoid)
+			.layers(&[
 				(10, Identity),
 				(10, ReLU)
 			])
-			.with_output(5, Tanh);
+			.output(5, Tanh);
 		let mut it = dis.iter_layers()
 			.map(|&size| size);
 		assert_eq!(it.next(), Some(Layer::new(2, 5, Sigmoid)));

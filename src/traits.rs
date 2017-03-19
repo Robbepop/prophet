@@ -2,8 +2,8 @@
 
 use ndarray::*;
 use error_stats::ErrorStats;
-use mentor::{Result};
-use mentor::ErrorKind::{InvalidLearnRate, InvalidLearnMomentum};
+use errors::Result;
+use errors::ErrorKind::{InvalidLearnRate, InvalidLearnMomentum};
 
 /// Learn rate.
 #[derive(Debug, Copy, Clone, PartialEq)]
