@@ -892,7 +892,7 @@ mod tests {
 	}
 
 	#[test]
-	fn train_max() {
+	fn train_compare() {
 		use activation::Activation::Tanh;
 
 		let count_learn_samples = 10_000;
@@ -901,7 +901,7 @@ mod tests {
 		let outputs = 1;
 
 		fn mapper(inputs: &[f32]) -> Vec<f32> {
-			if inputs[0] >= inputs[1] {
+			if inputs[0] < inputs[1] {
 				vec![-1.0]
 			}
 			else {

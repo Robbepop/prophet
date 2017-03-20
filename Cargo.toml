@@ -25,3 +25,7 @@ approx = "0.1.1"
 
 [features]
 bench = []
+
+[badges]
+travis-ci = { repository = "https://github.com/robbepop/prophet" }
+# appveyor = { repository = "https://github.com/robbepop/prophet", branch = "master", service = "github" }
