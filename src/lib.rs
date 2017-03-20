@@ -106,21 +106,26 @@ extern crate test;
 #[cfg(test)] #[macro_use]
 extern crate approx;
 
-pub mod traits;
-pub mod neural_net;
+mod traits;
+mod neural_net;
+mod activation;
+mod errors;
 
-pub mod errors;
-pub mod activation;
 pub mod topology;
 pub mod mentor;
+
+pub use activation::Activation;
+pub use neural_net::NeuralNet;
+pub use traits::{LearnRate, LearnMomentum, Predict};
+pub use errors::{Result, ErrorKind};
 
 /// The prophet prelude publicly imports all propet modules the user needs in order to
 /// create, train and use neural networks.
 pub mod prelude {
 	pub use activation::Activation;
 	pub use neural_net::NeuralNet;
-	pub use mentor::{Builder, Sample, SampleView, LogConfig, Scheduling, Criterion};
-	pub use errors::{Result, ErrorKind};
-	pub use topology::{Topology, TopologyBuilder, Layer};
 	pub use traits::{LearnRate, LearnMomentum, Predict};
+	pub use topology::{Topology, TopologyBuilder, Layer};
+	pub use mentor::{Mentor, Sample, SampleView, LogConfig, Scheduling, Criterion};
+	pub use errors::{Result, ErrorKind};
 }

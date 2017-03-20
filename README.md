@@ -8,6 +8,8 @@ PROPHET
 
 A simple neural net implementation written in Rust with a focus on cache-efficiency and sequential performance.
 
+Currently only supports supervised learning with fully connected layers.
+
 Take a look into the [documentation](https://docs.rs/prophet) to get to know how to use it!
 
 Link to [crates.io](https://crates.io/crates/prophet).

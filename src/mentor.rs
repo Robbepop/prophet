@@ -267,7 +267,9 @@ impl<A1, A2> From<(A1, A2)> for Sample
 	}
 }
 
-/// A sample used to train a disciple during supervised learning.
+/// A sample view used to train a disciple during supervised learning.
+/// 
+/// Views are non-owning.
 #[derive(Debug, Clone)]
 pub struct SampleView<'a> {
 	/// The input parameter of this `SampleView`.
@@ -286,11 +288,11 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 	}
 }
 
-/// Builder follows the builder pattern to incrementally
-/// build properties for the real Mentor and delay computations
-/// until the `go` routine is called.
+/// Mentor follows the builder pattern to incrementally
+/// build properties for the training session and delay any
+/// expensive computations until the go routine is called.
 #[derive(Debug, Clone)]
-pub struct Builder {
+pub struct Mentor {
 	deviation : Deviation,
 	learn_rate: LearnRateConfig,
 	learn_mom : LearnMomentumConfig,
@@ -301,11 +303,11 @@ pub struct Builder {
 	log_config: LogConfig
 }
 
-impl Builder {
+impl Mentor {
 	/// Creates a new mentor for the given disciple and
 	/// with the given sample collection (training data).
-	pub fn new(disciple: Topology, samples: Vec<Sample>) -> Builder {
-		Builder {
+	pub fn new(disciple: Topology, samples: Vec<Sample>) -> Self {
+		Mentor {
 			deviation : Deviation::default(),
 			learn_rate: LearnRateConfig::Adapt,
 			learn_mom : LearnMomentumConfig::Adapt,
@@ -320,7 +322,7 @@ impl Builder {
 	/// Use the given criterion.
 	///
 	/// Default criterion is `AvgNetError(0.05)`.
-	pub fn criterion(mut self, criterion: Criterion) -> Builder {
+	pub fn criterion(mut self, criterion: Criterion) -> Self {
 		self.criterion = criterion;
 		self
 	}
@@ -330,7 +332,7 @@ impl Builder {
 	/// Default learn rate is adapting behaviour.
 	/// 
 	/// ***Panics*** if given learn rate is invalid!
-	pub fn learn_rate(mut self, learn_rate: f64) -> Builder {
+	pub fn learn_rate(mut self, learn_rate: f64) -> Self {
 		self.learn_rate = LearnRateConfig::Fixed(
 			LearnRate::from_f64(learn_rate)
 				.expect("expected valid learn rate"));
@@ -342,7 +344,7 @@ impl Builder {
 	/// Default learn momentum is fixed at `0.5`.
 	/// 
 	/// ***Panics*** if given learn momentum is invalid
-	pub fn learn_momentum(mut self, learn_momentum: f64) -> Builder {
+	pub fn learn_momentum(mut self, learn_momentum: f64) -> Self {
 		self.learn_mom = LearnMomentumConfig::Fixed(
 			LearnMomentum::from_f64(learn_momentum)
 				.expect("expected valid learn momentum"));
@@ -352,7 +354,7 @@ impl Builder {
 	/// Use the given scheduling routine.
 	///
 	/// Default scheduling routine is to pick random samples.
-	pub fn scheduling(mut self, kind: Scheduling) -> Builder {
+	pub fn scheduling(mut self, kind: Scheduling) -> Self {
 		self.scheduling = kind;
 		self
 	}
@@ -360,7 +362,7 @@ impl Builder {
 	/// Use the given logging configuration.
 	/// 
 	/// Default logging configuration is to never log anything.
-	pub fn log_config(mut self, config: LogConfig) -> Builder {
+	pub fn log_config(mut self, config: LogConfig) -> Self {
 		self.log_config = config;
 		self
 	}
@@ -392,14 +394,14 @@ impl Builder {
 		self.learn_rate.check_validity()?;
 		self.learn_mom.check_validity()?;
 		self.validate_samples()?;
-		Mentor::from(self).train()
+		Training::from(self).train()
 	}
 }
 
 impl Topology {
 	/// Iterates over the layer sizes of this Disciple's topology definition.
-	pub fn train(self, samples: Vec<Sample>) -> Builder {
-		Builder::new(self, samples)
+	pub fn train(self, samples: Vec<Sample>) -> Mentor {
+		Mentor::new(self, samples)
 	}
 }
 
@@ -489,21 +491,6 @@ impl Iteration {
 	}
 }
 
-/// A Mentor is an object type that is able to train a Disciple
-/// to become a fully qualified and useable Prophet.
-#[derive(Debug, Clone)]
-struct Mentor {
-	cfg       : Config,
-	disciple  : NeuralNet,
-	scheduler : SampleScheduler,
-	deviation : Deviation,
-	iterations: Iteration,
-	starttime : SystemTime,
-	learn_rate: LearnRate,
-	learn_mom : LearnMomentum,
-	logger    : Logger
-}
-
 /// Config parameters for mentor objects used throughtout a training session.
 #[derive(Debug, Copy, Clone)]
 struct Config {
@@ -579,7 +566,23 @@ impl Logger {
 	}
 }
 
-impl Mentor {
+/// A training session trains a neural network and stops only
+/// after the neural networks training stats meet certain 
+/// predefined criteria.
+#[derive(Debug, Clone)]
+struct Training {
+	cfg       : Config,
+	disciple  : NeuralNet,
+	scheduler : SampleScheduler,
+	deviation : Deviation,
+	iterations: Iteration,
+	starttime : SystemTime,
+	learn_rate: LearnRate,
+	learn_mom : LearnMomentum,
+	logger    : Logger
+}
+
+impl Training {
 	fn is_done(&self) -> bool {
 		use mentor::Criterion::*;
 		match self.cfg.criterion {
@@ -661,9 +664,9 @@ impl Mentor {
 	}
 }
 
-impl From<Builder> for Mentor {
-	fn from(builder: Builder) -> Mentor {
-		Mentor {
+impl From<Mentor> for Training {
+	fn from(builder: Mentor) -> Training {
+		Training {
 			disciple : NeuralNet::from(builder.disciple),
 			scheduler: SampleScheduler::from_samples(builder.scheduling, builder.samples),
 

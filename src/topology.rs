@@ -48,7 +48,13 @@ pub struct Topology {
 
 impl Topology {
 	/// Creates a new topology.
+	/// 
+	/// # Panics
+	/// 
+	/// If size is zero.
 	pub fn input(size: usize) -> TopologyBuilder {
+		assert!(size >= 1, "cannot define a zero-sized input layer");
+
 		TopologyBuilder{
 			last  : size,
 			layers: vec![]
@@ -83,6 +89,8 @@ impl Topology {
 
 impl TopologyBuilder {
 	fn push_layer(&mut self, layer_size: usize, act: Activation) {
+		assert!(layer_size >= 1, "cannot define a zero-sized hidden layer");
+
 		self.layers.push(Layer::new(self.last, layer_size, act));
 		self.last = layer_size;
 	}
@@ -90,6 +98,10 @@ impl TopologyBuilder {
 	/// Adds a hidden layer to this topology with the given amount of neurons.
 	///
 	/// Bias-Neurons are implicitely added!
+	/// 
+	/// # Panics
+	/// 
+	/// If `layer_size` is zero.
 	pub fn layer(mut self, layer_size: usize, act: Activation) -> TopologyBuilder {
 		self.push_layer(layer_size, act);
 		self
@@ -98,6 +110,10 @@ impl TopologyBuilder {
 	/// Adds some hidden layers to this topology with the given amount of neurons.
 	///
 	/// Bias-Neurons are implicitely added!
+	/// 
+	/// # Panics
+	/// 
+	/// If any of the specified layer sizes is zero.
 	pub fn layers(mut self, layers: &[(usize, Activation)]) -> TopologyBuilder {
 		for &layer in layers {
 			self.push_layer(layer.0, layer.1);
@@ -108,7 +124,13 @@ impl TopologyBuilder {
 	/// Finishes constructing a topology by defining its output layer neurons.
 	///
 	/// Bias-Neurons are implicitely added!
+	/// 
+	/// # Panics
+	/// 
+	/// If `layer_size` is zero.
 	pub fn output(mut self, layer_size: usize, act: Activation) -> Topology {
+		assert!(layer_size >= 1, "cannot define a zero-sized output layer");
+
 		self.push_layer(layer_size, act);
 		Topology {
 			layers: self.layers,
@@ -122,9 +144,9 @@ mod tests {
 
 	#[test]
 	fn construction() {
-		use self::Activation::*;
+		use self::Activation::{Logistic, Identity, ReLU, Tanh};
 		let dis = Topology::input(2)
-			.layer(5, Sigmoid)
+			.layer(5, Logistic)
 			.layers(&[
 				(10, Identity),
 				(10, ReLU)
@@ -132,7 +154,7 @@ mod tests {
 			.output(5, Tanh);
 		let mut it = dis.iter_layers()
 			.map(|&size| size);
-		assert_eq!(it.next(), Some(Layer::new(2, 5, Sigmoid)));
+		assert_eq!(it.next(), Some(Layer::new(2, 5, Logistic)));
 		assert_eq!(it.next(), Some(Layer::new(5, 10, Identity)));
 		assert_eq!(it.next(), Some(Layer::new(10, 10, ReLU)));
 		assert_eq!(it.next(), Some(Layer::new(10, 5, Tanh)));

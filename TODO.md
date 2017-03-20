@@ -3,7 +3,6 @@ TODO-LIST
 
 This is the list of things that are planned for the next updates:
 
- - Rewrite NeuralNetwork so that you cannot let it predict data before it hasn't learned anything.
  - Improved layer architecture to support convolutional layers.
  - Serialization and deserialization for neural networks via Serde.
  - Improved error handling: Less panics, more Results!
