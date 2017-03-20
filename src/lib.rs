@@ -62,29 +62,27 @@
 //! A more minimalistic example code for the same logical-OR operation:
 //!
 //! ```rust
-//! #[macro_use]
-//! extern crate prophet;
-//! 
-//! use prophet::prelude::*;
-//! use Activation::Tanh;
-//!
+//! # #[macro_use]
+//! # extern crate prophet;
+//! # use prophet::prelude::*;
+//! # use Activation::Tanh;
 //! # fn main() {
-//! let (t, f)  = (1.0, -1.0);
-//! let train_samples = samples![
-//! 	[f, f] => [f], // ⊥ ∧ ⊥ → ⊥
-//! 	[f, t] => [t], // ⊥ ∧ ⊤ → ⊤
-//! 	[t, f] => [t], // ⊤ ∧ ⊥ → ⊤
-//! 	[t, t] => [t]  // ⊤ ∧ ⊤ → ⊤
-//! ];
-//! 
+//! # let (t, f)  = (1.0, -1.0);
 //! // create the topology for our neural network
 //! let mut net = Topology::input(2) // has two input neurons
-//! 	.layer(3, Tanh)          // with 3 neurons in the first hidden layer
-//! 	.layer(2, Tanh)          // and 2 neurons in the second hidden layer
-//! 	.output(1, Tanh)         // and 1 neuron in the output layer
+//! 	.layer(3, Tanh)              // with 3 neurons in the first hidden layer
+//! 	.layer(2, Tanh)              // and 2 neurons in the second hidden layer
+//! 	.output(1, Tanh)             // and 1 neuron in the output layer
 //!
-//! 	.train(train_samples).go() // start the training session
-//! 	.unwrap(); // be ashamed to unwrap a Result
+//! 	// train it for the given samples
+//! 	.train(samples![
+//! 		[f, f] => [f], // ⊥ ∧ ⊥ → ⊥
+//! 		[f, t] => [t], // ⊥ ∧ ⊤ → ⊤
+//! 		[t, f] => [t], // ⊤ ∧ ⊥ → ⊤
+//! 		[t, t] => [t]  // ⊤ ∧ ⊤ → ⊤
+//! 	])
+//! 	.go()      // start the training session
+//! 	.unwrap(); // and unwrap the Result
 //! 
 //! assert_eq!(net.predict(&[f, f])[0].round(), f);
 //! assert_eq!(net.predict(&[f, t])[0].round(), t);
@@ -116,7 +114,7 @@ pub mod mentor;
 
 pub use activation::Activation;
 pub use neural_net::NeuralNet;
-pub use traits::{LearnRate, LearnMomentum, Predict};
+pub use traits::{Predict};
 pub use errors::{Result, ErrorKind};
 
 /// The prophet prelude publicly imports all propet modules the user needs in order to
