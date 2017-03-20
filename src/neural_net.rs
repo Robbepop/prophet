@@ -303,28 +303,37 @@ mod bench {
 	use super::*;
 	use test::{
 		Bencher,
-		// black_box
+		black_box
 	};
 
-	use learn_config::LearnConfig;
-	use activation_fn::ActivationFn;
-	use super::NeuralNet;
+	fn mk_giant_nn() -> NeuralNet {
+		use Activation::Tanh;
+		NeuralNet::from_topology(
+			Topology::input(2)
+				.layers(&[
+					(1000, Tanh),
+					(1000, Tanh),
+					(1000, Tanh),
+					(1000, Tanh),
+					(1000, Tanh),
+					(1000, Tanh),
+					(1000, Tanh),
+					(1000, Tanh),
+					(1000, Tanh),
+					(1000, Tanh)
+				])
+				.output(1, Tanh))
+	}
 
 	#[bench]
-	fn bench_giant(bencher: &mut Bencher) {
-
-		// TODO
-
-		// let config = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::tanh());
-		// let mut net = NeuralNet::new(config, &[2, 1000, 1000, 1]);
-		// let f = -1.0;
-		// let t =  1.0;
-
-		// bencher.iter(|| {
-		// 	net.train(&[f, f], &[f]);
-		// 	net.train(&[f, t], &[f]);
-		// 	net.train(&[t, f], &[f]);
-		// 	net.train(&[t, t], &[t]);
-		// });
+	fn predict(bencher: &mut Bencher) {
+		let mut net = mk_giant_nn();
+		let (t, f)  = (1.0, -1.0);
+		bencher.iter(|| {
+			black_box(net.predict(&[f, f]));
+			black_box(net.predict(&[f, t]));
+			black_box(net.predict(&[t, f]));
+			black_box(net.predict(&[t, t]));
+		});
 	}
 }
