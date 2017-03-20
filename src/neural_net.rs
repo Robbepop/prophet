@@ -81,7 +81,7 @@ impl FullyConnectedLayer {
 		let shape = Shape::from(Dim([outputs, inputs]));
 
 		FullyConnectedLayer {
-			weights:       Array2::random(shape, Range::new(0.0, 1.0)),
+			weights:       Array2::random(shape, Range::new(-1.0, 1.0)),
 			delta_weights: Array2::default(shape),
 			outputs:       Array1::default(outputs),
 			gradients:     Array1::zeros(count_gradients),

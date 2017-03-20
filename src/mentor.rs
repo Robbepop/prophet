@@ -700,7 +700,9 @@ impl From<Mentor> for Training {
 /// Given the following definitions
 /// 
 /// ```rust,no_run
+/// # #[allow(unused_variables)]
 /// let t =  1.0;
+/// # #[allow(unused_variables)]
 /// let f = -1.0;
 /// ```
 /// ... this macro invokation ...
@@ -712,6 +714,7 @@ impl From<Mentor> for Training {
 /// # fn main() {
 /// # let t =  1.0;
 /// # let f = -1.0;
+/// # #[allow(unused_variables)]
 /// let samples = samples![
 /// 	[f, f] => [f],
 /// 	[t, f] => [t],
@@ -724,12 +727,12 @@ impl From<Mentor> for Training {
 /// ... will expand to this
 /// 
 /// ```rust,no_run
-/// # #[macro_use]
 /// # extern crate prophet;
 /// # use prophet::prelude::*;
 /// # fn main() {
 /// # let t =  1.0;
 /// # let f = -1.0;
+/// # #[allow(unused_variables)]
 /// let samples = vec![
 /// 	Sample::from((vec![f, f], vec![f])),
 /// 	Sample::from((vec![t, f], vec![t])),
@@ -785,7 +788,7 @@ mod tests {
 	}
 
 	#[test]
-	fn xor() {
+	fn train_xor() {
 		use activation::Activation::Tanh;
 
 		let (t, f) = (1.0, -1.0);
@@ -802,6 +805,8 @@ mod tests {
 			.output(1, Tanh)
 
 			.train(samples.clone())
+			.learn_rate(0.6)
+			// .log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
 			.go()
 			.unwrap();
 
