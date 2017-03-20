@@ -539,6 +539,7 @@ impl From<LogConfig> for Logger {
 impl Logger {
 	fn log(stats: Stats) {
 		info!("{:?}\n", stats);
+		println!("{:?}", stats)
 	}
 
 	fn try_log(&mut self, stats: Stats) {
@@ -744,12 +745,40 @@ mod tests {
 		}
 	}
 
+	/// Validate given samples for the given net with rounded mode.
 	fn validate_rounded(net: NeuralNet, samples: Vec<Sample>) {
 		validate_impl(net, samples, true)
 	}
 
+	/// Validate given samples for the given net with exact precision.
 	fn validate_exact(net: NeuralNet, samples: Vec<Sample>) {
 		validate_impl(net, samples, false)
+	}
+
+	/// Create a sample collection with given amount of samples,
+	/// each of given input and output size.
+	/// Also has a mapper to specify how the expected vector
+	/// values are calculated.
+	fn gen_random_samples<F>(amount: usize,
+	                         input_size: usize,
+	                         output_size: usize,
+	                         mapping: F) -> Vec<Sample>
+		where F: Fn(&[f32]) -> Vec<f32>
+	{
+		let mut rng = thread_rng();
+		let mut samples = Vec::with_capacity(amount);
+		for _ in 0..amount {
+			let inputs = rng.gen_iter::<Open01<f32>>()
+				.take(input_size)
+				.map(|Open01(val)| val)
+				.collect::<Vec<f32>>();
+			assert_eq!(inputs.len(), input_size);
+			let outputs = mapping(&inputs);
+			assert_eq!(outputs.len(), output_size);
+			samples.push(Sample::from((inputs, outputs)))
+		}
+		assert_eq!(samples.len(), amount);
+		samples
 	}
 
 	#[test]
@@ -836,36 +865,62 @@ mod tests {
 	#[test]
 	fn train_triple_add() {
 		use activation::Activation::Identity;
-		use rand::*;
 
 		let count_learn_samples = 10_000;
 		let count_test_samples  = 10;
+		let inputs  = 3;
+		let outputs = 1;
 
-		let mut rng = thread_rng();
-
-		// generate learn samples
-		let mut learn_samples = Vec::with_capacity(count_learn_samples);
-		for _ in 0..count_learn_samples {
-			let a = rng.next_f32();
-			let b = rng.next_f32();
-			let c = rng.next_f32();
-			learn_samples.push(Sample::from((vec![a, b, c], vec![a + b + c])))
+		fn mapper(inputs: &[f32]) -> Vec<f32> {
+			vec![inputs[0] + inputs[1] + inputs[2]]
 		}
 
-		// generate test samples
-		let mut test_samples = Vec::with_capacity(count_test_samples);
-		for _ in 0..count_test_samples {
-			let a = rng.next_f32();
-			let b = rng.next_f32();
-			let c = rng.next_f32();
-			test_samples.push(Sample::from((vec![a, b, c], vec![a + b + c])))
-		}
+		let learn_samples =
+			gen_random_samples(count_learn_samples, inputs, outputs, mapper);
+		let test_samples =
+			gen_random_samples(count_test_samples, inputs, outputs, mapper);
 
-		let net = Topology::input(3)
-			.output(1, Identity)
+		let net = Topology::input(inputs)
+			.output(outputs, Identity)
 
 			.train(learn_samples)
 			.log_config(LogConfig::Iterations(100))
+			.go()
+			.unwrap();
+
+		validate_exact(net, test_samples)
+	}
+
+	#[test]
+	fn train_max() {
+		use activation::Activation::Tanh;
+
+		let count_learn_samples = 10_000;
+		let count_test_samples  = 10;
+		let inputs  = 2;
+		let outputs = 1;
+
+		fn mapper(inputs: &[f32]) -> Vec<f32> {
+			if inputs[0] >= inputs[1] {
+				vec![-1.0]
+			}
+			else {
+				vec![1.0]
+			}
+		}
+
+		let learn_samples =
+			gen_random_samples(count_learn_samples, inputs, outputs, mapper);
+		let test_samples =
+			gen_random_samples(count_test_samples, inputs, outputs, mapper);
+
+		let net = Topology::input(inputs)
+			.layer(4, Tanh)
+			.layer(3, Tanh)
+			.output(outputs, Tanh)
+
+			.train(learn_samples)
+			.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
 			.go()
 			.unwrap();
 
