@@ -250,12 +250,6 @@ impl NeuralNet {
 	}
 }
 
-impl From<Topology> for NeuralNet {
-	fn from(topology: Topology) -> Self {
-		NeuralNet::from_topology(topology)
-	}
-}
-
 impl<'b, A> Predict<A> for NeuralNet
 	where A: Into<ArrayView1<'b, f32>>
 {
@@ -306,7 +300,7 @@ mod bench {
 		black_box
 	};
 
-	fn mk_giant_nn() -> NeuralNet {
+	fn create_giant_net() -> NeuralNet {
 		use Activation::Tanh;
 		NeuralNet::from_topology(
 			Topology::input(2)
@@ -327,7 +321,7 @@ mod bench {
 
 	#[bench]
 	fn predict(bencher: &mut Bencher) {
-		let mut net = mk_giant_nn();
+		let mut net = create_giant_net();
 		let (t, f)  = (1.0, -1.0);
 		bencher.iter(|| {
 			black_box(net.predict(&[f, f]));

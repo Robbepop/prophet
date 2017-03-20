@@ -75,23 +75,6 @@ pub enum LearnRateConfig {
 	Fixed(LearnRate),
 }
 
-impl LearnRateConfig {
-	/// Checks if this learn rate is valid.
-	fn check_validity(&self) -> Result<()> {
-		use self::LearnRateConfig::*;
-		match *self {
-			Adapt => Ok(()),
-			Fixed(rate) => {
-				if rate.0 > 0.0 && rate.0 < 1.0 {
-					Ok(())
-				} else {
-					Err(InvalidLearnRate)
-				}
-			}
-		}
-	}
-}
-
 /// Learning momentum configuration.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum LearnMomentumConfig {
@@ -100,23 +83,6 @@ pub enum LearnMomentumConfig {
 
 	/// Use the given fixed learn momentum.
 	Fixed(LearnMomentum),
-}
-
-impl LearnMomentumConfig {
-	/// Checks if this learn momentum is valid.
-	fn check_validity(&self) -> Result<()> {
-		use self::LearnMomentumConfig::*;
-		match *self {
-			Adapt => Ok(()),
-			Fixed(momentum) => {
-				if momentum.0 > 0.0 && momentum.0 < 1.0 {
-					Ok(())
-				} else {
-					Err(InvalidLearnMomentum)
-				}
-			}
-		}
-	}
 }
 
 /// Logging interval for logging stats during the learning process.
@@ -181,7 +147,7 @@ impl Scheduler {
 	fn from_kind(kind: Scheduling) -> Self {
 		use self::Scheduling::*;
 		match kind {
-			Random => Scheduler::Random(thread_rng()),
+			Random    => Scheduler::Random(thread_rng()),
 			Iterative => Scheduler::Iterative(0),
 		}
 	}
@@ -288,6 +254,13 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 	}
 }
 
+impl Topology {
+	/// Iterates over the layer sizes of this Disciple's topology definition.
+	pub fn train(self, samples: Vec<Sample>) -> Mentor {
+		Mentor::new(self, samples)
+	}
+}
+
 /// Mentor follows the builder pattern to incrementally
 /// build properties for the training session and delay any
 /// expensive computations until the go routine is called.
@@ -391,17 +364,40 @@ impl Mentor {
 	/// errors occured while training it.
 	pub fn go(self) -> Result<NeuralNet> {
 		self.criterion.check_validity()?;
-		self.learn_rate.check_validity()?;
-		self.learn_mom.check_validity()?;
 		self.validate_samples()?;
-		Training::from(self).train()
+		self.into_training().start()
 	}
-}
 
-impl Topology {
-	/// Iterates over the layer sizes of this Disciple's topology definition.
-	pub fn train(self, samples: Vec<Sample>) -> Mentor {
-		Mentor::new(self, samples)
+	/// Consumes this mentor into a training session.
+	/// 
+	/// This process computes all required structures for the training session.
+	fn into_training(self) -> Training {
+		Training {
+			disciple : NeuralNet::from_topology(self.disciple),
+			scheduler: SampleScheduler::from_samples(self.scheduling, self.samples),
+
+			cfg: Config{
+				learn_rate: self.learn_rate,
+				learn_mom : self.learn_mom,
+				criterion : self.criterion
+			},
+
+			learn_rate: match self.learn_rate {
+				LearnRateConfig::Adapt    => LearnRate::default(),
+				LearnRateConfig::Fixed(r) => r
+			},
+
+			learn_mom: match self.learn_mom {
+				LearnMomentumConfig::Adapt    => LearnMomentum::default(),
+				LearnMomentumConfig::Fixed(m) => m
+			},
+
+			iterations: Iteration::default(),
+			starttime : SystemTime::now(),
+			deviation : self.deviation,
+
+			logger: Logger::from(self.log_config)
+		}
 	}
 }
 
@@ -653,7 +649,7 @@ impl Training {
 		self.logger.try_log(stats)
 	}
 
-	fn train(mut self) -> Result<NeuralNet> {
+	fn start(mut self) -> Result<NeuralNet> {
 		loop {
 			self.update_learn_rate();
 			self.update_learn_momentum();
@@ -661,37 +657,6 @@ impl Training {
 			if self.is_done() { break }
 		}
 		Ok(self.disciple)
-	}
-}
-
-impl From<Mentor> for Training {
-	fn from(builder: Mentor) -> Training {
-		Training {
-			disciple : NeuralNet::from(builder.disciple),
-			scheduler: SampleScheduler::from_samples(builder.scheduling, builder.samples),
-
-			cfg: Config{
-				learn_rate: builder.learn_rate,
-				learn_mom : builder.learn_mom,
-				criterion : builder.criterion
-			},
-
-			learn_rate: match builder.learn_rate {
-				LearnRateConfig::Adapt    => LearnRate::default(),
-				LearnRateConfig::Fixed(r) => r
-			},
-
-			learn_mom: match builder.learn_mom {
-				LearnMomentumConfig::Adapt    => LearnMomentum::default(),
-				LearnMomentumConfig::Fixed(m) => m
-			},
-
-			iterations: Iteration::default(),
-			starttime : SystemTime::now(),
-			deviation : builder.deviation,
-
-			logger: Logger::from(builder.log_config)
-		}
 	}
 }
 
