@@ -3,62 +3,92 @@
 
 #![warn(missing_docs)]
 
-//! A neural net implementation focused on performance.
-//!
-//! This library features a simple interface to a neural net,
-//! which exists mainly of two functions that are defined as traits within the module ```traits```.
-//!
-//! A neural network can be trained by giving it some input data and some expected target values.
-//! This is called managed learning because the user of the library has to feed the network with the
-//! expected results.
-//! After several iterations the neural net might improve itself
-//! and will eventually improve at predicting the expected results.
-//!
-//! ```rust,no_run
-//! # use prophet::error_stats::ErrorStats;
-//! # trait Disciple {
-//! 	fn train(&mut self, input: &[f32], expected: &[f32]) -> ErrorStats;
-//! # }
-//! ```
-//!
-//! After a successful training session, the user might be able
-//! to use the neural net to predict expected values.
-//!
-//! ```rust,no_run
-//! # trait Prophet {
-//! 	fn predict(&mut self, input: &[f32]) -> &[f32];
-//! # }
-//! ```
-//!
+//! A neural net implementation focused on sequential performance.
+//! 
+//! The API works as follows:  
+//! 
+//! * The general shape of neural networks is defined with a topology.
+//! * Topologies can be consumed by a mentor to train it with given training samples.
+//! * After successful training the neural net's `predict` method can be used to predict data.
+//! 
+//! Currently this library only supports supervised learning and fully connected layers.
+//! 
 //! # Example
 //!
 //! The code below demonstrates how to train a neural net to be a logical-OR operator.
 //!
 //! ```rust
+//! #[macro_use]
+//! extern crate prophet;
+//! 
 //! use prophet::prelude::*;
+//! use Activation::Tanh;
 //!
-//! let config  = LearnConfig::new(
-//! 	0.25,                // learning_rate
-//! 	0.5,                 // learning_momentum
-//! 	ActivationFn::tanh() // activation function + derivate
-//! );
-//! let mut net = NeuralNet::new(config, &[2, 3, 2, 1]);
-//! // layer_sizes: - input layer which expects two values
-//! //              - two hidden layers with 3 and 2 neurons
-//! //              - output layer with one neuron
+//! # fn main() {
+//! let (t, f)  = (1.0, -1.0);
+//! // static samples are easily generated with this macro!
+//! let train_samples = samples![
+//! 	[f, f] => [f], // ⊥ ∧ ⊥ → ⊥
+//! 	[f, t] => [t], // ⊥ ∧ ⊤ → ⊤
+//! 	[t, f] => [t], // ⊤ ∧ ⊥ → ⊤
+//! 	[t, t] => [t]  // ⊤ ∧ ⊤ → ⊤
+//! ];
+//! 
+//! // create the topology for our neural network
+//! let top = Topology::input(2) // has two input neurons
+//! 	.layer(3, Tanh)          // with 3 neurons in the first hidden layer
+//! 	.layer(2, Tanh)          // and 2 neurons in the second hidden layer
+//! 	.output(1, Tanh);        // and 1 neuron in the output layer
+//! 
+//! let mut net = top.train(train_samples)
+//! 	.learn_rate(0.25)    // use the given learn rate
+//! 	.learn_momentum(0.6) // use the given learn momentum
+//! 	.log_config(LogConfig::Iterations(100)) // log state every 100 iterations
+//! 	.scheduling(Scheduling::Random)         // use random sample scheduling
+//! 	.criterion(Criterion::RecentMSE(0.05))  // train until the recent MSE is below 0.05
+//! 
+//! 	.go()      // start the training session
+//! 	.unwrap(); // be ashamed to unwrap a Result
+//! 
+//! // PROFIT! now you can use the neural network to predict data!
+//! 
+//! assert_eq!(net.predict(&[f, f])[0].round(), f);
+//! assert_eq!(net.predict(&[f, t])[0].round(), t);
+//! # }
+//! ```
+//! 
+//! # Example
+//! 
+//! A more minimalistic example code for the same logical-OR operation:
 //!
-//! // now train the neural net how to be an OR-operator
-//! let f = -1.0; // represents false
-//! let t =  1.0; // represents true
-//! for _ in 0..1000 { // make some iterations
-//! 	net.train(&[f, f], &[f]); // ⊥ ∧ ⊥ → ⊥
-//! 	net.train(&[f, t], &[t]); // ⊥ ∧ ⊤ → ⊤
-//! 	net.train(&[t, f], &[t]); // ⊤ ∧ ⊥ → ⊤
-//! 	net.train(&[t, t], &[t]); // ⊤ ∧ ⊤ → ⊤
-//! }
-//! // check if the neural net has successfully learned it by checking how close
-//! // the latest ```avg_error``` is to ```0.0```:
-//! assert!(net.latest_error_stats().avg_error() < 0.05);
+//! ```rust
+//! #[macro_use]
+//! extern crate prophet;
+//! 
+//! use prophet::prelude::*;
+//! use Activation::Tanh;
+//!
+//! # fn main() {
+//! let (t, f)  = (1.0, -1.0);
+//! let train_samples = samples![
+//! 	[f, f] => [f], // ⊥ ∧ ⊥ → ⊥
+//! 	[f, t] => [t], // ⊥ ∧ ⊤ → ⊤
+//! 	[t, f] => [t], // ⊤ ∧ ⊥ → ⊤
+//! 	[t, t] => [t]  // ⊤ ∧ ⊤ → ⊤
+//! ];
+//! 
+//! // create the topology for our neural network
+//! let mut net = Topology::input(2) // has two input neurons
+//! 	.layer(3, Tanh)          // with 3 neurons in the first hidden layer
+//! 	.layer(2, Tanh)          // and 2 neurons in the second hidden layer
+//! 	.output(1, Tanh)         // and 1 neuron in the output layer
+//!
+//! 	.train(train_samples).go() // start the training session
+//! 	.unwrap(); // be ashamed to unwrap a Result
+//! 
+//! assert_eq!(net.predict(&[f, f])[0].round(), f);
+//! assert_eq!(net.predict(&[f, t])[0].round(), t);
+//! # }
 //! ```
 
 extern crate rand;
@@ -77,10 +107,7 @@ extern crate test;
 extern crate approx;
 
 pub mod traits;
-pub mod activation_fn;
 pub mod neural_net;
-pub mod error_stats;
-pub mod learn_config;
 
 pub mod errors;
 pub mod activation;
@@ -90,11 +117,10 @@ pub mod mentor;
 /// The prophet prelude publicly imports all propet modules the user needs in order to
 /// create, train and use neural networks.
 pub mod prelude {
-	pub use traits::{Train};
+	pub use activation::Activation;
 	pub use neural_net::NeuralNet;
-	pub use error_stats::ErrorStats;
-	pub use learn_config::LearnConfig;
-	pub use activation_fn::{BaseFn, DerivedFn, ActivationFn};
-	pub use mentor::*;
+	pub use mentor::{Builder, Sample, SampleView, LogConfig, Scheduling, Criterion};
 	pub use errors::{Result, ErrorKind};
+	pub use topology::{Topology, TopologyBuilder, Layer};
+	pub use traits::{LearnRate, LearnMomentum, Predict};
 }

@@ -1,7 +1,7 @@
 //! Provides traits to serve as common interface for neural network implementations.
 
 use ndarray::*;
-use error_stats::ErrorStats;
+
 use errors::Result;
 use errors::ErrorKind::{InvalidLearnRate, InvalidLearnMomentum};
 
@@ -76,13 +76,4 @@ pub trait UpdateGradients<T> {
 pub trait UpdateWeights<I> {
 	/// Updates weights based on the given input data and the current gradients.
 	fn update_weights(&mut self, input: I, rate: LearnRate, momentum: LearnMomentum);
-}
-
-/// Temporarly convenience trait for training a neural network.
-/// 
-/// Will be replaced by a combination of `Predict`, `UpdateGradients`
-/// and `UpdateWeights` once the new `Mentor` system has landed.
-pub trait Train<I, T> {
-	/// Trains the implementor given the input and its expected values.
-	fn train(&mut self, input: I, target_values: T) -> ErrorStats;
 }

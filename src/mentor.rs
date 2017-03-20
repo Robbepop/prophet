@@ -193,7 +193,9 @@ impl Scheduler {
 	fn next(&mut self, num_samples: usize) -> usize {
 		use self::Scheduler::*;
 		match self {
-			&mut Random(ref mut rng) => rng.gen_range(0, num_samples),
+			&mut Random(ref mut rng) => {
+				rng.gen_range(0, num_samples)
+			},
 			&mut Iterative(ref mut cur) => {
 				let next = *cur as usize % num_samples;
 				*cur += 1;
@@ -421,7 +423,7 @@ impl Deviation {
 		assert!(0.0 < recent_factor && recent_factor < 1.0);
 		Deviation{
 			latest_mse   : 0.0,
-			recent_mse   : 0.0,
+			recent_mse   : 1.0,
 			recent_factor: recent_factor,
 		}
 	}
@@ -512,7 +514,7 @@ struct Config {
 
 /// Status during the learning process.
 #[derive(Debug, Copy, Clone)]
-pub struct Stats {
+struct Stats {
 	/// Number of samples learned so far.
 	pub iterations  : u64,
 
@@ -755,15 +757,35 @@ macro_rules! samples {
 mod tests {
 	use super::*;
 
+	fn validate_impl(mut net: NeuralNet, samples: Vec<Sample>, rounded: bool) {
+		use itertools::{Itertools, multizip};
+		for sample in samples.into_iter() {
+			let predicted = net.predict(sample.input.view());
+			multizip((predicted.iter(), sample.target.iter()))
+				.foreach(|(&predicted, &expected)| {
+					if rounded {
+						assert_eq!(predicted.round(), expected);
+					}
+					else {
+						relative_eq!(predicted, expected);
+					}
+				});
+		}
+	}
+
+	fn validate_rounded(net: NeuralNet, samples: Vec<Sample>) {
+		validate_impl(net, samples, true)
+	}
+
+	fn validate_exact(net: NeuralNet, samples: Vec<Sample>) {
+		validate_impl(net, samples, false)
+	}
+
 	#[test]
 	fn xor() {
 		use activation::Activation::Tanh;
-		use mentor::Criterion::LatestMSE;
-		use mentor::LogConfig;
-		use traits::Train;
 
-		let t =  1.0;
-		let f = -1.0;
+		let (t, f) = (1.0, -1.0);
 		let samples = samples![
 			[f, f] => [f],
 			[t, f] => [t],
@@ -771,22 +793,109 @@ mod tests {
 			[t, t] => [f]
 		];
 
-		let mut net = Topology::input(2)
+		let net = Topology::input(2)
 			.layer(4, Tanh)
 			.layer(3, Tanh)
 			.output(1, Tanh)
 
 			.train(samples.clone())
-			.learn_rate(0.1)
-			.criterion(LatestMSE(0.001))
-			.log_config(LogConfig::Iterations(10))
 			.go()
 			.unwrap();
 
-		// let mse = Deviation::default();
+		validate_rounded(net, samples);
+	}
 
-		let recent_mse = net.train(samples[0].input.view(), samples[0].target.view()).avg_error();
-		println!("recent_mse = {}", recent_mse);
-		assert!(recent_mse < 0.01);
+	#[test]
+	fn train_constant() {
+		use activation::Activation::Identity;
+
+		// samples to train the net with
+		let learn_samples = samples![
+			[0.0] => [1.0],
+			[0.2] => [1.0],
+			[0.4] => [1.0],
+			[0.6] => [1.0],
+			[0.8] => [1.0],
+			[1.0] => [1.0]
+		];
+
+		// samples to test the trained net with
+		let test_samples = samples![
+			[0.1] => [1.0],
+			[0.3] => [1.0],
+			[0.5] => [1.0],
+			[0.7] => [1.0],
+			[0.9] => [1.0]
+		];
+
+		let net = Topology::input(1)
+			.output(1, Identity)
+
+			.train(learn_samples)
+			.go()
+			.unwrap();
+
+		validate_rounded(net, test_samples)
+	}
+
+	#[test]
+	fn train_and() {
+		use activation::Activation::Tanh;
+
+		let (t, f) = (1.0, -1.0);
+		let samples = samples![
+			[f, f] => [f],
+			[f, t] => [f],
+			[t, f] => [f],
+			[t, t] => [t]
+		];
+
+		let net = Topology::input(2)
+			.output(1, Tanh)
+
+			.train(samples.clone())
+			.go()
+			.unwrap();
+
+		validate_rounded(net, samples)
+	}
+
+	#[test]
+	fn train_triple_add() {
+		use activation::Activation::Identity;
+		use rand::*;
+
+		let count_learn_samples = 10_000;
+		let count_test_samples  = 10;
+
+		let mut rng = thread_rng();
+
+		// generate learn samples
+		let mut learn_samples = Vec::with_capacity(count_learn_samples);
+		for _ in 0..count_learn_samples {
+			let a = rng.next_f32();
+			let b = rng.next_f32();
+			let c = rng.next_f32();
+			learn_samples.push(Sample::from((vec![a, b, c], vec![a + b + c])))
+		}
+
+		// generate test samples
+		let mut test_samples = Vec::with_capacity(count_test_samples);
+		for _ in 0..count_test_samples {
+			let a = rng.next_f32();
+			let b = rng.next_f32();
+			let c = rng.next_f32();
+			test_samples.push(Sample::from((vec![a, b, c], vec![a + b + c])))
+		}
+
+		let net = Topology::input(3)
+			.output(1, Identity)
+
+			.train(learn_samples)
+			.log_config(LogConfig::Iterations(100))
+			.go()
+			.unwrap();
+
+		validate_exact(net, test_samples)
 	}
 }

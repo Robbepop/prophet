@@ -9,15 +9,9 @@ use ndarray::prelude::*;
 use ndarray::Shape;
 use itertools::{multizip, Itertools};
 
-use traits::{LearnRate, LearnMomentum, Train, Predict, UpdateGradients, UpdateWeights};
-
-use learn_config::LearnConfig;
-use error_stats::ErrorStats;
-use activation_fn::{BaseFn, DerivedFn};
-use activation::*;
-
+use traits::{LearnRate, LearnMomentum, Predict, UpdateGradients, UpdateWeights};
+use activation::Activation;
 use topology::*;
-use activation_fn::ActivationFn;
 
 /// A fully connected layer within a neural net.
 ///
@@ -46,11 +40,11 @@ use activation_fn::ActivationFn;
 /// setting up the objects initially.
 #[derive(Debug, Clone, PartialEq)]
 struct FullyConnectedLayer {
-	weights: Array2<f32>,
+	weights      : Array2<f32>,
 	delta_weights: Array2<f32>,
-	outputs: Array1<f32>,
-	gradients: Array1<f32>,
-	activation: Activation,
+	outputs      : Array1<f32>,
+	gradients    : Array1<f32>,
+	activation   : Activation,
 }
 
 /// A neural net.
@@ -67,12 +61,6 @@ struct FullyConnectedLayer {
 pub struct NeuralNet {
 	/// the layers within this ```NeuralNet```
 	layers: Vec<FullyConnectedLayer>,
-
-	/// the config that handles all the parameters to tune the learning process
-	pub config: LearnConfig,
-
-	/// holds error stats for the user to query the current learning state of the network
-	error_stats: ErrorStats,
 }
 
 impl FullyConnectedLayer {
@@ -93,11 +81,11 @@ impl FullyConnectedLayer {
 		let shape = Shape::from(Dim([outputs, inputs]));
 
 		FullyConnectedLayer {
-			weights: Array2::random(shape, Range::new(0.0, 1.0)),
+			weights:       Array2::random(shape, Range::new(0.0, 1.0)),
 			delta_weights: Array2::default(shape),
-			outputs: Array1::default(outputs),
-			gradients: Array1::zeros(count_gradients),
-			activation: activation,
+			outputs:       Array1::default(outputs),
+			gradients:     Array1::zeros(count_gradients),
+			activation:    activation,
 		}
 	}
 
@@ -105,13 +93,16 @@ impl FullyConnectedLayer {
 		let (rows, _) = self.weights.dim();
 		rows
 	}
+
 	fn count_columns(&self) -> Ix {
 		let (_, cols) = self.weights.dim();
 		cols
 	}
+
 	fn count_outputs(&self) -> Ix {
 		self.outputs.dim()
 	}
+
 	fn count_gradients(&self) -> Ix {
 		self.gradients.dim()
 	}
@@ -133,17 +124,18 @@ impl FullyConnectedLayer {
 	/// Asserts:
 	///  - output with m elements
 	fn feed_forward(&mut self,
-	                input: ArrayView1<f32>,
-	                activation_fn: BaseFn<f32>)
+	                input: ArrayView1<f32>)
 	                -> ArrayView1<f32> {
 		debug_assert_eq!(self.count_rows(), self.count_outputs());
 		debug_assert_eq!(self.count_columns(), input.len() + 1);
 
+		let act = self.activation;
 		multizip((self.outputs.iter_mut(), self.weights.outer_iter()))
 			.foreach(|(output, weights_row)| {
-				*output = activation_fn(multizip((weights_row.iter(), input.iter().chain(&[1.0])))
-					.map(|(w, i)| w * i)
-					.sum())
+				*output = act.base(
+					multizip((weights_row.iter(), input.iter().chain(&[1.0])))
+						.map(|(w, i)| w * i)
+						.sum())
 			});
 
 		self.output_view()
@@ -152,14 +144,14 @@ impl FullyConnectedLayer {
 	/// Used internally in the output layer to initialize gradients for the back propagation phase.
 	/// Sets the gradient for the bias neuron to zero - hopefully this is the correct behaviour.
 	fn calculate_output_gradients(&mut self,
-	                              target_values: ArrayView1<f32>,
-	                              act_fn_dx: DerivedFn<f32>)
+	                              target_values: ArrayView1<f32>)
 	                              -> &Self {
-		debug_assert_eq!(self.count_outputs(), target_values.len());
+		debug_assert_eq!(self.count_outputs()  , target_values.len());
 		debug_assert_eq!(self.count_gradients(), target_values.len() + 1); // no calculation for bias!
 
+		let act = self.activation;
 		multizip((self.gradients.iter_mut(), target_values.iter(), self.outputs.iter()))
-			.foreach(|(gradient, target, &output)| { *gradient = (target - output) * act_fn_dx(output) });
+			.foreach(|(gradient, target, &output)| { *gradient = (target - output) * act.derived(output) });
 
 		// gradient of bias should be set equal to zero during object initialization already.
 		self
@@ -174,11 +166,12 @@ impl FullyConnectedLayer {
 	}
 
 	/// Applies the given activation function on all gradients of this layer.
-	fn apply_activation(&mut self, act_fn_dx: DerivedFn<f32>) {
+	fn apply_activation(&mut self) {
 		debug_assert_eq!(self.count_gradients(), self.count_outputs() + 1);
 
+		let act = self.activation;
 		multizip((self.gradients.iter_mut(), self.outputs.iter().chain(&[1.0])))
-			.foreach(|(gradient, &output)| *gradient *= act_fn_dx(output));
+			.foreach(|(gradient, &output)| *gradient *= act.derived(output));
 	}
 
 	/// Back propagate gradients from the previous layer (in reversed order) to this layer
@@ -186,8 +179,7 @@ impl FullyConnectedLayer {
 	/// This also computes the gradient for the bias neuron.
 	/// Returns readable reference to self to allow chaining.
 	fn propagate_gradients(&mut self,
-	                       prev: &FullyConnectedLayer,
-	                       act_fn_dx: DerivedFn<f32>)
+	                       prev: &FullyConnectedLayer)
 	                       -> &Self {
 		debug_assert_eq!(prev.count_rows(), prev.count_gradients() - 1);
 		debug_assert_eq!(prev.count_columns(), self.count_gradients());
@@ -200,7 +192,7 @@ impl FullyConnectedLayer {
 					.foreach(|(gradient, weight)| *gradient += weight * prev_gradient)
 			});
 
-		self.apply_activation(act_fn_dx);
+		self.apply_activation();
 		self // for chaining in a fold expression
 	}
 
@@ -239,112 +231,22 @@ impl NeuralNet {
 	/// Creates a new neural network from a given vector of fully connected layers.
 	///
 	/// This constructor should only be used internally!
-	fn from_vec(learn_config: LearnConfig, layers: Vec<FullyConnectedLayer>) -> Self {
+	fn from_vec(layers: Vec<FullyConnectedLayer>) -> Self {
 		NeuralNet {
-			layers: layers,
-			config: learn_config,
-			error_stats: ErrorStats::default(),
+			layers: layers
 		}
 	}
 
 	/// Creates a new neural network of fully connected layers from a given topology.
-	fn from_topology(topology: Topology) -> Self {
-		let buffer = topology.iter_layers()
-			// .tuple_windows::<(_, _)>()
-			// .map(|(&inputs, &outputs)| FullyConnectedLayer::random(inputs, outputs))
-			.map(|&layer| FullyConnectedLayer::random(layer.inputs, layer.outputs, layer.activation))
-			.collect::<Vec<FullyConnectedLayer>>();
-		NeuralNet::from_vec(LearnConfig::new(0.3, 0.5, ActivationFn::tanh()), buffer)
-	}
-
-	/// Creates a new instance of a ```NeuralNet```.
-	///
-	///  - ```layer_sizes``` define the count of neurons (without bias) per neural layer.
-	///  - ```learning_rate``` and ```learning_momentum``` describe the acceleration and momentum
-	/// with which the created neural net will be learning. These values can be changed later during
-	/// the lifetime of the object if needed.
-	///  - ```act_fn``` represents the pair of activation function and derivate used throughout the
-	/// neural net layers.
-	///
-	/// Weights between the neural layers are initialized to ```(0,1)```.
-	///
-	/// # Examples
-	///
-	/// ```
-	/// use prophet::prelude::*;
-	///
-	/// let config  = LearnConfig::new(
-	/// 	0.15,                // learning_rate
-	/// 	0.4,                 // learning_momentum
-	/// 	ActivationFn::tanh() // activation function + derivate
-	/// );
-	/// let mut net = NeuralNet::new(config, &[2, 4, 3, 1]);
-	/// // layer_sizes: - input layer which expects two values
-	/// //              - two hidden layers with 4 and 3 neurons
-	/// //              - output layer with one neuron
-	///
-	/// // now train the neural net how to be an XOR-operator
-	/// let f = -1.0; // represents false
-	/// let t =  1.0; // represents true
-	/// for _ in 0..1000 {
-	/// 	net.train(&[f, f], &[f]);
-	/// 	net.train(&[f, t], &[t]);
-	/// 	net.train(&[t, f], &[t]);
-	/// 	net.train(&[t, t], &[f]);
-	/// }
-	/// // now check if the neural net has successfully learned it by checking how close
-	/// // the latest ```avg_error``` is to ```0.0```:
-	/// assert!(net.latest_error_stats().avg_error() < 0.05);
-	/// ```
-	pub fn new(config: LearnConfig, layer_sizes: &[Ix]) -> Self {
-		let buffer = layer_sizes.iter()
-			.tuple_windows::<(_, _)>()
-			.map(|(&inputs, &outputs)| FullyConnectedLayer::random(inputs, outputs, Activation::Identity))
-			.collect::<Vec<FullyConnectedLayer>>();
-		NeuralNet::from_vec(config, buffer)
-	}
-
-	fn output_layer(&self) -> &FullyConnectedLayer {
-		self.layers.last().unwrap()
-	}
-
-	fn overall_net_error(&self, target_values: ArrayView1<f32>) -> f32 {
-		let outputs = self.output_layer().output_view();
-
-		use std::ops::Div;
-		multizip((outputs.iter(), target_values))
-			.map(|(output, target)| {
-				let dx = target - output;
-				dx * dx
+	pub fn from_topology(topology: Topology) -> Self {
+		NeuralNet::from_vec(topology
+			.iter_layers()
+			.map(|&layer| {
+				FullyConnectedLayer::random(
+					layer.inputs, layer.outputs, layer.activation)
 			})
-			.sum::<f32>()
-			.div(outputs.len() as f32)
-			.sqrt()
-	}
-
-	/// Returns the ```ErrorStats``` that were generated by the latest call to ```train```.
-	///
-	/// Returns a default constructed ```ErrorStats``` object when this neural net
-	/// was never trained before.
-	pub fn latest_error_stats(&self) -> ErrorStats {
-		self.error_stats
-	}
-
-	fn propagate_gradients(&mut self, target_values: ArrayView1<f32>) {
-		let act_fn_dx = self.config.act_fn.derived_fn(); // because of borrow checker bugs
-
-		if let Some((&mut ref mut last, ref mut tail)) = self.layers.split_last_mut() {
-			tail.iter_mut()
-				.rev()
-				.fold(last.calculate_output_gradients(target_values, act_fn_dx),
-				      |prev, layer| layer.propagate_gradients(prev, act_fn_dx));
-		}
-	}
-
-	fn update_error_stats(&mut self, target_values: ArrayView1<f32>) -> ErrorStats {
-		let latest_error = self.overall_net_error(target_values);
-		self.error_stats.update(latest_error);
-		self.error_stats
+			.collect()
+		)
 	}
 }
 
@@ -359,11 +261,10 @@ impl<'b, A> Predict<A> for NeuralNet
 {
 	fn predict(&mut self, input: A) -> ArrayView1<f32> {
 		let input  = input.into();
-		let act_fn = self.config.act_fn.base_fn();
 		if let Some((first, tail)) = self.layers.split_first_mut() {
 			tail.iter_mut()
-				.fold(first.feed_forward(input, act_fn),
-				      |prev, layer| layer.feed_forward(prev, act_fn))
+				.fold(first.feed_forward(input),
+				      |prev, layer| layer.feed_forward(prev))
 		} else {
 			panic!("A Neural Net is guaranteed to have at least one layer so this situation \
 			        should never happen!");
@@ -375,7 +276,12 @@ impl<'a, A> UpdateGradients<A> for NeuralNet
 	where A: Into<ArrayView1<'a, f32>>
 {
 	fn update_gradients(&mut self, target_values: A) {
-		self.propagate_gradients(target_values.into());
+		if let Some((&mut ref mut last, ref mut tail)) = self.layers.split_last_mut() {
+			tail.iter_mut()
+				.rev()
+				.fold(last.calculate_output_gradients(target_values.into()),
+				      |prev, layer| layer.propagate_gradients(prev));
+		}
 	}
 }
 
@@ -392,148 +298,6 @@ impl<'b, A> UpdateWeights<A> for NeuralNet
 	}
 }
 
-impl<'a, 'b, A1, A2> Train<A1, A2> for NeuralNet
-	where A1: Into<ArrayView1<'a, f32>>,
-	      A2: Into<ArrayView1<'b, f32>>
-{
-	fn train(&mut self, input: A1, target: A2) -> ErrorStats {
-		let input  = input.into();
-		let target = target.into();
-		self.predict(input);
-		self.update_gradients(target);
-		self.update_weights(input, LearnRate::default(), LearnMomentum::default());
-		self.update_error_stats(target)
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	use learn_config::LearnConfig;
-	use traits::*;
-	use activation_fn::ActivationFn;
-	use topology::*;
-	use super::NeuralNet;
-
-	#[test]
-	fn train_xor_new() {
-		use activation::Activation::Tanh;
-		let top = Topology::input(2)
-			.layer(4, Tanh)
-			.layer(3, Tanh)
-			.output(1, Tanh);
-		let mut net = NeuralNet::from(top);
-
-		let t = 1.0;
-		let f = -1.0;
-		let print = false;
-		for _ in 0..200 {
-			if print {
-				println!("(f,f) => {}"  , net.train(&[f, f], &[f]));
-				println!("(f,t) => {}"  , net.train(&[f, t], &[t]));
-				println!("(t,f) => {}"  , net.train(&[t, f], &[t]));
-				println!("(t,t) => {}\n", net.train(&[t, t], &[f]));
-			} else {
-				net.train(&[f, f], &[f]);
-				net.train(&[f, t], &[t]);
-				net.train(&[t, f], &[t]);
-				net.train(&[t, t], &[f]);
-			}
-		}
-		assert!(net.latest_error_stats().avg_error() < 0.05);
-	}
-
-	#[test]
-	fn train_xor() {
-		let config = LearnConfig::new(0.15, 0.4, ActivationFn::<f32>::tanh());
-		let mut net = NeuralNet::new(config, &[2, 4, 3, 1]);
-		let t = 1.0;
-		let f = -1.0;
-		let print = false;
-		for _ in 0..200 {
-			if print {
-				println!("(f,f) => {}"  , net.train(&[f, f], &[f]));
-				println!("(f,t) => {}"  , net.train(&[f, t], &[t]));
-				println!("(t,f) => {}"  , net.train(&[t, f], &[t]));
-				println!("(t,t) => {}\n", net.train(&[t, t], &[f]));
-			} else {
-				net.train(&[f, f], &[f]);
-				net.train(&[f, t], &[t]);
-				net.train(&[t, f], &[t]);
-				net.train(&[t, t], &[f]);
-			}
-		}
-		assert!(net.latest_error_stats().avg_error() < 0.05);
-	}
-
-	#[test]
-	fn train_constant() {
-		let config = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::identity());
-		let mut net = NeuralNet::new(config, &[1, 1]);
-		let mut vx = vec![0.0; 1];
-		let print = false;
-		for _ in 0..100 {
-			for &x in &[0.0, 0.2, 0.4, 0.6, 0.8, 1.0] {
-				vx[0] = x;
-				if print {
-					println!("{} => {}", x, net.train(vx.as_slice(), &[1.0]));
-				} else {
-					net.train(vx.as_slice(), &[1.0]);
-				}
-			}
-		}
-		assert!(net.latest_error_stats().avg_error() < 0.05);
-	}
-
-	#[test]
-	fn train_and() {
-		let config = LearnConfig::new(0.15, 0.5, ActivationFn::<f32>::tanh());
-		let mut net = NeuralNet::new(config, &[2, 1]);
-		let f = -1.0;
-		let t = 1.0;
-		let print = false;
-		for _ in 0..200 {
-			if print {
-				println!("(f, f) => {}"  , net.train(&[f, f], &[f]));
-				println!("(f, t) => {}"  , net.train(&[f, t], &[f]));
-				println!("(t, f) => {}"  , net.train(&[t, f], &[f]));
-				println!("(t, t) => {}\n", net.train(&[t, t], &[t]));
-			} else {
-				net.train(&[f, f], &[f]);
-				net.train(&[f, t], &[f]);
-				net.train(&[t, f], &[f]);
-				net.train(&[t, t], &[t]);
-			}
-		}
-		assert!(net.latest_error_stats().avg_error() < 0.05);
-	}
-
-	#[test]
-	fn train_triple_add() {
-		use rand::*;
-		let config = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::identity());
-		let mut net = NeuralNet::new(config, &[3, 1]);
-		let mut gen = thread_rng();
-		let print = false;
-		for _ in 0..200 {
-			let a = gen.next_f32();
-			let b = gen.next_f32();
-			let c = gen.next_f32();
-			if print {
-				println!("{} + {} + {} (= {}) => {}",
-				         a,
-				         b,
-				         c,
-				         a + b + c,
-				         net.train(&[a, b, c], &[a + b + c]));
-			} else {
-				net.train(&[a, b, c], &[a + b + c]);
-			}
-		}
-		assert!(net.latest_error_stats().avg_error() < 0.05);
-	}
-}
-
-
 #[cfg(all(feature = "bench", test))]
 mod bench {
 	use super::*;
@@ -548,16 +312,19 @@ mod bench {
 
 	#[bench]
 	fn bench_giant(bencher: &mut Bencher) {
-		let config = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::tanh());
-		let mut net = NeuralNet::new(config, &[2, 1000, 1000, 1]);
-		let f = -1.0;
-		let t = 1.0;
 
-		bencher.iter(|| {
-			net.train(&[f, f], &[f]);
-			net.train(&[f, t], &[f]);
-			net.train(&[t, f], &[f]);
-			net.train(&[t, t], &[t]);
-		});
+		// TODO
+
+		// let config = LearnConfig::new(0.25, 0.5, ActivationFn::<f32>::tanh());
+		// let mut net = NeuralNet::new(config, &[2, 1000, 1000, 1]);
+		// let f = -1.0;
+		// let t =  1.0;
+
+		// bencher.iter(|| {
+		// 	net.train(&[f, f], &[f]);
+		// 	net.train(&[f, t], &[f]);
+		// 	net.train(&[t, f], &[f]);
+		// 	net.train(&[t, t], &[t]);
+		// });
 	}
 }
