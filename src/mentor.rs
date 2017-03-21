@@ -875,10 +875,10 @@ mod tests {
 			vec![inputs[0] + inputs[1] + inputs[2]]
 		}
 
-		let learn_samples =
-			gen_random_samples(count_learn_samples, inputs, outputs, mapper);
-		let test_samples =
-			gen_random_samples(count_test_samples, inputs, outputs, mapper);
+		let learn_samples = gen_random_samples(
+			count_learn_samples, inputs, outputs, mapper);
+		let test_samples = gen_random_samples(
+			count_test_samples, inputs, outputs, mapper);
 
 		let net = Topology::input(inputs)
 			.output(outputs, Identity)
@@ -909,10 +909,10 @@ mod tests {
 			}
 		}
 
-		let learn_samples =
-			gen_random_samples(count_learn_samples, inputs, outputs, mapper);
-		let test_samples =
-			gen_random_samples(count_test_samples, inputs, outputs, mapper);
+		let learn_samples = gen_random_samples(
+			count_learn_samples, inputs, outputs, mapper);
+		let test_samples = gen_random_samples(
+			count_test_samples, inputs, outputs, mapper);
 
 		let net = Topology::input(inputs)
 			.layer(4, Tanh)
