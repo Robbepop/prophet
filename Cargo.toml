@@ -13,11 +13,11 @@ keywords = ["deep-learning", "neural-networks", "machine-learning", "classifier"
 categories = ["science"]
 
 [dependencies]
-rand = "0.3"
-num = "0.1"
+rand = "0.3.15"
+num = "0.1.37"
 ndarray = "0.8"
 ndarray-rand = "0.4"
-itertools = "0.5"
+itertools = "0.5.9"
 log = "0.3.7"
 
 [dev-dependencies]
