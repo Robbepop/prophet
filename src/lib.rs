@@ -117,8 +117,17 @@ pub use errors::{Result, ErrorKind};
 pub mod prelude {
 	pub use activation::Activation;
 	pub use neural_net::NeuralNet;
-	pub use traits::{LearnRate, LearnMomentum, Predict};
+	pub use traits::{Predict};
 	pub use topology::{Topology, TopologyBuilder, Layer};
 	pub use mentor::{Mentor, Sample, SampleView, LogConfig, Scheduling, Criterion};
 	pub use errors::{Result, ErrorKind};
+}
+
+/// Public export for internal structures.
+/// 
+/// The purpose of this prelude-ish module is to make it possible to outsource 
+/// benches that require knowledge of some few internals.
+// #[cfg(test)]
+pub mod internal {
+	pub use traits::{LearnRate, LearnMomentum, UpdateGradients, UpdateWeights};
 }
