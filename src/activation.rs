@@ -4,6 +4,7 @@ use ndarray::NdFloat;
 
 /// Represents an activation function.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub enum Activation {
 	/// Identity: *ƒ(x) = x*
 	Identity,

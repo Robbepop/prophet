@@ -21,15 +21,15 @@ ndarray      = "0.8"
 ndarray-rand = "0.4"
 itertools    = "0.5.9"
 log          = "0.3.7"
-
-[dependencies.serde]
-version  = "0.9"
-optional = true
+serde        = { version = "0.9", optional = true }
+serde_derive = { version = "0.9", optional = true }
 
 [dev-dependencies]
 approx = "0.1.1"
 
-# [features]
+[features]
+run_internal_benches = []
+serde_support        = ["serde", "serde_derive", "ndarray/serde"]
 
 [badges]
 travis-ci = { repository = "https://github.com/robbepop/prophet" }

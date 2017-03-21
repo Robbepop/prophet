@@ -1,3 +1,4 @@
+#![cfg_attr(all(feature = "run_internal_benches", test), feature(test))]
 
 #![warn(missing_docs)]
 
@@ -93,11 +94,23 @@ extern crate ndarray;
 extern crate ndarray_rand;
 extern crate itertools;
 
+#[cfg(feature = "serde_support")]
+extern crate serde;
+
+#[cfg(feature = "serde_support")] #[macro_use]
+extern crate serde_derive;
+
 #[macro_use]
 extern crate log;
 
 #[cfg(test)] #[macro_use]
 extern crate approx;
+
+#[cfg(all(feature = "run_internal_benches", test))]
+extern crate test;
+
+#[cfg(all(feature = "run_internal_benches", test))]
+mod benches;
 
 mod traits;
 mod neural_net;
@@ -121,13 +134,4 @@ pub mod prelude {
 	pub use topology::{Topology, TopologyBuilder, Layer};
 	pub use mentor::{Mentor, Sample, SampleView, LogConfig, Scheduling, Criterion};
 	pub use errors::{Result, ErrorKind};
-}
-
-/// Public export for internal structures.
-/// 
-/// The purpose of this prelude-ish module is to make it possible to outsource 
-/// benches that require knowledge of some few internals.
-// #[cfg(test)]
-pub mod internal {
-	pub use traits::{LearnRate, LearnMomentum, UpdateGradients, UpdateWeights};
 }

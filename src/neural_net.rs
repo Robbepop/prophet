@@ -39,6 +39,7 @@ use topology::*;
 /// Besides that this design allows to completely avoid heap memory allocations after
 /// setting up the objects initially.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 struct FullyConnectedLayer {
 	weights      : Array2<f32>,
 	delta_weights: Array2<f32>,
@@ -58,6 +59,7 @@ struct FullyConnectedLayer {
 /// object organizes the input data throughout all of its owned layers and pipes
 /// the result in the last layer back to the user.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NeuralNet {
 	/// the layers within this ```NeuralNet```
 	layers: Vec<FullyConnectedLayer>,
