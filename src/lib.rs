@@ -1,6 +1,4 @@
 
-#![cfg_attr(all(feature = "bench", test), feature(test))]
-
 #![warn(missing_docs)]
 
 //! A neural net implementation focused on sequential performance.
@@ -97,9 +95,6 @@ extern crate itertools;
 
 #[macro_use]
 extern crate log;
-
-#[cfg(all(feature = "bench", test))]
-extern crate test;
 
 #[cfg(test)] #[macro_use]
 extern crate approx;

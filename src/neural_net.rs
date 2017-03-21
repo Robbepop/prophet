@@ -89,25 +89,42 @@ impl FullyConnectedLayer {
 		}
 	}
 
+	/// Count rows of the weight matrix.
+	/// 
+	/// This method should be only used for debugging purposes!
+	#[inline]
 	fn count_rows(&self) -> Ix {
 		let (rows, _) = self.weights.dim();
 		rows
 	}
 
+	/// Count columns of the weight matrix.
+	/// 
+	/// This method should be only used for debugging purposes!
+	#[inline]
 	fn count_columns(&self) -> Ix {
 		let (_, cols) = self.weights.dim();
 		cols
 	}
 
+	/// Count output neurons of this layer.
+	/// 
+	/// This method should be only used for debugging purposes!
+	#[inline]
 	fn count_outputs(&self) -> Ix {
 		self.outputs.dim()
 	}
 
+	/// Count gradients of this layer.
+	/// 
+	/// This method should be only used for debugging purposes!
+	#[inline]
 	fn count_gradients(&self) -> Ix {
 		self.gradients.dim()
 	}
 
 	/// Returns this layer's output as read-only view.
+	#[inline]
 	fn output_view(&self) -> ArrayView1<f32> {
 		self.outputs.view()
 	}
@@ -160,6 +177,7 @@ impl FullyConnectedLayer {
 	/// Sets all gradient values in this layer to zero.
 	/// This is required as initialization step before propagating gradients
 	/// for the efficient implementation of this library.
+	#[inline]
 	fn reset_gradients(&mut self) {
 		self.gradients.fill(0.0);
 		debug_assert!(self.gradients.iter().all(|&g| g == 0.0));
@@ -289,45 +307,5 @@ impl<'b, A> UpdateWeights<A> for NeuralNet
 				.fold(first.update_weights(input, rate, momentum),
 				      |prev, layer| layer.update_weights(prev, rate, momentum));
 		}
-	}
-}
-
-#[cfg(all(feature = "bench", test))]
-mod bench {
-	use super::*;
-	use test::{
-		Bencher,
-		black_box
-	};
-
-	fn create_giant_net() -> NeuralNet {
-		use Activation::Tanh;
-		NeuralNet::from_topology(
-			Topology::input(2)
-				.layers(&[
-					(1000, Tanh),
-					(1000, Tanh),
-					(1000, Tanh),
-					(1000, Tanh),
-					(1000, Tanh),
-					(1000, Tanh),
-					(1000, Tanh),
-					(1000, Tanh),
-					(1000, Tanh),
-					(1000, Tanh)
-				])
-				.output(1, Tanh))
-	}
-
-	#[bench]
-	fn predict(bencher: &mut Bencher) {
-		let mut net = create_giant_net();
-		let (t, f)  = (1.0, -1.0);
-		bencher.iter(|| {
-			black_box(net.predict(&[f, f]));
-			black_box(net.predict(&[f, t]));
-			black_box(net.predict(&[t, f]));
-			black_box(net.predict(&[t, t]));
-		});
 	}
 }

@@ -867,7 +867,7 @@ mod tests {
 		use activation::Activation::Identity;
 
 		let count_learn_samples = 10_000;
-		let count_test_samples  = 10;
+		let count_test_samples  =    100;
 		let inputs  = 3;
 		let outputs = 1;
 
@@ -896,7 +896,7 @@ mod tests {
 		use activation::Activation::Tanh;
 
 		let count_learn_samples = 10_000;
-		let count_test_samples  = 10;
+		let count_test_samples  =    100;
 		let inputs  = 2;
 		let outputs = 1;
 
