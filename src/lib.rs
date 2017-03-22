@@ -119,19 +119,9 @@ mod errors;
 
 pub mod topology;
 pub mod mentor;
+pub mod prelude;
 
 pub use activation::Activation;
 pub use neural_net::NeuralNet;
 pub use traits::{Predict};
 pub use errors::{Result, ErrorKind};
-
-/// The prophet prelude publicly imports all propet modules the user needs in order to
-/// create, train and use neural networks.
-pub mod prelude {
-	pub use activation::Activation;
-	pub use neural_net::NeuralNet;
-	pub use traits::{Predict};
-	pub use topology::{Topology, TopologyBuilder, Layer};
-	pub use mentor::{Mentor, Sample, SampleView, LogConfig, Scheduling, Criterion};
-	pub use errors::{Result, ErrorKind};
-}
