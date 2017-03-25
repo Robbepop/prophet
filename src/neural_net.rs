@@ -149,6 +149,7 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(self.count_columns(), input.len() + 1);
 
 		let act = self.activation;
+
 		multizip((self.outputs.iter_mut(), self.weights.outer_iter()))
 			.foreach(|(output, weights_row)| {
 				*output = act.base(
@@ -204,8 +205,6 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(prev.count_rows(), prev.count_gradients() - 1);
 		debug_assert_eq!(prev.count_columns(), self.count_gradients());
 
-		self.reset_gradients();
-
 		multizip((prev.weights.outer_iter(), prev.gradients.iter()))
 			.foreach(|(prev_weights_row, prev_gradient)| {
 				multizip((self.gradients.iter_mut(), prev_weights_row.iter()))
@@ -242,6 +241,7 @@ impl FullyConnectedLayer {
 				weights_row += &delta_weights_row;
 			});
 
+		self.reset_gradients();
 		self.output_view()
 	}
 }
