@@ -1,7 +1,9 @@
 [![Build Status](https://travis-ci.org/Robbepop/prophet.svg?branch=master)](https://travis-ci.org/Robbepop/prophet)
+[![Build Status](https://ci.appveyor.com/api/projects/status/2ckrux25wpa5eseh/branch/master?svg=true)](https://ci.appveyor.com/project/Robbepop/prophet/branch/master)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Crates.io Version](https://img.shields.io/crates/v/prophet.svg)](https://crates.io/crates/prophet)
 [![Doc.rs Badge](https://docs.rs/prophet/badge.svg)](https://docs.rs/prophet)
+
 
 PROPHET
 =======
