@@ -32,5 +32,5 @@ run_internal_benches = []
 serde_support        = ["serde", "serde_derive", "ndarray/serde"]
 
 [badges]
-travis-ci = { repository = "https://github.com/robbepop/prophet" }
+travis-ci = { repository = "robbepop/prophet" }
 # appveyor = { repository = "https://github.com/robbepop/prophet", branch = "master", service = "github" }

@@ -231,16 +231,15 @@ impl FullyConnectedLayer {
 		          self.gradients.iter()))
 			.foreach(|(mut weights_row, mut delta_weights_row, gradient)| {
 				multizip((prev_outputs.iter().chain(&[1.0]),
-				          weights_row.iter_mut(),
 				          delta_weights_row.iter_mut()))
-					.foreach(|(prev_output, weight, delta_weight)| {
+					.foreach(|(prev_output, delta_weight)| {
 						*delta_weight =
 							// Individual input, magnified by the gradient and train rate
 							learn_rate.0 * prev_output * gradient
 							// Also add momentum which is a fraction of the previous delta weight
 							+ learn_mom.0 * *delta_weight;
-						*weight += *delta_weight;
-					})
+					});
+				weights_row += &delta_weights_row;
 			});
 
 		self.output_view()
