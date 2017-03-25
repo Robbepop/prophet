@@ -33,4 +33,4 @@ serde_support        = ["serde", "serde_derive", "ndarray/serde"]
 
 [badges]
 travis-ci = { repository = "Robbepop/prophet" }
-# appveyor = { repository = "https://github.com/robbepop/prophet", branch = "master", service = "github" }
+appveyor  = { repository = "Robbepop/prophet", branch = "master", service = "github" }
