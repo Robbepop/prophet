@@ -148,8 +148,13 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(self.count_rows(), self.count_outputs());
 		debug_assert_eq!(self.count_columns(), input.len() + 1);
 
-		let act = self.activation;
+		let act = self.activation; // required because of non-lexical borrows
 
+		/// This entire block of code is basically just a fancy matrix-vector multiplication.
+		/// 
+		/// Could profit greatly from vectorization and builtin library solutions for this
+		/// kind of operation w.r.t. performance gains.
+		/// =================================================================================
 		multizip((self.outputs.iter_mut(), self.weights.outer_iter()))
 			.foreach(|(output, weights_row)| {
 				*output = act.base(
@@ -157,8 +162,9 @@ impl FullyConnectedLayer {
 						.map(|(w, i)| w * i)
 						.sum())
 			});
+		/// =================================================================================
 
-		self.output_view()
+		self.output_view() // required for folding the general operation
 	}
 
 	/// Used internally in the output layer to initialize gradients for the back propagation phase.
@@ -169,7 +175,8 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(self.count_outputs()  , target_values.len());
 		debug_assert_eq!(self.count_gradients(), target_values.len() + 1); // no calculation for bias!
 
-		let act = self.activation;
+		let act = self.activation; // required because of non-lexical borrows
+
 		multizip((self.gradients.iter_mut(), target_values.iter(), self.outputs.iter()))
 			.foreach(|(gradient, target, &output)| { *gradient = (target - output) * act.derived(output) });
 
