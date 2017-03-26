@@ -118,11 +118,15 @@ mod activation;
 mod errors;
 
 pub mod topology;
-pub mod mentor;
-mod mentor2;
+mod mentor;
 pub mod prelude;
 
 pub use activation::Activation;
 pub use neural_net::NeuralNet;
+
+pub use mentor::configs::{LogConfig, Scheduling, Criterion};
+pub use mentor::training::{Mentor};
+pub use mentor::samples::{Sample, SampleView};
+
 pub use traits::{Predict};
 pub use errors::{Result, ErrorKind};

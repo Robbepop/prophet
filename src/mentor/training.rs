@@ -1,6 +1,4 @@
-
-use ndarray::prelude::*;
-use std::time::{SystemTime, Duration};
+use std::time::{SystemTime};
 
 use neural_net::NeuralNet;
 use traits::{
@@ -13,26 +11,26 @@ use traits::{
 use errors::ErrorKind::{InvalidSampleInputSize, InvalidSampleTargetSize};
 use errors::Result;
 use topology::Topology;
-use mentor2::configs::{
+use mentor::configs::{
 	LearnRateConfig,
 	LearnMomentumConfig,
 	Criterion,
 	LogConfig,
 	Scheduling
 };
-use mentor2::samples::{SampleScheduler};
-use mentor2::deviation::Deviation;
-use mentor2::logger::{Stats, Logger};
-use mentor2::samples::Sample;
+use mentor::samples::{SampleScheduler};
+use mentor::deviation::Deviation;
+use mentor::logger::{Stats, Logger};
+use mentor::samples::Sample;
 
 
+impl Topology {
+	/// Iterates over the layer sizes of this Disciple's topology definition.
+	pub fn train(self, samples: Vec<Sample>) -> Mentor {
+		Mentor::new(self, samples)
+	}
+}
 
-// impl Topology {
-// 	/// Iterates over the layer sizes of this Disciple's topology definition.
-// 	pub fn train(self, samples: Vec<Sample>) -> Mentor {
-// 		Mentor::new(self, samples)
-// 	}
-// }
 
 /// Mentor follows the builder pattern to incrementally
 /// build properties for the training session and delay any
@@ -216,7 +214,7 @@ impl Mentor {
 
 impl Training {
 	fn is_done(&self) -> bool {
-		use mentor2::configs::Criterion::*;
+		use mentor::configs::Criterion::*;
 		match self.cfg.criterion {
 			TimeOut(duration) => {
 				self.starttime.elapsed().unwrap() >= duration
@@ -251,11 +249,9 @@ impl Training {
 		use self::LearnRateConfig::*;
 		match self.cfg.learn_rate {
 			Adapt => {
-				// not yet implemented
+				// TODO: not yet implemented
 			}
-			Fixed(_) => {
-				// nothing to do here!
-			}
+			Fixed(_) => return // nothing to do here!
 		}
 	}
 
@@ -263,11 +259,9 @@ impl Training {
 		use self::LearnMomentumConfig::*;
 		match self.cfg.learn_mom {
 			Adapt => {
-				// not yet implemented
+				// TODO: not yet implemented
 			}
-			Fixed(_) => {
-				// nothing to do here!
-			}
+			Fixed(_) => return // nothing to do here!
 		}
 	}
 

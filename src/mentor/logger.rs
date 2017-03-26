@@ -1,6 +1,6 @@
 use std::time::{SystemTime, Duration};
 
-use mentor2::configs::LogConfig;
+use mentor::configs::LogConfig;
 
 /// Status during the learning process.
 #[derive(Debug, Copy, Clone)]

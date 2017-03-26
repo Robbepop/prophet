@@ -2,7 +2,7 @@ use ndarray::prelude::*;
 
 use rand::{Rng, ThreadRng, thread_rng};
 
-use mentor2::configs::Scheduling;
+use mentor::configs::Scheduling;
 
 // /// Mentors are objects that train a given disciple structure
 // /// resulting in a prophet structure that can be used to predict
@@ -153,7 +153,7 @@ impl ::std::fmt::Debug for Scheduler {
 impl Scheduler {
 	/// Creates a new `Scheduler` from a given scheduling strategy.
 	fn from_kind(kind: Scheduling) -> Self {
-		use mentor2::configs::Scheduling::*;
+		use mentor::configs::Scheduling::*;
 		match kind {
 			Random    => Scheduler::Random(thread_rng()),
 			Iterative => Scheduler::Iterative(0),
