@@ -13,9 +13,6 @@ pub use traits::{Predict};
 #[doc(no_inline)]
 pub use topology::{Topology, TopologyBuilder, Layer};
 
-// #[doc(no_inline)]
-// pub use mentor::{Mentor, Sample, SampleView, LogConfig, Scheduling, Criterion};
-
 #[doc(no_inline)]
 pub use errors::{Result, ErrorKind};
 
