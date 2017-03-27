@@ -125,7 +125,7 @@ pub use activation::Activation;
 pub use neural_net::NeuralNet;
 
 pub use mentor::configs::{LogConfig, Scheduling, Criterion};
-pub use mentor::training::{Mentor, Mentor3};
+pub use mentor::training::{Mentor, MentorBuilder};
 pub use mentor::samples::{Sample, SampleView};
 
 pub use traits::{Predict};
