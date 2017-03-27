@@ -20,7 +20,7 @@ pub use errors::{Result, ErrorKind};
 pub use mentor::configs::{LogConfig, Scheduling, Criterion};
 
 #[doc(no_inline)]
-pub use mentor::training::{Mentor};
+pub use mentor::training::{Mentor, Mentor3};
 
 #[doc(no_inline)]
 pub use mentor::samples::{Sample, SampleView};
