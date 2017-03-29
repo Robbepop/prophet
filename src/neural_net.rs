@@ -174,12 +174,17 @@ impl FullyConnectedLayer {
 
 		let act = self.activation; // required because of non-lexical borrows
 
-		// Zip::from(&mut self.gradients).and(&target_values).and(&self.outputs).apply(|gradient, &target, &output| {
-		// 	*gradient = (target - output) * act.derived(output)
-		// });
+		// Just as slow as the old version below ...
+		Zip::from(&mut self.gradients.slice_mut(s![..-1]))
+			.and(&target_values)
+			.and(&self.outputs)
+			.apply(|gradient, &target, &output| {
+			*gradient = (target - output) * act.derived(output)
+		});
 
-		multizip((self.gradients.iter_mut(), target_values.iter(), self.outputs.iter()))
-			.foreach(|(gradient, target, &output)| { *gradient = (target - output) * act.derived(output) });
+		// Old version of the new Zip mechanics above
+		// multizip((self.gradients.iter_mut(), target_values.iter(), self.outputs.iter()))
+		// 	.foreach(|(gradient, target, &output)| { *gradient = (target - output) * act.derived(output) });
 
 		// gradient of bias should be set equal to zero during object initialization already.
 		self
@@ -210,7 +215,7 @@ impl FullyConnectedLayer {
 	fn propagate_gradients(&mut self,
 	                       prev: &FullyConnectedLayer)
 	                       -> &Self {
-		debug_assert_eq!(prev.count_rows(), prev.count_gradients() - 1);
+		debug_assert_eq!(prev.count_rows()   , prev.count_gradients() - 1);
 		debug_assert_eq!(prev.count_columns(), self.count_gradients());
 
 		multizip((prev.weights.outer_iter(), prev.gradients.iter()))
