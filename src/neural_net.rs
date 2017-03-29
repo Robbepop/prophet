@@ -6,7 +6,7 @@ use std::vec::Vec;
 use rand::distributions::Range;
 use ndarray_rand::RandomExt;
 use ndarray::prelude::*;
-use ndarray::Shape;
+use ndarray::{Shape, Zip};
 use itertools::{multizip, Itertools};
 
 use traits::{LearnRate, LearnMomentum, Predict, UpdateGradients, UpdateWeights};
@@ -155,13 +155,10 @@ impl FullyConnectedLayer {
 		/// Could profit greatly from vectorization and builtin library solutions for this
 		/// kind of operation w.r.t. performance gains.
 		/// =================================================================================
-		multizip((self.outputs.iter_mut(), self.weights.outer_iter()))
-			.foreach(|(output, weights_row)| {
-				*output = act.base(
-					multizip((weights_row.iter(), input.iter().chain(&[1.0])))
-						.map(|(w, i)| w * i)
-						.sum())
-			});
+		Zip::from(&mut self.outputs).and(self.weights.axis_iter(Axis(0))).apply(|output, weights| {
+			let s   = weights.len();
+			*output = act.base(weights.slice(s![..-1]).dot(&input) + weights[s-1]);
+		});
 		/// =================================================================================
 
 		self.output_view() // required for folding the general operation
