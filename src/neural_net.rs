@@ -198,7 +198,7 @@ impl FullyConnectedLayer {
 	fn apply_activation(&mut self) {
 		debug_assert_eq!(self.count_gradients(), self.count_outputs() + 1);
 
-		let act = self.activation;
+		let act = self.activation; // required because of non-lexical borrows
 		multizip((self.gradients.iter_mut(), self.outputs.iter().chain(&[1.0])))
 			.foreach(|(gradient, &output)| *gradient *= act.derived(output));
 	}
