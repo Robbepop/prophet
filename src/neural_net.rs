@@ -84,8 +84,8 @@ impl FullyConnectedLayer {
 
 		FullyConnectedLayer {
 			weights:       Array2::random(shape, Range::new(-1.0, 1.0)),
-			delta_weights: Array2::default(shape),
-			outputs:       Array1::default(outputs),
+			delta_weights: unsafe{ Array2::uninitialized(shape) },
+			outputs:       unsafe{ Array1::uninitialized(outputs) },
 			gradients:     Array1::zeros(count_gradients),
 			activation:    activation,
 		}
@@ -173,6 +173,10 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(self.count_gradients(), target_values.len() + 1); // no calculation for bias!
 
 		let act = self.activation; // required because of non-lexical borrows
+
+		// Zip::from(&mut self.gradients).and(&target_values).and(&self.outputs).apply(|gradient, &target, &output| {
+		// 	*gradient = (target - output) * act.derived(output)
+		// });
 
 		multizip((self.gradients.iter_mut(), target_values.iter(), self.outputs.iter()))
 			.foreach(|(gradient, target, &output)| { *gradient = (target - output) * act.derived(output) });
