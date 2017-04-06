@@ -6,7 +6,7 @@ use std::vec::Vec;
 use rand::distributions::Range;
 use ndarray_rand::RandomExt;
 use ndarray::prelude::*;
-use ndarray::{Shape, Zip};
+use ndarray::{Zip};
 use itertools::{multizip, Itertools};
 
 use traits::{LearnRate, LearnMomentum, Predict, UpdateGradients, UpdateWeights};
@@ -78,9 +78,9 @@ impl FullyConnectedLayer {
 	fn random(inputs: Ix, outputs: Ix, activation: Activation) -> Self {
 		assert!(inputs >= 1 && outputs >= 1);
 
-		let inputs = inputs + 1; // implicitely add bias!
+		let inputs          = inputs  + 1; // implicitely add bias!
 		let count_gradients = outputs + 1;
-		let shape = Shape::from(Dim([outputs, inputs]));
+		let shape           = (outputs, inputs);
 
 		FullyConnectedLayer {
 			weights:       Array2::random(shape, Range::new(-1.0, 1.0)),
@@ -155,10 +155,11 @@ impl FullyConnectedLayer {
 		/// Could profit greatly from vectorization and builtin library solutions for this
 		/// kind of operation w.r.t. performance gains.
 		/// =================================================================================
-		Zip::from(&mut self.outputs).and(self.weights.axis_iter(Axis(0))).apply(|output, weights| {
+		Zip::from(&mut self.outputs).and(self.weights.outer_iter()).apply(|output, weights| {
 			let s   = weights.len();
 			*output = act.base(weights.slice(s![..-1]).dot(&input) + weights[s-1]);
 		});
+		// general_matvec_mul(&mut self.outputs, &self.weights, &input);
 		/// =================================================================================
 
 		self.output_view() // required for folding the general operation
@@ -176,9 +177,9 @@ impl FullyConnectedLayer {
 
 		// Just as slow as the old version below ...
 		Zip::from(&mut self.gradients.slice_mut(s![..-1]))
-			.and(&target_values)
-			.and(&self.outputs)
-			.apply(|gradient, &target, &output| {
+				.and(&target_values)
+				.and(&self.outputs)
+				.apply(|gradient, &target, &output| {
 			*gradient = (target - output) * act.derived(output)
 		});
 
