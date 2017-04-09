@@ -6,7 +6,7 @@ use std::vec::Vec;
 use rand::distributions::Range;
 use ndarray_rand::RandomExt;
 use ndarray::prelude::*;
-use ndarray::{Zip};
+use ndarray::{Zip, Ix};
 use itertools::{multizip, Itertools};
 
 use traits::{LearnRate, LearnMomentum, Predict, UpdateGradients, UpdateWeights};
