@@ -91,24 +91,6 @@ impl FullyConnectedLayer {
 		}
 	}
 
-	/// Count rows of the weight matrix.
-	/// 
-	/// This method should be only used for debugging purposes!
-	#[inline]
-	fn count_rows(&self) -> Ix {
-		let (rows, _) = self.weights.dim();
-		rows
-	}
-
-	/// Count columns of the weight matrix.
-	/// 
-	/// This method should be only used for debugging purposes!
-	#[inline]
-	fn count_columns(&self) -> Ix {
-		let (_, cols) = self.weights.dim();
-		cols
-	}
-
 	/// Count output neurons of this layer.
 	/// 
 	/// This method should be only used for debugging purposes!
@@ -145,8 +127,8 @@ impl FullyConnectedLayer {
 	fn feed_forward(&mut self,
 	                input: ArrayView1<f32>)
 	                -> ArrayView1<f32> {
-		debug_assert_eq!(self.count_rows(), self.count_outputs());
-		debug_assert_eq!(self.count_columns(), input.len() + 1);
+		debug_assert_eq!(self.weights.rows(), self.count_outputs());
+		debug_assert_eq!(self.weights.cols(), input.len() + 1);
 
 		let act = self.activation; // required because of non-lexical borrows
 
@@ -216,8 +198,8 @@ impl FullyConnectedLayer {
 	fn propagate_gradients(&mut self,
 	                       prev: &FullyConnectedLayer)
 	                       -> &Self {
-		debug_assert_eq!(prev.count_rows()   , prev.count_gradients() - 1);
-		debug_assert_eq!(prev.count_columns(), self.count_gradients());
+		debug_assert_eq!(prev.weights.rows(), prev.count_gradients() - 1);
+		debug_assert_eq!(prev.weights.cols(), self.count_gradients());
 
 		multizip((prev.weights.outer_iter(), prev.gradients.iter()))
 			.foreach(|(prev_weights_row, prev_gradient)| {
@@ -236,8 +218,8 @@ impl FullyConnectedLayer {
 	                  learn_rate  : LearnRate,
 	                  learn_mom   : LearnMomentum)
 	                  -> ArrayView1<f32> {
-		debug_assert_eq!(prev_outputs.len() + 1, self.count_columns());
-		debug_assert_eq!(self.count_gradients(), self.count_rows() + 1);
+		debug_assert_eq!(prev_outputs.len() + 1, self.weights.cols());
+		debug_assert_eq!(self.count_gradients(), self.weights.rows() + 1);
 
 		multizip((self.weights.outer_iter_mut(),
 		          self.delta_weights.outer_iter_mut(),
