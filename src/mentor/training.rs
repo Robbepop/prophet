@@ -129,8 +129,15 @@ impl<LR1, LM1, CR1, SC1, LG1> Mentor<LR1, LM1, CR1, SC1, LG1>
 		SC2: SchedulingConfigState,
 		LG2: LogConfigState>
 	(self) -> Mentor<LR2, LM2, CR2, SC2, LG2> {
-		unsafe {
-			::std::mem::transmute::<Self, Mentor<LR2, LM2, CR2, SC2, LG2>>(self)
+		Mentor{
+			learn_rate: self.learn_rate,
+			learn_mom : self.learn_mom,
+			criterion : self.criterion,
+			scheduling: self.scheduling,
+			disciple  : self.disciple,
+			samples   : self.samples,
+			log_config: self.log_config,
+			phantom   : PhantomData
 		}
 	}
 }
