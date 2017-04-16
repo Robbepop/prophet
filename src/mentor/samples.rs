@@ -30,15 +30,25 @@ pub struct Sample {
 	pub target: Array1<f32>,
 }
 
+impl Sample {
+	/// Creates a new sample from a given input and a given target range of values.
+	pub fn new<A1, A2>(input: A1, target: A2) -> Sample
+		where A1: Into<Vec<f32>>,
+		      A2: Into<Vec<f32>>
+	{
+		Sample{
+			input : Array1::from_vec(input.into()),
+			target: Array1::from_vec(target.into())
+		}
+	}
+}
+
 impl<A1, A2> From<(A1, A2)> for Sample
     where A1: Into<Vec<f32>>,
           A2: Into<Vec<f32>>
 {
 	fn from(from: (A1, A2)) -> Sample {
-		Sample {
-			input : Array1::from_vec(from.0.into()),
-			target: Array1::from_vec(from.1.into()),
-		}
+		Sample::new(from.0, from.1)
 	}
 }
 
@@ -85,10 +95,10 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 /// # let f = -1.0;
 /// # #[allow(unused_variables)]
 /// let samples = samples![
-/// 	[f, f] => [f],
-/// 	[t, f] => [t],
-/// 	[f, t] => [t],
-/// 	[t, t] => [f]
+/// 	[f, f] => f,
+/// 	[t, f] => t,
+/// 	[f, t] => t,
+/// 	[t, t] => f
 /// ];
 /// # }
 /// ```
@@ -103,10 +113,10 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 /// # let f = -1.0;
 /// # #[allow(unused_variables)]
 /// let samples = vec![
-/// 	Sample::from((vec![f, f], vec![f])),
-/// 	Sample::from((vec![t, f], vec![t])),
-/// 	Sample::from((vec![f, t], vec![t])),
-/// 	Sample::from((vec![t, t], vec![f])),
+/// 	Sample::new(vec![f, f], vec![f]),
+/// 	Sample::new(vec![t, f], vec![t]),
+/// 	Sample::new(vec![f, t], vec![t]),
+/// 	Sample::new(vec![t, t], vec![f]),
 /// ];
 /// # }
 /// ```
@@ -118,11 +128,36 @@ macro_rules! samples {
 		),+
 	] => {
 		vec![$(
-			Sample::from(
-				(
-					vec![$($i),+],
-					vec![$($e),+]
-				)
+			Sample::new(
+				vec![$($i),+],
+				vec![$($e),+]
+			)
+		),+]
+	};
+
+	[ $( [ $($i:expr),+ ] => $e:expr ),+ ] => {
+		vec![$(
+			Sample::new(
+				vec![$($i),+],
+				vec![$e]
+			)
+		),+]
+	};
+
+	[ $( $i:expr => [ $($e:expr),+ ] ),+ ] => {
+		vec![$(
+			Sample::new(
+				vec![$i],
+				vec![$($e),+]
+			)
+		),+]
+	};
+
+	[ $( $i:expr => $e:expr ),+ ] => {
+		vec![$(
+			Sample::new(
+				vec![$i],
+				vec![$e]
 			)
 		),+]
 	};
@@ -200,5 +235,79 @@ impl SampleScheduler {
 		let len_samples = self.samples.len();
 		let id = self.scheduler.next(len_samples);
 		(&self.samples[id]).into()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	fn assert_samples_eq(expansion: &[Sample], target: &[Sample]) {
+		assert_eq!(expansion.len(), target.len());
+		for (fst, snd) in expansion.iter().zip(target.iter()) {
+			assert_eq!(fst.input.len(), snd.input.len());
+			assert_eq!(fst.target.len(), snd.target.len());
+			for (i, t) in fst.input.iter().zip(snd.input.iter()) {
+				assert_eq!(i, t);
+			}
+		}
+	}
+
+	#[test]
+	fn sample_and_vec_equal() {
+		let s1: Vec<Sample> = samples![
+			[1.0, 2.0] => [3.0],
+			[4.0, 5.0] => [5.0]
+		];
+		let a1: Vec<Sample> = vec![
+			Sample::new(vec![1.0, 2.0], vec![3.0]),
+			Sample::new(vec![4.0, 5.0], vec![5.0]),
+		];
+		assert_samples_eq(&s1, &a1);
+	}
+
+	#[test]
+	fn missing_right_brackets() {
+		let s1: Vec<Sample> = samples![
+			[1.0, 2.0] => [3.0],
+			[4.0, 5.0] => [5.0],
+			[6.0, 7.0] => [8.0]
+		];
+		let s2: Vec<Sample> = samples![
+			[1.0, 2.0] => 3.0,
+			[4.0, 5.0] => 5.0,
+			[6.0, 7.0] => 8.0
+		];
+		assert_samples_eq(&s1, &s2);
+	}
+
+	#[test]
+	fn missing_left_brackets() {
+		let s1: Vec<Sample> = samples![
+			[1.0] => [2.0, 3.0],
+			[4.0] => [5.0, 6.0],
+			[7.0] => [8.0, 9.0]
+		];
+		let s2: Vec<Sample> = samples![
+			1.0 => [2.0, 3.0],
+			4.0 => [5.0, 6.0],
+			7.0 => [8.0, 9.0]
+		];
+		assert_samples_eq(&s1, &s2);
+	}
+
+	#[test]
+	fn missing_both_brackets() {
+		let s1: Vec<Sample> = samples![
+			[1.0] => [2.0],
+			[3.0] => [4.0],
+			[5.0] => [6.0]
+		];
+		let s2: Vec<Sample> = samples![
+			1.0 => 2.0,
+			3.0 => 4.0,
+			5.0 => 6.0
+		];
+		assert_samples_eq(&s1, &s2);
 	}
 }
