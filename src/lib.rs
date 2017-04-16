@@ -27,10 +27,10 @@
 //! let (t, f)  = (1.0, -1.0);
 //! // static samples are easily generated with this macro!
 //! let train_samples = samples![
-//! 	[f, f] => [f], // ⊥ ∧ ⊥ → ⊥
-//! 	[f, t] => [t], // ⊥ ∧ ⊤ → ⊤
-//! 	[t, f] => [t], // ⊤ ∧ ⊥ → ⊤
-//! 	[t, t] => [t]  // ⊤ ∧ ⊤ → ⊤
+//! 	[f, f] => f, // ⊥ ∧ ⊥ → ⊥
+//! 	[f, t] => t, // ⊥ ∧ ⊤ → ⊤
+//! 	[t, f] => t, // ⊤ ∧ ⊥ → ⊤
+//! 	[t, t] => t  // ⊤ ∧ ⊤ → ⊤
 //! ];
 //! 
 //! // create the topology for our neural network
@@ -75,10 +75,10 @@
 //!
 //! 	// train it for the given samples
 //! 	.train(samples![
-//! 		[f, f] => [f], // ⊥ ∧ ⊥ → ⊥
-//! 		[f, t] => [t], // ⊥ ∧ ⊤ → ⊤
-//! 		[t, f] => [t], // ⊤ ∧ ⊥ → ⊤
-//! 		[t, t] => [t]  // ⊤ ∧ ⊤ → ⊤
+//! 		[f, f] => f, // ⊥ ∧ ⊥ → ⊥
+//! 		[f, t] => t, // ⊥ ∧ ⊤ → ⊤
+//! 		[t, f] => t, // ⊤ ∧ ⊥ → ⊤
+//! 		[t, t] => t  // ⊤ ∧ ⊤ → ⊤
 //! 	])
 //! 	.go()      // start the training session
 //! 	.unwrap(); // and unwrap the Result

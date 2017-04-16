@@ -69,10 +69,10 @@ fn train_xor() {
 
 	let (t, f) = (1.0, -1.0);
 	let samples = samples![
-		[f, f] => [f],
-		[t, f] => [t],
-		[f, t] => [t],
-		[t, t] => [f]
+		[f, f] => f,
+		[t, f] => t,
+		[f, t] => t,
+		[t, t] => f
 	];
 
 	let net = Topology::input(2)
@@ -95,21 +95,21 @@ fn train_constant() {
 
 	// samples to train the net with
 	let learn_samples = samples![
-		[0.0] => [1.0],
-		[0.2] => [1.0],
-		[0.4] => [1.0],
-		[0.6] => [1.0],
-		[0.8] => [1.0],
-		[1.0] => [1.0]
+		0.0 => 1.0,
+		0.2 => 1.0,
+		0.4 => 1.0,
+		0.6 => 1.0,
+		0.8 => 1.0,
+		1.0 => 1.0
 	];
 
 	// samples to test the trained net with
 	let test_samples = samples![
-		[0.1] => [1.0],
-		[0.3] => [1.0],
-		[0.5] => [1.0],
-		[0.7] => [1.0],
-		[0.9] => [1.0]
+		0.1 => 1.0,
+		0.3 => 1.0,
+		0.5 => 1.0,
+		0.7 => 1.0,
+		0.9 => 1.0
 	];
 
 	let net = Topology::input(1)
@@ -128,10 +128,10 @@ fn train_and() {
 
 	let (t, f) = (1.0, -1.0);
 	let samples = samples![
-		[f, f] => [f],
-		[f, t] => [f],
-		[t, f] => [f],
-		[t, t] => [t]
+		[f, f] => f,
+		[f, t] => f,
+		[t, f] => f,
+		[t, t] => t
 	];
 
 	let net = Topology::input(2)

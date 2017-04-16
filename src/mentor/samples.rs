@@ -122,11 +122,7 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 /// ```
 #[macro_export]
 macro_rules! samples {
-	[
-		$(
-			[ $($i:expr),+ ] => [ $($e:expr),+ ]
-		),+
-	] => {
+	[ $( [ $($i:expr),+ ] => [ $($e:expr),+ ] ),+ ] => {
 		vec![$(
 			Sample::new(
 				vec![$($i),+],
