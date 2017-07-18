@@ -4,6 +4,7 @@ TODO-LIST
 This is the list of things that are planned for the next updates:
 
  - Write blog post about the type state pattern and publish new version.
+ - Implement some unit tests, testing the internals of layers.
  - Optimize `FullyConnectedLayer` so that all associated layers have equal sizes.
  - Split `FullyConnectedLayer` into `DenseLayer` and `ActivationLayer`.
  - Add `InputLayer` as a new topology layer for initial topology building.

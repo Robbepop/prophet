@@ -3,7 +3,7 @@
 name    = "prophet" # other names: Pulsar
 version = "0.3.0"
 authors = ["Robbepop"]
-license = "MIT/Apache-2.0"
+license = "MIT"
 readme  = "README.md"
 
 keywords   = ["deep-learning", "neural-networks", "machine-learning", "classifier"]
@@ -16,20 +16,20 @@ description   = """A neural network implementation with a focus on cache-efficie
 
 [dependencies]
 rand         = "0.3.15"
-num          = "0.1.37"
-ndarray      = "0.9.1"
-ndarray-rand = "0.5"
+num          = "0.1.40"
+ndarray      = "0.10"
+ndarray-rand = "0.6"
 itertools    = "0.6"
-log          = "0.3.7"
-serde        = { version = "0.9", optional = true }
-serde_derive = { version = "0.9", optional = true }
+log          = "0.3.8"
+serde        = { version = "1.0", optional = true }
+serde_derive = { version = "1.0", optional = true }
 
 [dev-dependencies]
 approx = "0.1.1"
 
 [features]
 run_internal_benches = []
-serde_support        = ["serde", "serde_derive", "ndarray/serde"]
+serde_support        = ["serde", "serde_derive", "ndarray/serde-1"]
 
 [badges]
 travis-ci = { repository = "Robbepop/prophet" }
