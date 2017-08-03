@@ -1,4 +1,4 @@
-#![cfg_attr(all(feature = "run_internal_benches", test), feature(test))]
+#![cfg_attr(all(feature = "benches", test), feature(test))]
 
 #![warn(missing_docs)]
 
@@ -108,10 +108,10 @@ extern crate log;
 #[cfg(test)] #[macro_use]
 extern crate approx;
 
-#[cfg(all(feature = "run_internal_benches", test))]
+#[cfg(all(feature = "benches", test))]
 extern crate test;
 
-#[cfg(all(feature = "run_internal_benches", test))]
+#[cfg(all(feature = "benches", test))]
 mod benches;
 
 mod traits;
