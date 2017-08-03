@@ -132,17 +132,17 @@ impl FullyConnectedLayer {
 
 		let act = self.activation; // required because of non-lexical borrows
 
-		/// This entire block of code is basically just a fancy matrix-vector multiplication.
-		/// 
-		/// Could profit greatly from vectorization and builtin library solutions for this
-		/// kind of operation w.r.t. performance gains.
-		/// =================================================================================
+		// This entire block of code is basically just a fancy matrix-vector multiplication.
+		// 
+		// Could profit greatly from vectorization and builtin library solutions for this
+		// kind of operation w.r.t. performance gains.
+		// =================================================================================
 		Zip::from(&mut self.outputs).and(self.weights.outer_iter()).apply(|output, weights| {
 			let s   = weights.len();
 			*output = act.base(weights.slice(s![..-1]).dot(&input) + weights[s-1]);
 		});
 		// general_matvec_mul(&mut self.outputs, &self.weights, &input);
-		/// =================================================================================
+		// =================================================================================
 
 		self.output_view() // required for folding the general operation
 	}
