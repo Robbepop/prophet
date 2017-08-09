@@ -21,6 +21,7 @@ Currently only supports supervised learning with fully connected layers.
 
 ### v0.4.0
 
+- Updated `ndarray` dependency version from `0.9` to `0.10`
 - Updated `serde` dependency version from `0.9` to `1.0`
 - Enabled `serde` feature by default.
 - `NeuralLayer::random` now uses `ChaChaRng` internally instead of `weak_rng`
