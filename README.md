@@ -17,6 +17,18 @@ Currently only supports supervised learning with fully connected layers.
 - GPGPU Support by Vulkano
 - Even more flexible learning methods
 
+## Release Notes
+
+### v0.4.0
+
+- Updated `serde` dependency version from `0.9` to `1.0`
+- Enabled `serde` feature by default.
+- `NeuralLayer::random` now uses `ChaChaRng` internally instead of `weak_rng`
+- Devel:
+	- travisCI now using new trusty environment
+	- travisCI now uploads code coverage to coveralls and codecov.io
+	- travisCI no longer requires `sudo`
+
 [1]: https://travis-ci.org/Robbepop/prophet.svg?branch=master
 [2]: https://travis-ci.org/Robbepop/prophet
 [3]: https://ci.appveyor.com/api/projects/status/2ckrux25wpa5eseh/branch/master?svg=true
