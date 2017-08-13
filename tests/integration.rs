@@ -82,7 +82,7 @@ fn train_xor() {
 
 		.train(samples.clone())
 		.learn_rate(0.6)
-		// .log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
+		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
 		.go()
 		.unwrap();
 
@@ -116,6 +116,7 @@ fn train_constant() {
 		.output(1, Identity)
 
 		.train(learn_samples)
+		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
 		.go()
 		.unwrap();
 
@@ -138,6 +139,7 @@ fn train_and() {
 		.output(1, Tanh)
 
 		.train(samples.clone())
+		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
 		.go()
 		.unwrap();
 
@@ -166,7 +168,7 @@ fn train_triple_add() {
 		.output(outputs, Identity)
 
 		.train(learn_samples)
-		.log_config(LogConfig::Iterations(100))
+		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
 		.go()
 		.unwrap();
 
