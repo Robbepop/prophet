@@ -113,10 +113,6 @@ fn train_constant() {
 	];
 
 	let net = Topology::input(1)
-		.layer(4, Identity) // Both layers introduced as counter to failing tests under 
-		.layer(3, Identity) // appveyor (Windows). If this fixes the problem there is a serious
-		                    // bug somewhere in the algorithms.
-		                    // These layers should be removed as soon as the bugs are fixed.
 		.output(1, Identity)
 
 		.train(learn_samples)
@@ -140,10 +136,6 @@ fn train_and() {
 	];
 
 	let net = Topology::input(2)
-		.layer(4, Tanh) // Both layers introduced as counter to failing tests under 
-		.layer(3, Tanh) // appveyor (Windows). If this fixes the problem there is a serious
-		                // bug somewhere in the algorithms.
-		                // These layers should be removed as soon as the bugs are fixed.
 		.output(1, Tanh)
 
 		.train(samples.clone())
@@ -173,10 +165,6 @@ fn train_triple_add() {
 		count_test_samples, inputs, outputs, mapper);
 
 	let net = Topology::input(inputs)
-		.layer(4, Identity) // Both layers introduced as counter to failing tests under 
-		.layer(3, Identity) // appveyor (Windows). If this fixes the problem there is a serious
-		                    // bug somewhere in the algorithms.
-		                    // These layers should be removed as soon as the bugs are fixed.
 		.output(outputs, Identity)
 
 		.train(learn_samples)
