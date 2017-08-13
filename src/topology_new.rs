@@ -10,7 +10,7 @@ use activation::Activation;
 pub enum Layer {
 	Input(usize),
 	FullyConnected(usize),
-	Activation(pub Activation, usize),
+	Activation(Activation, usize),
 	Convolution((usize, usize)),
 	Pooling((usize, usize))
 }
@@ -18,10 +18,13 @@ pub enum Layer {
 impl Layer {
 	/// Returns the len (in counts of neurons; without bias) of this layer.
 	pub fn len(&self) -> usize {
+		use self::Layer::*;
 		match self {
 			&Input(size) => size,
 			&FullyConnected(size) => size,
-			&Activation(size, _) => size
+			&Activation(_, size) => size,
+			&Convolution(_) => unreachable!(),
+			&Pooling(_) => unreachable!()
 		}
 	}
 }
@@ -48,7 +51,8 @@ impl TopologyBuilder {
 	/// 
 	/// Activation layers always have the size of the previous layer.
 	fn activation(mut self, activation: Activation) -> TopologyBuilder {
-		self.layers.push(Layer::Activation(self.last_len(), activation));
+		let last_len = self.last_len();
+		self.layers.push(Layer::Activation(activation, last_len));
 		self
 	}
 
@@ -66,7 +70,7 @@ impl TopologyBuilder {
 	/// Returns the fully constructed topology.
 	/// 
 	/// No further modifications to the topology are possible after this operation.
-	fn done() -> Topology {
+	fn done(self) -> Topology {
 		Topology{ layers: self.layers }
 	}
 }
@@ -177,7 +181,7 @@ mod tests {
 			.fully_connect(10).activation(ReLU)
 			.fully_connect( 1).activation(Tanh)
 
-			.done() // Checks validity of topology and makes it immutable.
+			.done(); // Checks validity of topology and makes it immutable.
 
 		assert_eq!(top.input_len() , 2);
 		assert_eq!(top.output_len(), 1);
@@ -191,7 +195,7 @@ mod tests {
 			.fully_connect(10).activation(ReLU)
 			.fully_connect(10).activation(ReLU)
 			.fully_connect( 5).activation(Tanh)
-			.done()
+			.done();
 
 		assert_eq!(top.input_len() , 2);
 		assert_eq!(top.output_len(), 5);

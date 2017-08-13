@@ -120,6 +120,7 @@ mod activation;
 mod errors;
 
 pub mod topology;
+mod topology_new;
 mod mentor;
 pub mod prelude;
 
