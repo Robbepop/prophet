@@ -76,8 +76,7 @@ fn train_xor() {
 	];
 
 	let net = Topology::input(2)
-		.layer(4, Tanh)
-		.layer(3, Tanh)
+		.layer(2, Tanh)
 		.output(1, Tanh)
 
 		.train(samples.clone())

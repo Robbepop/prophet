@@ -88,6 +88,14 @@ impl TopologyBuilder {
 		self
 	}
 
+	/// Returns the fully constructed topology.
+	/// 
+	/// No further modifications to the topology are possible after this operation.
+	#[inline]
+	pub fn done(self) -> Topology {
+		Topology{ layers: self.layers }
+	}
+
 	/// Returns the length of the last pushed layer.
 	/// 
 	/// Useful for layers like activation layers which adopt their size
@@ -97,13 +105,6 @@ impl TopologyBuilder {
 			.last()
 			.expect("a finished disciple must have a valid last layer!")
 			.len()
-	}
-
-	/// Returns the fully constructed topology.
-	/// 
-	/// No further modifications to the topology are possible after this operation.
-	fn done(self) -> Topology {
-		Topology{ layers: self.layers }
 	}
 }
 
