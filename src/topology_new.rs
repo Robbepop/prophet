@@ -8,14 +8,19 @@ use errors::{Result, Error};
 /// with input neurons, output neurons and an activation function.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Layer {
-	Input(usize),
-	FullyConnected(usize),
-	Activation(Activation, usize)
+	/// The input layer of a neural network.
+	/// 
+	/// Every neural network must have exactly one input layer.
+	Input(LayerSize),
+	/// A layer that fully connects both adjacent layers.
+	FullyConnected(LayerSize),
+	/// A layer that computes a given activation function for all elements.
+	Activation(Activation, LayerSize)
 }
 
 impl Layer {
 	/// Returns the len (in counts of neurons; without bias) of this layer.
-	pub fn len(&self) -> usize {
+	pub fn len(&self) -> LayerSize {
 		use self::Layer::*;
 		match self {
 			&Input(size) => size,
@@ -27,7 +32,7 @@ impl Layer {
 
 /// Represents the number of neurons within a layer of a topology.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct LayerSize(usize);
+pub struct LayerSize(usize);
 
 impl LayerSize {
 	/// Creates a new `LayerSize` with the given number of neurons.
@@ -35,7 +40,7 @@ impl LayerSize {
 	/// # Errors
 	/// 
 	/// - If the given size is equal to 0 (zero).
-	fn from_usize(size: usize) -> Result<LayerSize> {
+	pub fn from_usize(size: usize) -> Result<LayerSize> {
 		if size == 0 {
 			return Err(Error::zero_layer_size())
 		}
@@ -43,7 +48,7 @@ impl LayerSize {
 	}
 
 	/// Returns the represented number of neurons as `usize`.
-	fn to_usize(self) -> usize {
+	pub fn to_usize(self) -> usize {
 		self.0
 	}
 }
@@ -67,9 +72,10 @@ pub struct TopologyBuilder {
 
 impl TopologyBuilder {
 	/// Fully connects to the previous layer with the given amount of neurons.
-	pub fn fully_connect(mut self, size: usize) -> TopologyBuilder {
-		assert!(size >= 1, "cannot define a zero-sized hidden layer");
-		self.layers.push(Layer::FullyConnected(size));
+	pub fn fully_connect<S>(mut self, size: S) -> TopologyBuilder
+		where S: Into<LayerSize>
+	{
+		self.layers.push(Layer::FullyConnected(size.into()));
 		self
 	}
 
@@ -86,7 +92,7 @@ impl TopologyBuilder {
 	/// 
 	/// Useful for layers like activation layers which adopt their size
 	/// from their previous layer.
-	fn last_len(&self) -> usize {
+	fn last_len(&self) -> LayerSize {
 		self.layers
 			.last()
 			.expect("a finished disciple must have a valid last layer!")
@@ -108,22 +114,23 @@ pub struct Topology {
 }
 
 impl Topology {
-	/// Creates a new topology.
+	/// Creates a new topology with an input layer of the given size.
 	/// 
 	/// # Panics
 	/// 
 	/// If size is zero.
-	pub fn input(size: usize) -> TopologyBuilder {
-		assert!(size >= 1, "cannot define a zero-sized input layer");
+	pub fn input<S>(size: S) -> TopologyBuilder
+		where S: Into<LayerSize>
+	{
 		TopologyBuilder{
-			layers: vec![Layer::Input(size)]
+			layers: vec![Layer::Input(size.into())]
 		}
 	}
 
 	/// Returns the number of input neurons.
 	///
 	/// Used by mentors to validate their sample sizes.
-	pub fn input_len(&self) -> usize {
+	pub fn input_len(&self) -> LayerSize {
 		self.layers
 			.first()
 			.expect("a finished disciple must have a valid first layer!")
@@ -133,7 +140,7 @@ impl Topology {
 	/// Returns the number of output neurons.
 	///
 	/// Used by mentors to validate their sample sizes.
-	pub fn output_len(&self) -> usize {
+	pub fn output_len(&self) -> LayerSize {
 		self.layers
 			.last()
 			.expect("a finished disciple must have a valid last layer!")
@@ -141,77 +148,9 @@ impl Topology {
 	}
 }
 
-/// Padding configuration for kernel operations in convolution layers.
-enum Padding {
-	/// Zero-padding
-	/// 
-	/// Fill empty areas with zeroes.
-	Zero,
-
-	/// Exact-padding
-	/// 
-	/// Ignore areas with one or more empty values entirely.
-	Exact,
-
-	/// Ignoring-padding
-	/// 
-	/// Ignores empty elements on kernel computation.
-	Ignore
-}
-
-/// Pooling kind for the pooling operation in convolution layers.
-enum Pooling {
-	/// Compute the minimum element within a pool.
-	Min,
-
-	/// Compute the maximum element within a pool
-	Max,
-
-	/// Compute the mean amongst all elements within a pool.
-	Mean
-}
-
 #[cfg(test)]
 mod tests {
 	use super::*;
-
-	#[test]
-	fn topology_2d() {
-		use PoolingKind::Max;
-		use self::Activation::{Logistic, Identity, ReLU, Tanh};
-		let top = Topology::input2d((120, 80))
-			.convolution((10, 10)) // PARAMS: conv-size, feature-count, padding
-			.pooling((5, 5))       // PARAMS: pool-size, pooling-kind, step-size
-			                       // FEATURE SIZE: 24 x 16
-			.activation(ReLU)      // Activation works for 1d and 2d inputs!
-
-			.convolution((8, 8))
-			.pooling((4, 4))       // FEATURE SIZE: 6 x 4
-			.activation(ReLU)
-
-			.convolution((3, 3))
-			.pooling((3, 2))       // FEATURE SIZE: 2 x 2
-			.activation(ReLU)
-
-			.pooling((2, 2))       // FEATURE SIZE: 1 x 1
-			.activation(ReLU)
-
-			.fully_connect(5) // Note: First call to `fully_connect` after
-			                  // a series of convolution will convert the 1x1-sized
-			                  // feature maps into a one-dimensional array that
-			                  // can be fully connected against.
-			                  // This operation is implicit.
-			                  // Panics if the feature maps aren't of size 1x1.
-			.activation(Logistic)
-			.fully_connect(10).activation(Identity)
-			.fully_connect(10).activation(ReLU)
-			.fully_connect( 1).activation(Tanh)
-
-			.done(); // Checks validity of topology and makes it immutable.
-
-		assert_eq!(top.input_len() , 2);
-		assert_eq!(top.output_len(), 1);
-	}
 
 	#[test]
 	fn topology_1d() {
@@ -223,7 +162,7 @@ mod tests {
 			.fully_connect( 5).activation(Tanh)
 			.done();
 
-		assert_eq!(top.input_len() , 2);
-		assert_eq!(top.output_len(), 5);
+		assert_eq!(top.input_len() , LayerSize(2));
+		assert_eq!(top.output_len(), LayerSize(5));
 	}
 }
