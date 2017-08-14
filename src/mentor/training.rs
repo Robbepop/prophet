@@ -155,10 +155,10 @@ impl<LM, CR, SC, LG> Mentor<Unset, LM, CR, SC, LG>
 	/// Default learn rate is adapting behaviour.
 	/// 
 	/// ***Panics*** if given learn rate is invalid!
-	pub fn learn_rate(mut self, learn_rate: f64) -> Mentor<Set, LM, CR, SC, LG> {
-		self.learn_rate = LearnRateConfig::Fixed(
-			LearnRate::from_f64(learn_rate)
-				.expect("expected valid learn rate"));
+	pub fn learn_rate<LR>(mut self, learn_rate: LR) -> Mentor<Set, LM, CR, SC, LG>
+		where LR: Into<LearnRate>
+	{
+		self.learn_rate = LearnRateConfig::Fixed(learn_rate.into());
 		self.switch_state()
 	}
 }
@@ -175,10 +175,10 @@ impl<LR, CR, SC, LG> Mentor<LR, Unset, CR, SC, LG>
 	/// Default learn momentum is fixed at `0.5`.
 	/// 
 	/// ***Panics*** if given learn momentum is invalid
-	pub fn learn_momentum(mut self, learn_momentum: f64) -> Mentor<LR, Set, CR, SC, LG> {
-		self.learn_mom = LearnMomentumConfig::Fixed(
-			LearnMomentum::from_f64(learn_momentum)
-				.expect("expected valid learn momentum"));
+	pub fn learn_momentum<LM>(mut self, learn_momentum: LM) -> Mentor<LR, Set, CR, SC, LG>
+		where LM: Into<LearnMomentum>
+	{
+		self.learn_mom = LearnMomentumConfig::Fixed(learn_momentum.into());
 		self.switch_state()
 	}
 }
@@ -348,9 +348,6 @@ impl Training {
 			Iterations(limit) => {
 				self.iterations.0 == limit
 			},
-			LatestMSE(target) => {
-				self.deviation.latest_mse() <= target
-			}
 			RecentMSE(target) => {
 				self.deviation.recent_mse() <= target
 			}
@@ -359,7 +356,7 @@ impl Training {
 
 	fn session(&mut self) {
 		{
-			let sample = self.scheduler.next();
+			let sample = self.scheduler.next_sample();
 			{
 				let output = self.disciple.predict(sample.input);
 				self.deviation.update(output, sample.target);

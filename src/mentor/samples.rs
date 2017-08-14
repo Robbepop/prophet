@@ -227,7 +227,7 @@ impl SampleScheduler {
 	}
 
 	/// Returns the next sample.
-	pub fn next(&mut self) -> SampleView {
+	pub fn next_sample(&mut self) -> SampleView {
 		let len_samples = self.samples.len();
 		let id = self.scheduler.next(len_samples);
 		(&self.samples[id]).into()

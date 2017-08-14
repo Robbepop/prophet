@@ -23,11 +23,7 @@ pub enum ErrorKind {
 
 	/// Occures when the specified average net error
 	/// criterion is invalid.
-	InvalidRecentMSE,
-
-	/// Occures when the specified mean squared error
-	/// criterion is invalid.
-	InvalidLatestMSE,
+	InvalidRecentMSECriterion,
 
 	/// Occures when trying to create a `LayerSize` that 
 	/// represents zero (0) neurons.
@@ -116,17 +112,8 @@ impl Error {
 	/// Creates a new `InvalidLearnMomentum` error with the given invalid learning momentum.
 	pub(crate) fn invalid_recent_mse(recent_mse: f64) -> Error {
 		Error{
-			kind: ErrorKind::InvalidRecentMSE,
+			kind: ErrorKind::InvalidRecentMSECriterion,
 			message: format!("Tried to create an invalid `RecentMSE` criterion of {:?}. Only strictly positive values are allowed.", recent_mse),
-			annotation: None
-		}
-	}
-
-	/// Creates a new `InvalidLearnMomentum` error with the given invalid learning momentum.
-	pub(crate) fn invalid_latest_mse(latest_mse: f64) -> Error {
-		Error{
-			kind: ErrorKind::InvalidLatestMSE,
-			message: format!("Tried to create an invalid `LatestMSE` criterion of {:?}. Only strictly positive values are allowed.", latest_mse),
 			annotation: None
 		}
 	}

@@ -16,6 +16,13 @@ impl LearnRate {
 	}
 }
 
+impl From<f64> for LearnRate {
+	fn from(rate: f64) -> LearnRate {
+		LearnRate::from_f64(rate)
+			.expect("Expected valid user input (`f64`) for creating a new LearnRate.")
+	}
+}
+
 impl Default for LearnRate {
 	fn default() -> Self {
 		LearnRate(0.3)
@@ -35,6 +42,13 @@ impl LearnMomentum {
 			return Err(Error::invalid_learn_momentum(momentum))
 		}
 		Ok(LearnMomentum(momentum as f32))
+	}
+}
+
+impl From<f64> for LearnMomentum {
+	fn from(rate: f64) -> LearnMomentum {
+		LearnMomentum::from_f64(rate)
+			.expect("Expected valid user input (`f64`) for creating a new LearnMomentum.")
 	}
 }
 

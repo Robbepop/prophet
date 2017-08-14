@@ -13,9 +13,6 @@ pub enum Criterion {
 	/// Stop after the given amount of learning iterations.
 	Iterations(u64),
 
-	/// Stop when the latest mean square error drops below the given value.
-	LatestMSE(f64),
-
 	/// Stop as soon as the recent mean squared error
 	/// drops below the given value.
 	RecentMSE(f64),
@@ -28,13 +25,6 @@ impl Criterion {
 		match *self {
 			TimeOut(_)    |
 			Iterations(_) => Ok(()),
-			LatestMSE(latest_mse) => {
-				if latest_mse > 0.0 {
-					Ok(())
-				} else {
-					Err(Error::invalid_latest_mse(latest_mse))
-				}
-			}
 			RecentMSE(recent_mse) => {
 				if recent_mse > 0.0 {
 					Ok(())
