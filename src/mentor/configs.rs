@@ -1,9 +1,8 @@
 
 use std::time::{Duration};
 
-use errors::ErrorKind::{InvalidLatestMSE, InvalidRecentMSE};
-use errors::Result;
-use traits::{LearnRate, LearnMomentum};
+use errors::{Result, Error};
+use utils::{LearnRate, LearnMomentum};
 
 /// Cirterias after which the learning process holds.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -29,18 +28,18 @@ impl Criterion {
 		match *self {
 			TimeOut(_) => Ok(()),
 			Iterations(_) => Ok(()),
-			LatestMSE(mse) => {
-				if mse > 0.0 && mse < 1.0 {
+			LatestMSE(latest_mse) => {
+				if latest_mse > 0.0 {
 					Ok(())
 				} else {
-					Err(InvalidLatestMSE)
+					Err(Error::invalid_latest_mse(latest_mse))
 				}
 			}
-			RecentMSE(recent) => {
-				if recent > 0.0 && recent < 1.0 {
+			RecentMSE(recent_mse) => {
+				if recent_mse > 0.0 {
 					Ok(())
 				} else {
-					Err(InvalidRecentMSE)
+					Err(Error::invalid_recent_mse(recent_mse))
 				}
 			}
 		}

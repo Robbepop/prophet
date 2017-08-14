@@ -9,7 +9,8 @@ use ndarray::prelude::*;
 use ndarray::{Zip, Ix};
 use itertools::{multizip, Itertools};
 
-use traits::{LearnRate, LearnMomentum, Predict, UpdateGradients, UpdateWeights};
+use traits::{Predict, UpdateGradients, UpdateWeights};
+use utils::{LearnRate, LearnMomentum};
 use activation::Activation;
 use topology::*;
 

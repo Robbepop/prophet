@@ -1,15 +1,16 @@
 use std::time::{SystemTime};
 
 use neural_net::NeuralNet;
-use traits::{
+use utils::{
 	LearnRate,
-	LearnMomentum,
+	LearnMomentum
+};
+use traits::{
 	Predict,
 	UpdateGradients,
 	UpdateWeights
 };
-use errors::ErrorKind::{InvalidSampleInputSize, InvalidSampleTargetSize};
-use errors::Result;
+use errors::{Result, Error};
 use topology::Topology;
 use mentor::configs::{
 	LearnRateConfig,
@@ -244,10 +245,10 @@ impl<LR, LM, CR, SC, LG> Mentor<LR, LM, CR, SC, LG>
 		let req_outputs = self.disciple.len_output();
 		for sample in self.samples.iter() {
 			if sample.input.len() != req_inputs {
-				return Err(InvalidSampleInputSize);
+				return Err(Error::unmatching_input_sample_size(sample.input.len(), req_inputs));
 			}
 			if sample.target.len() != req_outputs {
-				return Err(InvalidSampleTargetSize);
+				return Err(Error::unmatching_target_sample_size(sample.target.len(), req_outputs));
 			}
 		}
 		Ok(())
