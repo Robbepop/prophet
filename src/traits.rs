@@ -2,57 +2,7 @@
 
 use ndarray::*;
 
-use errors::Result;
-use errors::ErrorKind::{InvalidLearnRate, InvalidLearnMomentum};
-
-/// Learn rate.
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct LearnRate(pub f32);
-
-impl LearnRate {
-	/// Returns learn rate from the given `f64` if valid.
-	/// 
-	/// `rate` has to be in `(0,1)` to form a valid `LearnRate`
-	pub fn from_f64(rate: f64) -> Result<LearnRate> {
-		if rate > 0.0 && rate < 1.0 {
-			Ok(LearnRate(rate as f32))
-		}
-		else {
-			Err(InvalidLearnRate)
-		}
-	}
-}
-
-impl Default for LearnRate {
-	fn default() -> Self {
-		LearnRate(0.3)
-	}
-}
-
-/// Learn momentum.
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct LearnMomentum(pub f32);
-
-impl LearnMomentum {
-	/// Returns learn momentum from the given `f64` if valid.
-	/// 
-	/// `momentum` has to be in `(0,1)` to form a valid `LearnMomentum`
-	pub fn from_f64(momentum: f64) -> Result<LearnMomentum> {
-		if momentum > 0.0 && momentum < 1.0 {
-			Ok(LearnMomentum(momentum as f32))
-		}
-		else {
-			Err(InvalidLearnMomentum)
-		}
-	}
-}
-
-impl Default for LearnMomentum {
-	fn default() -> Self {
-		LearnMomentum(0.5)
-	}
-}
-
+use utils::{LearnRate, LearnMomentum};
 
 /// Types that can predict data based on a one-dimensional input data range.
 pub trait Predict<I> {
