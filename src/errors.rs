@@ -34,6 +34,7 @@ pub enum ErrorKind {
 	ZeroLayerSize
 }
 
+/// The error class used in `Prophet`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Error{
 	kind      : ErrorKind,
