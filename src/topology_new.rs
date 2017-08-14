@@ -1,8 +1,8 @@
 //! Provides operations, data structures and error definitions for Disciple objects
 //! which form the basis for topologies of neural networks.
 
-use std::slice::Iter;
 use activation::Activation;
+use errors::{Result, Error};
 
 /// Represents the topology element for a fully connected layer
 /// with input neurons, output neurons and an activation function.
@@ -10,9 +10,7 @@ use activation::Activation;
 pub enum Layer {
 	Input(usize),
 	FullyConnected(usize),
-	Activation(Activation, usize),
-	Convolution((usize, usize)),
-	Pooling((usize, usize))
+	Activation(Activation, usize)
 }
 
 impl Layer {
@@ -22,10 +20,38 @@ impl Layer {
 		match self {
 			&Input(size) => size,
 			&FullyConnected(size) => size,
-			&Activation(_, size) => size,
-			&Convolution(_) => unreachable!(),
-			&Pooling(_) => unreachable!()
+			&Activation(_, size) => size
 		}
+	}
+}
+
+/// Represents the number of neurons within a layer of a topology.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct LayerSize(usize);
+
+impl LayerSize {
+	/// Creates a new `LayerSize` with the given number of neurons.
+	/// 
+	/// # Errors
+	/// 
+	/// - If the given size is equal to 0 (zero).
+	fn from_usize(size: usize) -> Result<LayerSize> {
+		if size == 0 {
+			return Err(Error::zero_layer_size())
+		}
+		Ok(LayerSize(size))
+	}
+
+	/// Returns the represented number of neurons as `usize`.
+	fn to_usize(self) -> usize {
+		self.0
+	}
+}
+
+impl From<usize> for LayerSize {
+	fn from(size: usize) -> LayerSize {
+		assert!(size > 0);
+		LayerSize(size)
 	}
 }
 
@@ -41,7 +67,7 @@ pub struct TopologyBuilder {
 
 impl TopologyBuilder {
 	/// Fully connects to the previous layer with the given amount of neurons.
-	fn fully_connect(mut self, size: usize) -> TopologyBuilder {
+	pub fn fully_connect(mut self, size: usize) -> TopologyBuilder {
 		assert!(size >= 1, "cannot define a zero-sized hidden layer");
 		self.layers.push(Layer::FullyConnected(size));
 		self
@@ -50,7 +76,7 @@ impl TopologyBuilder {
 	/// Pushes an activation layer to the topology.
 	/// 
 	/// Activation layers always have the size of the previous layer.
-	fn activation(mut self, activation: Activation) -> TopologyBuilder {
+	pub fn activation(mut self, activation: Activation) -> TopologyBuilder {
 		let last_len = self.last_len();
 		self.layers.push(Layer::Activation(activation, last_len));
 		self
