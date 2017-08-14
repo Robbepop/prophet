@@ -87,7 +87,7 @@ impl Activation {
 mod details {
 	use ndarray::NdFloat;
 
-	/// Identity: *ƒ(x) = x*
+	/// `Identity`: *ƒ(x) = x*
 	pub fn identity<F: NdFloat>(x: F) -> F {
 		x
 	}
@@ -139,35 +139,35 @@ mod details {
 		F::one() / (x * x + F::one())
 	}
 
-	/// SoftSign: *ƒ(x) = x ⋅ (1 + |x|)⁻¹*
+	/// `SoftSign`: *ƒ(x) = x ⋅ (1 + |x|)⁻¹*
 	pub fn softsign<F: NdFloat>(x: F) -> F {
 		x / (F::one() + x.abs())
 	}
-	/// Derivation of SoftSign: *ƒ(x) = ( (1 + |x|)² )⁻¹*
+	/// Derivation of `SoftSign`: *ƒ(x) = ( (1 + |x|)² )⁻¹*
 	pub fn softsign_dx<F: NdFloat>(x: F) -> F {
 		let dx = F::one() + x.abs();
 		F::one() / (dx * dx)
 	}
 
-	/// ReLU:
+	/// `ReLU`:
 	/// *ƒ(x) = 0* **if** *x < 0*
 	/// *ƒ(x) = x* **else**
 	pub fn relu<F: NdFloat>(x: F) -> F {
 		if x < F::zero() { F::zero() } else { x }
 	}
 
-	/// Derivation of ReLU:
+	/// Derivation of `ReLU`:
 	/// *ƒ(x) = 0* **if** *x < 0*
 	/// *ƒ(x) = 1* **else**
 	pub fn relu_dx<F: NdFloat>(x: F) -> F {
 		if x < F::zero() { F::zero() } else { F::one() }
 	}
 
-	/// SoftPlus: *ƒ(x) = __ln__(1 + eˣ)*
+	/// `SoftPlus`: *ƒ(x) = __ln__(1 + eˣ)*
 	pub fn softplus<F: NdFloat>(x: F) -> F {
 		x.exp().ln_1p()
 	}
-	/// Derivation of SoftPlus: *ƒ(x) = (1 + e⁻ˣ)⁻¹*
+	/// Derivation of `SoftPlus`: *ƒ(x) = (1 + e⁻ˣ)⁻¹*
 	pub fn softplus_dx<F: NdFloat>(x: F) -> F {
 		F::one() / (F::one() + (-x).exp())
 	}

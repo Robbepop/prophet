@@ -64,25 +64,25 @@ impl Error {
 		}
 	}
 
-	/// Returns a new `Error` for the given kind and with the given message.
-	/// 
-	/// Note: Instances created with this method won't have an annotation.
-	///       Use `with_annotation(..)` to add one if needed.
-	#[inline]
-	pub(crate) fn new(kind: ErrorKind, message: String) -> Error {
-		Error{kind, message, annotation: None}
-	}
+	// /// Returns a new `Error` for the given kind and with the given message.
+	// /// 
+	// /// Note: Instances created with this method won't have an annotation.
+	// ///       Use `with_annotation(..)` to add one if needed.
+	// #[inline]
+	// pub(crate) fn new(kind: ErrorKind, message: String) -> Error {
+	// 	Error{kind, message, annotation: None}
+	// }
 
-	/// Consumes this error and returns itself with the given annotation added to it.
-	/// 
-	/// Note: This will replace an already existing annotation.
-	#[inline]
-	pub(crate) fn with_annotation<A>(mut self, annotation: A) -> Error
-		where A: Into<String>
-	{
-		self.annotation = Some(annotation.into());
-		self
-	}
+	// /// Consumes this error and returns itself with the given annotation added to it.
+	// /// 
+	// /// Note: This will replace an already existing annotation.
+	// #[inline]
+	// pub(crate) fn with_annotation<A>(mut self, annotation: A) -> Error
+	// 	where A: Into<String>
+	// {
+	// 	self.annotation = Some(annotation.into());
+	// 	self
+	// }
 }
 
 impl Error {
@@ -90,7 +90,7 @@ impl Error {
 	pub(crate) fn zero_layer_size() -> Error {
 		Error{
 			kind: ErrorKind::ZeroLayerSize,
-			message: format!("Cannot create a layer size representing zero (0) neurons."),
+			message: String::from("Cannot create a layer size representing zero (0) neurons."),
 			annotation: None
 		}
 	}

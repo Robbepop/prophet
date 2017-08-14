@@ -118,9 +118,10 @@ mod traits;
 mod neural_net;
 mod activation;
 mod errors;
+mod utils;
 
 pub mod topology;
-mod topology_new;
+pub mod topology_new;
 mod mentor;
 pub mod prelude;
 

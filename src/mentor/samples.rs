@@ -174,9 +174,9 @@ enum Scheduler {
 impl ::std::fmt::Debug for Scheduler {
 	fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
 		use self::Scheduler::*;
-		match self {
-			&Random(_)    => write!(f, "Scheduler::Random(_)"),
-			&Iterative(x) => write!(f, "Scheduler::Iterative({})", x),
+		match *self {
+			Random(_)    => write!(f, "Scheduler::Random(_)"),
+			Iterative(x) => write!(f, "Scheduler::Iterative({})", x),
 		}
 	}
 }
@@ -197,11 +197,11 @@ impl Scheduler {
 	/// to pick the associated sample.
 	fn next(&mut self, num_samples: usize) -> usize {
 		use self::Scheduler::*;
-		match self {
-			&mut Random(ref mut rng) => {
+		match *self {
+			Random(ref mut rng) => {
 				rng.gen_range(0, num_samples)
 			},
-			&mut Iterative(ref mut cur) => {
+			Iterative(ref mut cur) => {
 				let next = *cur as usize % num_samples;
 				*cur += 1;
 				next

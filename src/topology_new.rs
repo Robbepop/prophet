@@ -22,10 +22,10 @@ impl Layer {
 	/// Returns the len (in counts of neurons; without bias) of this layer.
 	pub fn len(&self) -> LayerSize {
 		use self::Layer::*;
-		match self {
-			&Input(size) => size,
-			&FullyConnected(size) => size,
-			&Activation(_, size) => size
+		match *self {
+			Input(size)          |
+			FullyConnected(size) |
+			Activation(_, size)  => size
 		}
 	}
 }
@@ -55,8 +55,8 @@ impl LayerSize {
 
 impl From<usize> for LayerSize {
 	fn from(size: usize) -> LayerSize {
-		assert!(size > 0);
-		LayerSize(size)
+		LayerSize::from_usize(size)
+			.expect("This implementation expects the user to provide valid input.")
 	}
 }
 

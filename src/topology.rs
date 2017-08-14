@@ -82,7 +82,7 @@ impl Topology {
 	}
 
 	/// Iterates over the layer sizes of this topology.
-	pub fn iter_layers<'a>(&'a self) -> Iter<'a, Layer> {
+	pub fn iter_layers(&self) -> Iter<Layer> {
 		self.layers.iter()
 	}
 }

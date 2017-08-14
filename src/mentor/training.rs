@@ -243,7 +243,7 @@ impl<LR, LM, CR, SC, LG> Mentor<LR, LM, CR, SC, LG>
 	fn validate_samples(&self) -> Result<()> {
 		let req_inputs = self.disciple.len_input();
 		let req_outputs = self.disciple.len_output();
-		for sample in self.samples.iter() {
+		for sample in &self.samples {
 			if sample.input.len() != req_inputs {
 				return Err(Error::unmatching_input_sample_size(sample.input.len(), req_inputs));
 			}
