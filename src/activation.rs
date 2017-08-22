@@ -207,169 +207,171 @@ mod details {
 mod tests {
 	use super::*;
 
+	const EPSILON: f64 = 0.0000001;
+
 	#[test]
 	fn identity() {
 		let act = Activation::Identity;
-		relative_eq!(act.base(-1.0), -1.0);
-		relative_eq!(act.base(-0.5), -0.5);
-		relative_eq!(act.base(0.0), 0.0);
-		relative_eq!(act.base(0.5), 0.5);
-		relative_eq!(act.base(1.0), 1.0);
-		relative_eq!(act.derived(-1.0), 1.0);
-		relative_eq!(act.derived(-0.5), 1.0);
-		relative_eq!(act.derived(0.0), 1.0);
-		relative_eq!(act.derived(0.5), 1.0);
-		relative_eq!(act.derived(1.0), 1.0);
+		assert_relative_eq!(act.base(-1.0), -1.0);
+		assert_relative_eq!(act.base(-0.5), -0.5);
+		assert_relative_eq!(act.base(0.0), 0.0);
+		assert_relative_eq!(act.base(0.5), 0.5);
+		assert_relative_eq!(act.base(1.0), 1.0);
+		assert_relative_eq!(act.derived(-1.0), 1.0);
+		assert_relative_eq!(act.derived(-0.5), 1.0);
+		assert_relative_eq!(act.derived(0.0), 1.0);
+		assert_relative_eq!(act.derived(0.5), 1.0);
+		assert_relative_eq!(act.derived(1.0), 1.0);
 	}
 
 	#[test]
 	fn binary_step() {
 		use num::Float;
 		let act = Activation::BinaryStep;
-		relative_eq!(act.base(-1.0), 0.0);
-		relative_eq!(act.base(-0.5), 0.0);
-		relative_eq!(act.base(0.0), 1.0);
-		relative_eq!(act.base(0.5), 1.0);
-		relative_eq!(act.base(1.0), 1.0);
-		relative_eq!(act.derived(-1.0), 0.0);
-		relative_eq!(act.derived(-0.5), 0.0);
-		relative_eq!(act.derived(0.0), <f64>::infinity());
-		relative_eq!(act.derived(0.5), 0.0);
-		relative_eq!(act.derived(1.0), 0.0);
+		assert_relative_eq!(act.base(-1.0), 0.0);
+		assert_relative_eq!(act.base(-0.5), 0.0);
+		assert_relative_eq!(act.base(0.0), 1.0);
+		assert_relative_eq!(act.base(0.5), 1.0);
+		assert_relative_eq!(act.base(1.0), 1.0);
+		assert_relative_eq!(act.derived(-1.0), 0.0);
+		assert_relative_eq!(act.derived(-0.5), 0.0);
+		assert_relative_eq!(act.derived(0.0), <f64>::infinity());
+		assert_relative_eq!(act.derived(0.5), 0.0);
+		assert_relative_eq!(act.derived(1.0), 0.0);
 	}
 
 	#[test]
 	fn logistic() {
 		let act = Activation::Logistic;
-		relative_eq!(act.base(-1.0), 0.26894143);
-		relative_eq!(act.base(-0.5), 0.37754068);
-		relative_eq!(act.base(0.0), 0.5);
-		relative_eq!(act.base(0.5), 0.62245935);
-		relative_eq!(act.base(1.0), 0.7310586);
-		relative_eq!(act.derived(-1.0), 0.19661194);
-		relative_eq!(act.derived(-0.5), 0.23500371);
-		relative_eq!(act.derived(0.0), 0.25);
-		relative_eq!(act.derived(0.5), 0.23500371);
-		relative_eq!(act.derived(1.0), 0.19661193);
+		assert_relative_eq!(act.base(-1.0), 0.26894143, epsilon = EPSILON);
+		assert_relative_eq!(act.base(-0.5), 0.37754068, epsilon = EPSILON);
+		assert_relative_eq!(act.base(0.0), 0.5);
+		assert_relative_eq!(act.base(0.5), 0.62245935, epsilon = EPSILON);
+		assert_relative_eq!(act.base(1.0), 0.7310586, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-1.0), 0.19661194, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-0.5), 0.23500371, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(0.0), 0.25);
+		assert_relative_eq!(act.derived(0.5), 0.23500371, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(1.0), 0.19661193, epsilon = EPSILON);
 	}
 
 	#[test]
 	fn arctan() {
 		let act = Activation::ArcTan;
-		relative_eq!(act.base(-1.0), -0.7853982);
-		relative_eq!(act.base(-0.5), -0.4636476);
-		relative_eq!(act.base(0.0), 0.0);
-		relative_eq!(act.base(0.5), 0.4636476);
-		relative_eq!(act.base(1.0), 0.7853982);
-		relative_eq!(act.derived(-1.0), 0.5);
-		relative_eq!(act.derived(-0.5), 0.8);
-		relative_eq!(act.derived(0.0), 1.0);
-		relative_eq!(act.derived(0.5), 0.8);
-		relative_eq!(act.derived(1.0), 0.5);
+		assert_relative_eq!(act.base(-1.0), -0.7853982, epsilon = EPSILON);
+		assert_relative_eq!(act.base(-0.5), -0.4636476, epsilon = EPSILON);
+		assert_relative_eq!(act.base(0.0), 0.0);
+		assert_relative_eq!(act.base(0.5), 0.4636476, epsilon = EPSILON);
+		assert_relative_eq!(act.base(1.0), 0.7853982, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-1.0), 0.5);
+		assert_relative_eq!(act.derived(-0.5), 0.8);
+		assert_relative_eq!(act.derived(0.0), 1.0);
+		assert_relative_eq!(act.derived(0.5), 0.8);
+		assert_relative_eq!(act.derived(1.0), 0.5);
 	}
 
 	#[test]
 	fn tanh() {
 		let act = Activation::Tanh;
-		relative_eq!(act.base(-1.0), -0.7615942);
-		relative_eq!(act.base(-0.5), -0.46211717);
-		relative_eq!(act.base(0.0), 0.0);
-		relative_eq!(act.base(0.5), 0.46211717);
-		relative_eq!(act.base(1.0), 0.7615942);
-		relative_eq!(act.derived(-1.0), 0.41997433);
-		relative_eq!(act.derived(-0.5), 0.7864477);
-		relative_eq!(act.derived(0.0), 1.0);
-		relative_eq!(act.derived(0.5), 0.7864477);
-		relative_eq!(act.derived(1.0), 0.41997433);
+		assert_relative_eq!(act.base(-1.0), -0.7615942, epsilon = EPSILON);
+		assert_relative_eq!(act.base(-0.5), -0.46211717, epsilon = EPSILON);
+		assert_relative_eq!(act.base(0.0), 0.0);
+		assert_relative_eq!(act.base(0.5), 0.46211717, epsilon = EPSILON);
+		assert_relative_eq!(act.base(1.0), 0.7615942, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-1.0), 0.41997433, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-0.5), 0.7864477, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(0.0), 1.0);
+		assert_relative_eq!(act.derived(0.5), 0.7864477, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(1.0), 0.41997433, epsilon = EPSILON);
 	}
 
 	#[test]
 	fn softsign() {
 		let act = Activation::SoftSign;
-		relative_eq!(act.base(-1.0), -0.5);
-		relative_eq!(act.base(-0.5), -0.33333334);
-		relative_eq!(act.base(0.0), 0.0);
-		relative_eq!(act.base(0.5), 0.33333334);
-		relative_eq!(act.base(1.0), 0.5);
-		relative_eq!(act.derived(-1.0), 0.25);
-		relative_eq!(act.derived(-0.5), 0.44444445);
-		relative_eq!(act.derived(0.0), 1.0);
-		relative_eq!(act.derived(0.5), 0.44444445);
-		relative_eq!(act.derived(1.0), 0.25);
+		assert_relative_eq!(act.base(-1.0), -0.5);
+		assert_relative_eq!(act.base(-0.5), -0.33333334, epsilon = EPSILON);
+		assert_relative_eq!(act.base(0.0), 0.0);
+		assert_relative_eq!(act.base(0.5), 0.33333334, epsilon = EPSILON);
+		assert_relative_eq!(act.base(1.0), 0.5);
+		assert_relative_eq!(act.derived(-1.0), 0.25);
+		assert_relative_eq!(act.derived(-0.5), 0.44444445, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(0.0), 1.0);
+		assert_relative_eq!(act.derived(0.5), 0.44444445, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(1.0), 0.25);
 	}
 
 	#[test]
 	fn relu() {
 		let act = Activation::ReLU;
-		relative_eq!(act.base(-1.0), 0.0);
-		relative_eq!(act.base(-0.5), 0.0);
-		relative_eq!(act.base(0.0), 0.0);
-		relative_eq!(act.base(0.5), 0.5);
-		relative_eq!(act.base(1.0), 1.0);
-		relative_eq!(act.derived(-1.0), 0.0);
-		relative_eq!(act.derived(-0.5), 0.0);
-		relative_eq!(act.derived(0.0), 1.0);
-		relative_eq!(act.derived(0.5), 1.0);
-		relative_eq!(act.derived(1.0), 1.0);
+		assert_relative_eq!(act.base(-1.0), 0.0);
+		assert_relative_eq!(act.base(-0.5), 0.0);
+		assert_relative_eq!(act.base(0.0), 0.0);
+		assert_relative_eq!(act.base(0.5), 0.5);
+		assert_relative_eq!(act.base(1.0), 1.0);
+		assert_relative_eq!(act.derived(-1.0), 0.0);
+		assert_relative_eq!(act.derived(-0.5), 0.0);
+		assert_relative_eq!(act.derived(0.0), 1.0);
+		assert_relative_eq!(act.derived(0.5), 1.0);
+		assert_relative_eq!(act.derived(1.0), 1.0);
 	}
 
 	#[test]
 	fn softplus() {
 		let act = Activation::SoftPlus;
-		relative_eq!(act.base(-1.0), 0.3132617);
-		relative_eq!(act.base(-0.5), 0.474077);
-		relative_eq!(act.base(0.0), 0.6931472);
-		relative_eq!(act.base(0.5), 0.974077);
-		relative_eq!(act.base(1.0), 1.3132616);
-		relative_eq!(act.derived(-1.0), 0.26894143);
-		relative_eq!(act.derived(-0.5), 0.37754068);
-		relative_eq!(act.derived(0.0), 0.5);
-		relative_eq!(act.derived(0.5), 0.62245935);
-		relative_eq!(act.derived(1.0), 0.7310586);
+		assert_relative_eq!(act.base(-1.0), 0.3132617, epsilon = EPSILON);
+		assert_relative_eq!(act.base(-0.5), 0.474077, epsilon = EPSILON);
+		assert_relative_eq!(act.base(0.0), 0.6931472, epsilon = EPSILON);
+		assert_relative_eq!(act.base(0.5), 0.974077, epsilon = EPSILON);
+		assert_relative_eq!(act.base(1.0), 1.3132616, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-1.0), 0.26894143, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-0.5), 0.37754068, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(0.0), 0.5);
+		assert_relative_eq!(act.derived(0.5), 0.62245935, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(1.0), 0.7310586, epsilon = EPSILON);
 	}
 
 	#[test]
 	fn bent_identity() {
 		let act = Activation::BentIdentity;
-		relative_eq!(act.base(-1.0), -0.79289323);
-		relative_eq!(act.base(-0.5), -0.440983);
-		relative_eq!(act.base(0.0), 0.0);
-		relative_eq!(act.base(0.5), 0.559017);
-		relative_eq!(act.base(1.0), 1.2071068);
-		relative_eq!(act.derived(-1.0), 0.6464466);
-		relative_eq!(act.derived(-0.5), 0.7763932);
-		relative_eq!(act.derived(0.0), 1.0);
-		relative_eq!(act.derived(0.5), 1.2236068);
-		relative_eq!(act.derived(1.0), 1.3535534);
+		assert_relative_eq!(act.base(-1.0), -0.79289323, epsilon = EPSILON);
+		assert_relative_eq!(act.base(-0.5), -0.440983, epsilon = EPSILON);
+		assert_relative_eq!(act.base(0.0), 0.0);
+		assert_relative_eq!(act.base(0.5), 0.559017, epsilon = EPSILON);
+		assert_relative_eq!(act.base(1.0), 1.2071068, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-1.0), 0.6464466, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-0.5), 0.7763932, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(0.0), 1.0);
+		assert_relative_eq!(act.derived(0.5), 1.2236068, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(1.0), 1.3535534, epsilon = EPSILON);
 	}
 
 	#[test]
 	fn sinusoid() {
 		let act = Activation::Sinusoid;
-		relative_eq!(act.base(-1.0), -0.84147096);
-		relative_eq!(act.base(-0.5), -0.47942555);
-		relative_eq!(act.base(0.0), 0.0);
-		relative_eq!(act.base(0.5), 0.47942555);
-		relative_eq!(act.base(1.0), 0.84147096);
-		relative_eq!(act.derived(-1.0), 0.5403023);
-		relative_eq!(act.derived(-0.5), 0.87758255);
-		relative_eq!(act.derived(0.0), 1.0);
-		relative_eq!(act.derived(0.5), 0.87758255);
-		relative_eq!(act.derived(1.0), 0.5403023);
+		assert_relative_eq!(act.base(-1.0), -0.84147096, epsilon = EPSILON);
+		assert_relative_eq!(act.base(-0.5), -0.47942555, epsilon = EPSILON);
+		assert_relative_eq!(act.base(0.0), 0.0);
+		assert_relative_eq!(act.base(0.5), 0.47942555, epsilon = EPSILON);
+		assert_relative_eq!(act.base(1.0), 0.84147096, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-1.0), 0.5403023, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-0.5), 0.87758255, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(0.0), 1.0);
+		assert_relative_eq!(act.derived(0.5), 0.87758255, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(1.0), 0.5403023, epsilon = EPSILON);
 	}
 
 	#[test]
 	fn gaussian() {
 		let act = Activation::Gaussian;
-		relative_eq!(act.base(-1.0), 0.36787945);
-		relative_eq!(act.base(-0.5), 0.7788008);
-		relative_eq!(act.base(0.0), 1.0);
-		relative_eq!(act.base(0.5), 0.7788008);
-		relative_eq!(act.base(1.0), 0.36787945);
-		relative_eq!(act.derived(-1.0), 0.7357589);
-		relative_eq!(act.derived(-0.5), 0.7788008);
-		relative_eq!(act.derived(0.0), 0.0);
-		relative_eq!(act.derived(0.5), -0.7788008);
-		relative_eq!(act.derived(1.0), -0.7357589);
+		assert_relative_eq!(act.base(-1.0), 0.36787945, epsilon = EPSILON);
+		assert_relative_eq!(act.base(-0.5), 0.7788008, epsilon = EPSILON);
+		assert_relative_eq!(act.base(0.0), 1.0);
+		assert_relative_eq!(act.base(0.5), 0.7788008, epsilon = EPSILON);
+		assert_relative_eq!(act.base(1.0), 0.36787945, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-1.0), 0.7357589, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(-0.5), 0.7788008, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(0.0), 0.0);
+		assert_relative_eq!(act.derived(0.5), -0.7788008, epsilon = EPSILON);
+		assert_relative_eq!(act.derived(1.0), -0.7357589, epsilon = EPSILON);
 	}
 }
