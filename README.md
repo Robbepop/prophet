@@ -17,9 +17,13 @@ Currently only supports supervised learning with fully connected layers.
 - GPGPU Support by Vulkano
 - Even more flexible learning methods
 
-## Release Notes
+## Release Notes (YYYY/MM/DD)
 
-### v0.4.0
+### 0.4.1 (2017/08/27)
+
+- Fixed long-standing undeterministic issue #2.
+
+### 0.4.0 (2017/08/09)
 
 - Updated `ndarray` dependency version from `0.9` to `0.10`
 - Updated `serde` dependency version from `0.9` to `1.0`
