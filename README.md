@@ -11,6 +11,36 @@ A simple neural net implementation written in Rust with a focus on cache-efficie
 
 Currently only supports supervised learning with fully connected layers.
 
+## How to use
+
+The preferred way to receive prophet is via cargo or github.
+
+Compile prophet with
+
+```
+cargo build
+```
+
+Run the test suite with
+
+```
+cargo test --release
+```
+
+Note: It is recommended to use `--release` for testing since optimizations are insanely effective for prophet.
+
+For additional information while running some long tests use
+
+```
+cargo test --release --verbose -- --nocapture
+```
+
+Run performance test with
+
+```
+cargo bench --features benches
+```
+
 ## Planned Features
 
 - Convolutional Layers: Foundations have been layed out already!
