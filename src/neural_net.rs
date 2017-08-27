@@ -82,13 +82,10 @@ impl FullyConnectedLayer {
 		let count_gradients = outputs + 1;
 		let shape           = (outputs, inputs);
 
-		use rand::chacha::ChaChaRng;
-		let mut rng = ChaChaRng::new_unseeded();
-
 		FullyConnectedLayer {
-			weights:       Array2::random_using(shape, Range::new(-1.0, 1.0), &mut rng),
-			delta_weights: unsafe{ Array2::uninitialized(shape) },
-			outputs:       unsafe{ Array1::uninitialized(outputs) },
+			weights:       Array2::random(shape, Range::new(-1.0, 1.0)),
+			delta_weights: Array2::zeros(shape),
+			outputs:       Array1::zeros(outputs),
 			gradients:     Array1::zeros(count_gradients),
 			activation:    activation,
 		}
