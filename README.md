@@ -21,7 +21,8 @@ Currently only supports supervised learning with fully connected layers.
 
 ### 0.4.1 (2017/08/27)
 
-- Fixed long-standing undeterministic issue #2.
+- Fixed long-standing undeterministic [bug](https://github.com/Robbepop/prophet/issues/2).
+- Reverted `ChaChaRng` usage in `NeuralLayer::random` - it is much faster and `ChaChaRng`'s safety is not needed.
 
 ### 0.4.0 (2017/08/09)
 
