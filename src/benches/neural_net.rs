@@ -20,6 +20,13 @@ fn create_giant_net() -> NeuralNet {
 }
 
 #[bench]
+fn construct(bencher: &mut Bencher) {
+	bencher.iter(|| {
+		black_box(create_giant_net());
+	});
+}
+
+#[bench]
 fn predict(bencher: &mut Bencher) {
 	let mut net = create_giant_net();
 	let (t, f)  = (1.0, -1.0);
@@ -42,7 +49,8 @@ fn update_gradients(bencher: &mut Bencher) {
 
 #[bench]
 fn update_weights(bencher: &mut Bencher) {
-	use traits::{LearnRate, LearnMomentum, UpdateWeights};
+	use traits::{UpdateWeights};
+	use utils::{LearnRate, LearnMomentum};
 	let mut net = create_giant_net();
 	bencher.iter(|| {
 		net.update_weights(&[1.0, 1.0], LearnRate::default(), LearnMomentum::default());
