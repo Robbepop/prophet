@@ -76,18 +76,32 @@ impl FullyConnectedLayer {
 	/// The weights are randomized within the open interval (0,1).
 	/// This excludes 0.0 and 1.0 as weights.
 	/// Other optional intervals may come with a future update!
-	fn random(inputs: Ix, outputs: Ix, activation: Activation) -> Self {
-		assert!(inputs >= 1 && outputs >= 1);
+	fn random(n_inputs: Ix, n_outputs: Ix, activation: Activation) -> Self {
+		assert!(n_inputs >= 1 && n_outputs >= 1);
 
-		let inputs          = inputs  + 1; // implicitely add bias!
-		let count_gradients = outputs + 1;
-		let shape           = (outputs, inputs);
+		// Implicitely add a bias neuron to all arrays and matrices.
+		// 
+		// In theory this is only required for gradients and both
+		// weight matrices, not for outputs. However, it is done for outputs, too,
+		// to create size-symmetry which simplifies implementation of
+		// optimized algorithms.
+
+		let biased_inputs    = n_inputs  + 1;
+		let biased_outputs   = n_outputs + 1;
+		let biased_gradients = biased_outputs;
+		let biased_shape     = (biased_outputs, biased_inputs);
+
+		let mut outputs = Array1::zeros(biased_outputs);
+		outputs[n_outputs] = 1.0; // The last value of any outputs array represents
+		                          // the value of the bias neuron which is always `1.0`
+		                          // and should never change during computation.
 
 		FullyConnectedLayer {
-			weights:       Array2::random(shape, Range::new(-1.0, 1.0)),
-			delta_weights: Array2::zeros(shape),
-			outputs:       Array1::zeros(outputs),
-			gradients:     Array1::zeros(count_gradients),
+			weights:       Array2::random(biased_shape, Range::new(-1.0, 1.0)), // Maybe `(-1.0, 1.0)` is a sub-optimal range?
+			delta_weights: Array2::zeros(biased_shape), // Must be initialized with zeros or else computation
+			                                            // in the first iteration will be screwed!
+			outputs,
+			gradients:     Array1::zeros(biased_gradients),
 			activation:    activation,
 		}
 	}
@@ -119,49 +133,69 @@ impl FullyConnectedLayer {
 	/// Output of this operation will be stored within this layer
 	/// and be returned as readable slice.
 	///
-	/// Expects:
-	///  - input with n elements
-	/// Requires:
-	///  - weight matrix with m rows and (n+1) columns
-	/// Asserts:
-	///  - output with m elements
-	fn feed_forward(&mut self,
-	                input: ArrayView1<f32>)
-	                -> ArrayView1<f32> {
+	/// ### Expects
+	/// 
+	///  - input with `n` elements
+	/// 
+	/// ### Requires
+	/// 
+	///  - weight matrix with `m` rows and `n` columns
+	/// 
+	/// ### Asserts
+	/// 
+	///  - output with `m` elements
+	/// 
+	fn feed_forward(
+		&mut self,
+		input: ArrayView1<f32>
+	)
+		-> ArrayView1<f32>
+	{
 		debug_assert_eq!(self.weights.rows(), self.count_outputs());
-		debug_assert_eq!(self.weights.cols(), input.len() + 1);
+		debug_assert_eq!(self.weights.cols(), input.len());
 
-		let act = self.activation; // required because of non-lexical borrows
+		// let act = self.activation; // required because of non-lexical borrows
 
 		// This entire block of code is basically just a fancy matrix-vector multiplication.
 		// 
 		// Could profit greatly from vectorization and builtin library solutions for this
 		// kind of operation w.r.t. performance gains.
 		// =================================================================================
-		Zip::from(&mut self.outputs).and(self.weights.outer_iter()).apply(|output, weights| {
-			let s   = weights.len();
-			*output = act.base(weights.slice(s![..-1]).dot(&input) + weights[s-1]);
-		});
-		// general_matvec_mul(&mut self.outputs, &self.weights, &input);
+		// Zip::from(&mut self.outputs).and(self.weights.outer_iter()).apply(|output, weights| {
+		// 	let s   = weights.len();
+		// 	*output = act.base(weights.slice(s![..-1]).dot(&input) + weights[s-1]);
+		// });
+		use ndarray::linalg::general_mat_vec_mul;
+
+		general_mat_vec_mul(1.0, &self.weights, &input, 1.0, &mut self.outputs);
 		// =================================================================================
+
+		self.apply_activation();
 
 		self.output_view() // required for folding the general operation
 	}
 
 	/// Used internally in the output layer to initialize gradients for the back propagation phase.
 	/// Sets the gradient for the bias neuron to zero - hopefully this is the correct behaviour.
-	fn calculate_output_gradients(&mut self,
-	                              target_values: ArrayView1<f32>)
-	                              -> &Self {
-		debug_assert_eq!(self.count_outputs()  , target_values.len());
-		debug_assert_eq!(self.count_gradients(), target_values.len() + 1); // no calculation for bias!
+	/// 
+	/// ### Returns
+	/// 
+	/// `&Self` to allow for method chaining, especially reductions.
+	fn calculate_output_gradients(
+		&mut self,
+	    target_values: ArrayView1<f32>
+	)
+		-> &Self
+	{
+		debug_assert_eq!(self.count_outputs()  , target_values.len() + 1); // No calculation for bias neurons.
+		debug_assert_eq!(self.count_gradients(), target_values.len() + 1); // see above ...
 
-		let act = self.activation; // required because of non-lexical borrows
+		let act = self.activation; // Required because of non-lexical borrows.
 
 		// Just as slow as the old version below ...
 		Zip::from(&mut self.gradients.slice_mut(s![..-1]))
 				.and(&target_values)
-				.and(&self.outputs)
+				.and(&self.outputs.slice(s![..-1]))
 				.apply(|gradient, &target, &output| {
 			*gradient = (target - output) * act.derived(output)
 		});
@@ -184,22 +218,35 @@ impl FullyConnectedLayer {
 	}
 
 	/// Applies the given activation function on all gradients of this layer.
+	/// 
+	/// ### Expects
+	/// 
+	/// - number of gradients equals number of outputs
+	/// 
 	fn apply_activation(&mut self) {
-		debug_assert_eq!(self.count_gradients(), self.count_outputs() + 1);
+		debug_assert_eq!(self.count_gradients(), self.count_outputs());
 
-		let act = self.activation; // required because of non-lexical borrows
-		multizip((self.gradients.iter_mut(), self.outputs.iter().chain(&[1.0])))
+		let act = self.activation; // Required because of non-lexical borrows.
+
+		multizip((&mut self.gradients, &self.outputs))
 			.foreach(|(gradient, &output)| *gradient *= act.derived(output));
 	}
 
 	/// Back propagate gradients from the previous layer (in reversed order) to this layer
 	/// using the given activation function.
 	/// This also computes the gradient for the bias neuron.
-	/// Returns readable reference to self to allow chaining.
-	fn propagate_gradients(&mut self,
-	                       prev: &FullyConnectedLayer)
-	                       -> &Self {
-		debug_assert_eq!(prev.weights.rows(), prev.count_gradients() - 1);
+	/// Returns readable reference to self to allow for method chaining.
+	/// 
+	/// ### Returns
+	/// 
+	/// `&Self` to allow for method chaining, especially reductions.
+	fn propagate_gradients(
+		&mut self,
+	    prev: &FullyConnectedLayer
+	)
+	    -> &Self
+	{
+		debug_assert_eq!(prev.weights.rows(), prev.count_gradients());
 		debug_assert_eq!(prev.weights.cols(), self.count_gradients());
 
 		multizip((prev.weights.outer_iter(), prev.gradients.iter()))
@@ -209,18 +256,21 @@ impl FullyConnectedLayer {
 			});
 
 		self.apply_activation();
-		self // for chaining in a fold expression
+		self
 	}
 
 	/// Updates the connection weights of this layer.
 	/// This operation is usually used after successful computation of gradients.
-	fn update_weights(&mut self,
-	                  prev_outputs: ArrayView1<f32>,
-	                  learn_rate  : LearnRate,
-	                  learn_mom   : LearnMomentum)
-	                  -> ArrayView1<f32> {
-		debug_assert_eq!(prev_outputs.len() + 1, self.weights.cols());
-		debug_assert_eq!(self.count_gradients(), self.weights.rows() + 1);
+	fn update_weights(
+		&mut self,
+	    prev_outputs: ArrayView1<f32>,
+	    learn_rate  : LearnRate,
+	    learn_mom   : LearnMomentum
+	)
+	    -> ArrayView1<f32>
+	{
+		debug_assert_eq!(prev_outputs.len()    , self.weights.cols());
+		debug_assert_eq!(self.count_gradients(), self.weights.rows());
 
 		multizip((self.weights.outer_iter_mut(),
 		          self.delta_weights.outer_iter_mut(),
