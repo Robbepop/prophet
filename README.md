@@ -13,7 +13,7 @@ Currently only supports supervised learning with fully connected layers.
 
 ## How to use
 
-The preferred way to receive prophet is via cargo or github.
+The preferred way to download prophet is via cargo or github.
 
 Compile prophet with
 
