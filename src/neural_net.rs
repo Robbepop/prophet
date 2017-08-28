@@ -151,6 +151,24 @@ impl FullyConnectedLayer {
 	)
 		-> ArrayView1<f32>
 	{
+		// Extend input if it does not contain the implicit `1.0` of the bias neuron.
+		// 
+		// This is a temporary hack and should be fixed as soon as possible.
+		// 
+		// A possible fix would be to always create a copy of user input that is expected
+		// to never contain the bias.
+		// Another fix is to (again) re-write the system to better match on this situation.
+		// 
+		let input = if input.len() == self.weights.cols() - 1 {
+			Array::from_iter(input
+				.iter()
+				.chain(&[1.0])
+				.map(|&e| e))
+		}
+		else {
+			input.to_owned()
+		};
+
 		debug_assert_eq!(self.weights.rows(), self.count_outputs());
 		debug_assert_eq!(self.weights.cols(), input.len());
 
@@ -269,6 +287,24 @@ impl FullyConnectedLayer {
 	)
 	    -> ArrayView1<f32>
 	{
+		// Extend input if it does not contain the implicit `1.0` of the bias neuron.
+		// 
+		// This is a temporary hack and should be fixed as soon as possible.
+		// 
+		// A possible fix would be to always create a copy of user input that is expected
+		// to never contain the bias.
+		// Another fix is to (again) re-write the system to better match on this situation.
+		// 
+		let prev_outputs = if prev_outputs.len() == self.weights.cols() - 1 {
+			Array::from_iter(prev_outputs
+				.iter()
+				.chain(&[1.0])
+				.map(|&e| e))
+		}
+		else {
+			prev_outputs.to_owned()
+		};
+
 		debug_assert_eq!(prev_outputs.len()    , self.weights.cols());
 		debug_assert_eq!(self.count_gradients(), self.weights.rows());
 
@@ -276,7 +312,7 @@ impl FullyConnectedLayer {
 		          self.delta_weights.outer_iter_mut(),
 		          self.gradients.iter()))
 			.foreach(|(mut weights_row, mut delta_weights_row, gradient)| {
-				multizip((prev_outputs.iter().chain(&[1.0]),
+				multizip((prev_outputs.iter(),
 				          delta_weights_row.iter_mut()))
 					.foreach(|(prev_output, delta_weight)| {
 						*delta_weight =
