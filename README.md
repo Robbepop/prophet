@@ -45,7 +45,7 @@ cargo bench --features benches
 
 - Convolutional Layers: Foundations have been layed out already!
 - GPGPU Support by Vulkano
-- Even more flexible learning methods
+- More flexible learning methods
 
 ## Release Notes (YYYY/MM/DD)
 
