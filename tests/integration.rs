@@ -88,124 +88,124 @@ fn train_xor() {
 	validate_rounded(net, samples);
 }
 
-#[test]
-fn train_constant() {
-	use Activation::Identity;
+// #[test]
+// fn train_constant() {
+// 	use Activation::Identity;
 
-	// samples to train the net with
-	let learn_samples = samples![
-		0.0 => 1.0,
-		0.2 => 1.0,
-		0.4 => 1.0,
-		0.6 => 1.0,
-		0.8 => 1.0,
-		1.0 => 1.0
-	];
+// 	// samples to train the net with
+// 	let learn_samples = samples![
+// 		0.0 => 1.0,
+// 		0.2 => 1.0,
+// 		0.4 => 1.0,
+// 		0.6 => 1.0,
+// 		0.8 => 1.0,
+// 		1.0 => 1.0
+// 	];
 
-	// samples to test the trained net with
-	let test_samples = samples![
-		0.1 => 1.0,
-		0.3 => 1.0,
-		0.5 => 1.0,
-		0.7 => 1.0,
-		0.9 => 1.0
-	];
+// 	// samples to test the trained net with
+// 	let test_samples = samples![
+// 		0.1 => 1.0,
+// 		0.3 => 1.0,
+// 		0.5 => 1.0,
+// 		0.7 => 1.0,
+// 		0.9 => 1.0
+// 	];
 
-	let net = Topology::input(1)
-		.output(1, Identity)
+// 	let net = Topology::input(1)
+// 		.output(1, Identity)
 
-		.train(learn_samples)
-		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
-		.go()
-		.unwrap();
+// 		.train(learn_samples)
+// 		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
+// 		.go()
+// 		.unwrap();
 
-	validate_rounded(net, test_samples)
-}
+// 	validate_rounded(net, test_samples)
+// }
 
-#[test]
-fn train_and() {
-	use Activation::Tanh;
+// #[test]
+// fn train_and() {
+// 	use Activation::Tanh;
 
-	let (t, f) = (1.0, -1.0);
-	let samples = samples![
-		[f, f] => f,
-		[f, t] => f,
-		[t, f] => f,
-		[t, t] => t
-	];
+// 	let (t, f) = (1.0, -1.0);
+// 	let samples = samples![
+// 		[f, f] => f,
+// 		[f, t] => f,
+// 		[t, f] => f,
+// 		[t, t] => t
+// 	];
 
-	let net = Topology::input(2)
-		.output(1, Tanh)
+// 	let net = Topology::input(2)
+// 		.output(1, Tanh)
 
-		.train(samples.clone())
-		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
-		.go()
-		.unwrap();
+// 		.train(samples.clone())
+// 		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
+// 		.go()
+// 		.unwrap();
 
-	validate_rounded(net, samples)
-}
+// 	validate_rounded(net, samples)
+// }
 
-#[test]
-fn train_triple_add() {
-	use Activation::Identity;
+// #[test]
+// fn train_triple_add() {
+// 	use Activation::Identity;
 
-	let count_learn_samples = 10_000;
-	let count_test_samples  =    100;
-	let inputs  = 3;
-	let outputs = 1;
+// 	let count_learn_samples = 10_000;
+// 	let count_test_samples  =    100;
+// 	let inputs  = 3;
+// 	let outputs = 1;
 
-	fn mapper(inputs: &[f32]) -> Vec<f32> {
-		vec![inputs[0] + inputs[1] + inputs[2]]
-	}
+// 	fn mapper(inputs: &[f32]) -> Vec<f32> {
+// 		vec![inputs[0] + inputs[1] + inputs[2]]
+// 	}
 
-	let learn_samples = gen_random_samples(
-		count_learn_samples, inputs, outputs, mapper);
-	let test_samples = gen_random_samples(
-		count_test_samples, inputs, outputs, mapper);
+// 	let learn_samples = gen_random_samples(
+// 		count_learn_samples, inputs, outputs, mapper);
+// 	let test_samples = gen_random_samples(
+// 		count_test_samples, inputs, outputs, mapper);
 
-	let net = Topology::input(inputs)
-		.output(outputs, Identity)
+// 	let net = Topology::input(inputs)
+// 		.output(outputs, Identity)
 
-		.train(learn_samples)
-		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
-		.go()
-		.unwrap();
+// 		.train(learn_samples)
+// 		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
+// 		.go()
+// 		.unwrap();
 
-	validate_exact(net, test_samples)
-}
+// 	validate_exact(net, test_samples)
+// }
 
-#[test]
-fn train_compare() {
-	use Activation::Tanh;
+// #[test]
+// fn train_compare() {
+// 	use Activation::Tanh;
 
-	let count_learn_samples = 10_000;
-	let count_test_samples  =    100;
-	let inputs  = 2;
-	let outputs = 1;
+// 	let count_learn_samples = 10_000;
+// 	let count_test_samples  =    100;
+// 	let inputs  = 2;
+// 	let outputs = 1;
 
-	fn mapper(inputs: &[f32]) -> Vec<f32> {
-		if inputs[0] < inputs[1] {
-			vec![-1.0]
-		}
-		else {
-			vec![1.0]
-		}
-	}
+// 	fn mapper(inputs: &[f32]) -> Vec<f32> {
+// 		if inputs[0] < inputs[1] {
+// 			vec![-1.0]
+// 		}
+// 		else {
+// 			vec![1.0]
+// 		}
+// 	}
 
-	let learn_samples = gen_random_samples(
-		count_learn_samples, inputs, outputs, mapper);
-	let test_samples = gen_random_samples(
-		count_test_samples, inputs, outputs, mapper);
+// 	let learn_samples = gen_random_samples(
+// 		count_learn_samples, inputs, outputs, mapper);
+// 	let test_samples = gen_random_samples(
+// 		count_test_samples, inputs, outputs, mapper);
 
-	let net = Topology::input(inputs)
-		.layer(4, Tanh)
-		.layer(3, Tanh)
-		.output(outputs, Tanh)
+// 	let net = Topology::input(inputs)
+// 		.layer(4, Tanh)
+// 		.layer(3, Tanh)
+// 		.output(outputs, Tanh)
 
-		.train(learn_samples)
-		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
-		.go()
-		.unwrap();
+// 		.train(learn_samples)
+// 		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
+// 		.go()
+// 		.unwrap();
 
-	validate_exact(net, test_samples)
-}
+// 	validate_exact(net, test_samples)
+// }
