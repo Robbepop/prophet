@@ -106,6 +106,8 @@ impl FullyConnectedLayer {
 		                          // the value of the bias neuron which is always `1.0`
 		                          // and should never change during computation.
 
+		// println!("FullyConnectedLayer::random() :: outputs = {}", outputs);
+
 		FullyConnectedLayer {
 			weights:       Array2::random(biased_shape, Range::new(-1.0, 1.0)), // Maybe `(-1.0, 1.0)` is a sub-optimal range?
 			delta_weights: Array2::zeros(biased_shape), // Must be initialized with zeros or else computation
@@ -165,12 +167,12 @@ impl FullyConnectedLayer {
 	)
 		-> ArrayView1<f32>
 	{
-		debug_assert_eq!(self.weights.rows(), self.count_outputs());
-		debug_assert_eq!(self.weights.cols(), input.len());
+		debug_assert_eq!(self.weights.rows() + 1, self.count_outputs());
+		debug_assert_eq!(self.weights.cols()    , input.len());
 
 		use ndarray::linalg::general_mat_vec_mul;
 
-		general_mat_vec_mul(1.0, &self.weights, &input, 1.0, &mut self.outputs);
+		general_mat_vec_mul(1.0, &self.weights, &input, 1.0, &mut (self.outputs.slice_mut(s![..-1])));
 
 		self.apply_activation();
 
@@ -245,8 +247,8 @@ impl FullyConnectedLayer {
 	)
 	    -> &Self
 	{
-		debug_assert_eq!(prev.weights.rows(), prev.count_gradients());
-		debug_assert_eq!(prev.weights.cols(), self.count_gradients());
+		debug_assert_eq!(prev.weights.rows() + 1, prev.count_gradients());
+		debug_assert_eq!(prev.weights.cols()    , self.count_gradients());
 
 		multizip((prev.weights.outer_iter(), prev.gradients.iter()))
 			.foreach(|(prev_weights_row, prev_gradient)| {
@@ -268,15 +270,13 @@ impl FullyConnectedLayer {
 	)
 	    -> ArrayView1<f32>
 	{
-		debug_assert!(
-			(prev_outputs.len()     == self.weights.cols()) ||
-			(prev_outputs.len() + 1 == self.weights.cols()));
-		debug_assert_eq!(self.count_gradients(), self.weights.rows());
+		debug_assert_eq!(prev_outputs.len()    , self.weights.cols()    );
+		debug_assert_eq!(self.count_gradients(), self.weights.rows() + 1);
 
-		multizip((self.weights.outer_iter_mut(),
-		          self.delta_weights.outer_iter_mut(),
+		// Compute new delta weights.
+		multizip((self.delta_weights.outer_iter_mut(),
 		          self.gradients.iter()))
-			.foreach(|(mut weights_row, mut delta_weights_row, gradient)| {
+			.foreach(|(mut delta_weights_row, gradient)| {
 				multizip((prev_outputs.iter(),
 				          delta_weights_row.iter_mut()))
 					.foreach(|(prev_output, delta_weight)| {
@@ -286,8 +286,10 @@ impl FullyConnectedLayer {
 							// Also add momentum which is a fraction of the previous delta weight
 							+ learn_mom.0 * *delta_weight;
 					});
-				weights_row += &delta_weights_row;
 			});
+
+		// Add the delta weights computed above to the current real weights.
+		self.weights += &self.delta_weights;
 
 		self.reset_gradients();
 		self.output_view()
@@ -301,8 +303,9 @@ impl NeuralNet {
 	fn from_vec(inputs: usize, layers: Vec<FullyConnectedLayer>) -> Self {
 		assert!(!layers.is_empty());
 		let mut biased_input = Array1::zeros(inputs + 1);
-		biased_input[inputs - 1] = 1.0; // Set bias value which is always `1.0`.
+		biased_input[inputs] = 1.0; // Set bias value which is always `1.0`.
 		                                // This initial value should never be overwritten.
+		debug_assert_eq!(biased_input[inputs], 1.0);
 		NeuralNet {
 			input : biased_input,
 			layers: layers
@@ -329,10 +332,18 @@ impl<'b, A> Predict<A> for NeuralNet
 {
 	fn predict(&mut self, input: A) -> ArrayView1<f32> {
 		let input = input.into();
+
+		debug_assert_eq!(input.len() + 1, self.input.len());
+		debug_assert_eq!(self.input[self.input.len() - 1], 1.0);
+
 		// Copy the user provided inputs into a buffer that is
 		// extended to additionally store the bias values (which is always `1.0`).
 		// This is used by the implementation internals for optimizations.
 		self.input.slice_mut(s![..-1]).assign(&input);
+
+		debug_assert_eq!(input.len() + 1, self.input.len());
+		debug_assert_eq!(self.input[self.input.len() - 1], 1.0);
+
 		// Compute the feed forward from first to last layer.
 		if let Some((first, tail)) = self.layers.split_first_mut() {
 			tail.iter_mut()
@@ -364,9 +375,17 @@ impl<'b, A> UpdateWeights<A> for NeuralNet
 {
 	fn update_weights(&mut self, input: A, rate: LearnRate, momentum: LearnMomentum) {
 		let input = input.into();
+
+		debug_assert_eq!(input.len() + 1, self.input.len());
+
+		// Copy the user provided inputs into a buffer that is
+		// extended to additionally store the bias values (which is always `1.0`).
+		// This is used by the implementation internals for optimizations.
+		self.input.slice_mut(s![..-1]).assign(&input);
+		// Update the weights of this neural network from first to last layer.
 		if let Some((first, tail)) = self.layers.split_first_mut() {
 			tail.iter_mut()
-				.fold(first.update_weights(input, rate, momentum),
+				.fold(first.update_weights(self.input.view(), rate, momentum),
 				      |prev, layer| layer.update_weights(prev, rate, momentum));
 		}
 	}
