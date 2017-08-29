@@ -62,7 +62,17 @@ struct FullyConnectedLayer {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct NeuralNet {
-	/// the layers within this ```NeuralNet```
+	/// A bias-extended input buffer for user input
+	/// that is not required to respect bias values.
+	/// 
+	/// This is needed so that the internal implementation
+	/// can use the invariant of symmetrically sized buffers
+	/// and weight-matrices for optimization purposes.
+	/// 
+	/// Later this operation could be done with a unique layer type,
+	///    e.g. `InputLayer`: adds bias values to user-provided input.
+	input: Array1<f32>,
+	/// The actual layers of this `NeuralNet`.
 	layers: Vec<FullyConnectedLayer>,
 }
 
@@ -89,7 +99,7 @@ impl FullyConnectedLayer {
 		let biased_inputs    = n_inputs  + 1;
 		let biased_outputs   = n_outputs + 1;
 		let biased_gradients = biased_outputs;
-		let biased_shape     = (biased_outputs, biased_inputs);
+		let biased_shape     = (n_outputs, biased_inputs);
 
 		let mut outputs = Array1::zeros(biased_outputs);
 		outputs[n_outputs] = 1.0; // The last value of any outputs array represents
@@ -145,48 +155,22 @@ impl FullyConnectedLayer {
 	/// 
 	///  - output with `m` elements
 	/// 
+	/// ### Returns
+	/// 
+	///  - A view to the resulting output. Useful for method chaining and reductions.
+	/// 
 	fn feed_forward(
 		&mut self,
 		input: ArrayView1<f32>
 	)
 		-> ArrayView1<f32>
 	{
-		// Extend input if it does not contain the implicit `1.0` of the bias neuron.
-		// 
-		// This is a temporary hack and should be fixed as soon as possible.
-		// 
-		// A possible fix would be to always create a copy of user input that is expected
-		// to never contain the bias.
-		// Another fix is to (again) re-write the system to better match on this situation.
-		// 
-		let input = if input.len() == self.weights.cols() - 1 {
-			Array::from_iter(input
-				.iter()
-				.chain(&[1.0])
-				.map(|&e| e))
-		}
-		else {
-			input.to_owned()
-		};
-
 		debug_assert_eq!(self.weights.rows(), self.count_outputs());
 		debug_assert_eq!(self.weights.cols(), input.len());
 
-		// let act = self.activation; // required because of non-lexical borrows
-
-		// This entire block of code is basically just a fancy matrix-vector multiplication.
-		// 
-		// Could profit greatly from vectorization and builtin library solutions for this
-		// kind of operation w.r.t. performance gains.
-		// =================================================================================
-		// Zip::from(&mut self.outputs).and(self.weights.outer_iter()).apply(|output, weights| {
-		// 	let s   = weights.len();
-		// 	*output = act.base(weights.slice(s![..-1]).dot(&input) + weights[s-1]);
-		// });
 		use ndarray::linalg::general_mat_vec_mul;
 
 		general_mat_vec_mul(1.0, &self.weights, &input, 1.0, &mut self.outputs);
-		// =================================================================================
 
 		self.apply_activation();
 
@@ -199,6 +183,7 @@ impl FullyConnectedLayer {
 	/// ### Returns
 	/// 
 	/// `&Self` to allow for method chaining, especially reductions.
+	/// 
 	fn calculate_output_gradients(
 		&mut self,
 	    target_values: ArrayView1<f32>
@@ -217,10 +202,6 @@ impl FullyConnectedLayer {
 				.apply(|gradient, &target, &output| {
 			*gradient = (target - output) * act.derived(output)
 		});
-
-		// Old version of the new Zip mechanics above
-		// multizip((self.gradients.iter_mut(), target_values.iter(), self.outputs.iter()))
-		// 	.foreach(|(gradient, target, &output)| { *gradient = (target - output) * act.derived(output) });
 
 		// gradient of bias should be set equal to zero during object initialization already.
 		self
@@ -287,25 +268,9 @@ impl FullyConnectedLayer {
 	)
 	    -> ArrayView1<f32>
 	{
-		// Extend input if it does not contain the implicit `1.0` of the bias neuron.
-		// 
-		// This is a temporary hack and should be fixed as soon as possible.
-		// 
-		// A possible fix would be to always create a copy of user input that is expected
-		// to never contain the bias.
-		// Another fix is to (again) re-write the system to better match on this situation.
-		// 
-		let prev_outputs = if prev_outputs.len() == self.weights.cols() - 1 {
-			Array::from_iter(prev_outputs
-				.iter()
-				.chain(&[1.0])
-				.map(|&e| e))
-		}
-		else {
-			prev_outputs.to_owned()
-		};
-
-		debug_assert_eq!(prev_outputs.len()    , self.weights.cols());
+		debug_assert!(
+			(prev_outputs.len()     == self.weights.cols()) ||
+			(prev_outputs.len() + 1 == self.weights.cols()));
 		debug_assert_eq!(self.count_gradients(), self.weights.rows());
 
 		multizip((self.weights.outer_iter_mut(),
@@ -333,21 +298,28 @@ impl NeuralNet {
 	/// Creates a new neural network from a given vector of fully connected layers.
 	///
 	/// This constructor should only be used internally!
-	fn from_vec(layers: Vec<FullyConnectedLayer>) -> Self {
+	fn from_vec(inputs: usize, layers: Vec<FullyConnectedLayer>) -> Self {
+		assert!(!layers.is_empty());
+		let mut biased_input = Array1::zeros(inputs + 1);
+		biased_input[inputs - 1] = 1.0; // Set bias value which is always `1.0`.
+		                                // This initial value should never be overwritten.
 		NeuralNet {
+			input : biased_input,
 			layers: layers
 		}
 	}
 
 	/// Creates a new neural network of fully connected layers from a given topology.
 	pub fn from_topology(topology: Topology) -> Self {
-		NeuralNet::from_vec(topology
-			.iter_layers()
-			.map(|&layer| {
-				FullyConnectedLayer::random(
-					layer.inputs, layer.outputs, layer.activation)
-			})
-			.collect()
+		NeuralNet::from_vec(
+			topology.len_input(),
+			topology
+				.iter_layers()
+				.map(|&layer| {
+					FullyConnectedLayer::random(
+						layer.inputs, layer.outputs, layer.activation)
+				})
+				.collect()
 		)
 	}
 }
@@ -356,14 +328,20 @@ impl<'b, A> Predict<A> for NeuralNet
 	where A: Into<ArrayView1<'b, f32>>
 {
 	fn predict(&mut self, input: A) -> ArrayView1<f32> {
-		let input  = input.into();
+		let input = input.into();
+		// Copy the user provided inputs into a buffer that is
+		// extended to additionally store the bias values (which is always `1.0`).
+		// This is used by the implementation internals for optimizations.
+		self.input.slice_mut(s![..-1]).assign(&input);
+		// Compute the feed forward from first to last layer.
 		if let Some((first, tail)) = self.layers.split_first_mut() {
 			tail.iter_mut()
-				.fold(first.feed_forward(input),
-				      |prev, layer| layer.feed_forward(prev))
+				.fold(first.feed_forward(self.input.view()), |prev, layer| {
+					layer.feed_forward(prev)
+				})
 		} else {
-			panic!("A Neural Net is guaranteed to have at least one layer so this situation \
-			        should never happen!");
+			unreachable!("Since neural networks can never have an empty stack of layers 
+				          this code should never be reachable.");
 		}
 	}
 }
