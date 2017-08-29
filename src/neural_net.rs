@@ -77,6 +77,33 @@ pub struct NeuralNet {
 }
 
 impl FullyConnectedLayer {
+	fn with_weights(weights: Array2<f32>, activation: Activation) -> Self {
+
+		// Implicitely add a bias neuron to all arrays and matrices.
+		// 
+		// In theory this is only required for gradients and both
+		// weight matrices, not for outputs. However, it is done for outputs, too,
+		// to create size-symmetry which simplifies implementation of
+		// optimized algorithms.
+		let (n_outputs, _biased_inputs) = weights.dim();
+		let biased_outputs   = n_outputs + 1;
+		let biased_gradients = biased_outputs;
+		let biased_shape     = weights.dim();
+
+		// Construct outputs with a `1.0` constant bias value as last element.
+		let mut outputs = Array1::zeros(biased_outputs);
+		outputs[n_outputs] = 1.0;
+
+		FullyConnectedLayer{
+			weights,
+			delta_weights: Array2::zeros(biased_shape), // Must be initialized with zeros or else computation
+			                                            // in the first iteration will be screwed!
+			outputs,
+			gradients: Array1::zeros(biased_gradients),
+			activation: activation,
+		}
+	}
+
 	/// Creates a FullyConnectedLayer with randomized weights.
 	///
 	/// Implicitely creates weights for the bias neuron,
@@ -387,6 +414,45 @@ impl<'b, A> UpdateWeights<A> for NeuralNet
 			tail.iter_mut()
 				.fold(first.update_weights(self.input.view(), rate, momentum),
 				      |prev, layer| layer.update_weights(prev, rate, momentum));
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	pub use super::*;
+
+	mod fully_connected_layer {
+		use super::*;
+
+		#[test]
+		fn feed_forward() {
+			use self::Activation::{Identity};
+			let mut layer = FullyConnectedLayer::with_weights(
+				Array2::from_shape_fn((3, 4), |(r, c)| ((4*r+c) + 1) as f32), Identity);
+			let applier = Array1::linspace(1.0, 4.0, 4);
+			let outputs = layer.feed_forward(applier.view()).to_owned();
+			let targets = Array1::from_vec(vec![30.0, 70.0, 110.0, 1.0]);
+			// println!("layer =\n{:?}", layer.weights);
+			// println!("applier =\n{:?}", applier);
+			// println!("outputs =\n{:?}", outputs);
+			// println!("targets =\n{:?}", targets);
+			assert_eq!(outputs, targets);
+		}
+
+		#[test]
+		fn update_output_gradients() {
+			// TODO
+		}
+
+		#[test]
+		fn update_gradients() {
+			// TODO
+		}
+
+		#[test]
+		fn update_weights() {
+			// TODO
 		}
 	}
 }
