@@ -369,7 +369,7 @@ mod tests {
 				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
 			let applier = Array1::linspace(1.0, 3.0, 3);
 			let outputs = layer.feed_forward(applier.view()).to_owned();
-			let targets = Array1::from_vec(vec![30.0, 70.0, 110.0]);
+			let targets = Array1::from_vec(vec![18.0, 46.0, 74.0]);
 
 			// println!("layer =\n{:?}", layer.weights);
 			// println!("applier =\n{:?}", applier);
