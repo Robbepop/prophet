@@ -66,6 +66,39 @@ pub struct NeuralNet {
 }
 
 impl FullyConnectedLayer {
+	fn with_weights(weights: Array2<f32>, activation: Activation) -> Self {
+		use std::iter;
+
+		// Implicitely add a bias neuron to all arrays and matrices.
+		// 
+		// In theory this is only required for gradients and both
+		// weight matrices, not for outputs. However, it is done for outputs, too,
+		// to create size-symmetry which simplifies implementation of
+		// optimized algorithms.
+		let (n_outputs, _)   = weights.dim();
+		let biased_outputs   = n_outputs + 1;
+		let biased_gradients = biased_outputs;
+		let biased_shape     = weights.dim();
+
+		FullyConnectedLayer{
+			weights,
+
+			// Must be initialized with zeros or else computation
+			// in the first iteration will be screwed!
+			delta_weights: Array2::zeros(biased_shape),
+
+			// Construct outputs with a `1.0` constant bias value as last element.
+			outputs: Array1::from_iter(iter::repeat(0.0).take(n_outputs).chain(iter::once(1.0))),
+
+			// Gradients must be initialized with zeros to prevent accidentally
+			// compute invalid gradients on the first iteration.
+			gradients: Array1::zeros(biased_gradients),
+
+			// Initialize the activation function. TODO: Should be moved into its own layer.
+			activation: activation,
+		}
+	}
+
 	/// Creates a FullyConnectedLayer with randomized weights.
 	///
 	/// Implicitely creates weights for the bias neuron,
@@ -75,20 +108,14 @@ impl FullyConnectedLayer {
 	/// The weights are randomized within the open interval (0,1).
 	/// This excludes 0.0 and 1.0 as weights.
 	/// Other optional intervals may come with a future update!
-	fn random(inputs: Ix, outputs: Ix, activation: Activation) -> Self {
-		assert!(inputs >= 1 && outputs >= 1);
+	fn random(n_inputs: Ix, n_outputs: Ix, activation: Activation) -> Self {
+		assert!(n_inputs >= 1 && n_outputs >= 1);
 
-		let inputs          = inputs  + 1; // implicitely add bias!
-		let count_gradients = outputs + 1;
-		let shape           = (outputs, inputs);
+		let biased_inputs = n_inputs  + 1;
+		let biased_shape  = (n_outputs, biased_inputs);
 
-		FullyConnectedLayer {
-			weights:       Array2::random(shape, Range::new(-1.0, 1.0)),
-			delta_weights: Array2::zeros(shape),
-			outputs:       Array1::zeros(outputs),
-			gradients:     Array1::zeros(count_gradients),
-			activation:    activation,
-		}
+		FullyConnectedLayer::with_weights(
+			Array2::random(biased_shape, Range::new(-1.0, 1.0)), activation)
 	}
 
 	/// Count output neurons of this layer.
@@ -111,6 +138,13 @@ impl FullyConnectedLayer {
 	#[inline]
 	fn output_view(&self) -> ArrayView1<f32> {
 		self.outputs.view()
+	}
+
+	/// Returns this layer's output as read-only view.
+	#[inline]
+	#[cfg(test)]
+	fn gradients_view(&self) -> ArrayView1<f32> {
+		self.gradients.view()
 	}
 
 	/// Takes input slice and performs a feed forward procedure
