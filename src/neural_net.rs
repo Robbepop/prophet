@@ -306,3 +306,107 @@ impl<'b, A> UpdateWeights<A> for NeuralNet
 		}
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	pub use super::*;
+
+	mod fully_connected_layer {
+		use super::*;
+
+		use std::iter;
+
+		#[test]
+		fn construction_invariants() {
+			use self::Activation::{Identity};
+			let weights = Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap();
+			let layer = FullyConnectedLayer::with_weights(weights.clone(), Identity);
+			assert_eq!(layer.weights, weights);
+			assert_eq!(layer.delta_weights, Array1::zeros(12).into_shape((3, 4)).unwrap());
+			assert_eq!(layer.gradients, Array1::zeros(4));
+			let expected_outputs = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
+			assert_eq!(layer.outputs, expected_outputs);
+		}
+
+		#[test]
+		fn feed_forward() {
+			use self::Activation::{Identity};
+			let mut layer = FullyConnectedLayer::with_weights(
+				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
+			let applier = Array1::linspace(1.0, 4.0, 4);
+			let outputs = layer.feed_forward(applier.view()).to_owned();
+			let targets = Array1::from_vec(vec![30.0, 70.0, 110.0, 1.0]);
+
+			// println!("layer =\n{:?}", layer.weights);
+			// println!("applier =\n{:?}", applier);
+			// println!("outputs =\n{:?}", outputs);
+			// println!("targets =\n{:?}", targets);
+
+			assert_eq!(outputs, targets);
+		}
+
+		#[test]
+		fn update_output_gradients() {
+			use self::Activation::{Identity};
+			let mut layer = FullyConnectedLayer::with_weights(
+				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
+			let expected = Array1::linspace(1.0, 3.0, 3);
+			let gradients = layer.gradients_view().to_owned();
+			let outputs   = layer.output_view().to_owned();
+			let expected_gradients = Array1::zeros(4);
+			let expected_outputs   = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
+			assert_eq!(gradients, expected_gradients);
+			assert_eq!(outputs  , expected_outputs);
+			assert_eq!(gradients, Array1::zeros(4));
+			layer.calculate_output_gradients(expected.view()).to_owned();
+			let targets   = Array1::from_vec(vec![1.0, 2.0, 3.0, 0.0]);
+			let gradients = layer.gradients_view().to_owned();
+
+			// println!("layer =\n{:?}", layer.weights);
+			// println!("applier =\n{:?}", applier);
+			// println!("outputs =\n{:?}", outputs);
+			// println!("targets =\n{:?}", targets);
+
+			assert_eq!(gradients, targets);
+		}
+
+		#[test]
+		fn propagate_gradients() {
+			use self::Activation::{Identity};
+
+			let delta_weights = Array1::zeros(12).into_shape((3, 4)).unwrap();
+			let outputs = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
+
+			let fst_layer = FullyConnectedLayer{
+				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
+				delta_weights: delta_weights.clone(),
+				outputs      : outputs.clone(),
+				gradients    : Array1::linspace(10.0, 40.0, 4),
+				activation   : Identity
+			};
+
+			let mut snd_layer = FullyConnectedLayer{
+				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
+				delta_weights: delta_weights.clone(),
+				outputs      : outputs.clone(),
+				gradients    : Array1::zeros(4),
+				activation   : Identity
+			};
+
+			snd_layer.propagate_gradients(&fst_layer);
+
+			// println!("outputs =\n{:?}", outputs);
+			// println!("fst_layer =\n{:?}"  , fst_layer);
+			// println!("snd_layer =\n{:?}"  , snd_layer);
+
+			let expected_gradients = Array1::from_vec(vec![380.0, 440.0, 500.0, 560.0]);
+
+			assert_eq!(snd_layer.gradients_view().to_owned(), expected_gradients);
+		}
+
+		#[test]
+		fn update_weights() {
+			// TODO
+		}
+	}
+}
