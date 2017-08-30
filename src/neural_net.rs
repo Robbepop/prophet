@@ -435,9 +435,9 @@ mod tests {
 			use self::Activation::{Identity};
 			let mut layer = FullyConnectedLayer::with_weights(
 				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
-			let applier = Array1::linspace(1.0, 4.0, 4);
+			let applier = Array1::from_iter((1..4).chain(iter::once(1)).map(|e| e as f32));
 			let outputs = layer.feed_forward(applier.view()).to_owned();
-			let targets = Array1::from_vec(vec![30.0, 70.0, 110.0, 1.0]);
+			let targets = Array1::from_vec(vec![18.0, 46.0, 74.0, 1.0]);
 
 			// println!("layer =\n{:?}", layer.weights);
 			// println!("applier =\n{:?}", applier);
