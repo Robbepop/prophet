@@ -89,6 +89,8 @@
 //! ```
 
 extern crate rand;
+
+#[cfg(test)]
 extern crate num;
 
 #[macro_use]
@@ -99,7 +101,8 @@ extern crate itertools;
 #[cfg(feature = "serde_support")]
 extern crate serde;
 
-#[cfg(feature = "serde_support")] #[macro_use]
+#[cfg(feature = "serde_support")]
+#[macro_use]
 extern crate serde_derive;
 
 #[macro_use]

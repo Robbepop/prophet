@@ -78,6 +78,7 @@ pub struct NeuralNet {
 
 impl FullyConnectedLayer {
 	fn with_weights(weights: Array2<f32>, activation: Activation) -> Self {
+		use std::iter;
 
 		// Implicitely add a bias neuron to all arrays and matrices.
 		// 
@@ -85,21 +86,26 @@ impl FullyConnectedLayer {
 		// weight matrices, not for outputs. However, it is done for outputs, too,
 		// to create size-symmetry which simplifies implementation of
 		// optimized algorithms.
-		let (n_outputs, _biased_inputs) = weights.dim();
+		let (n_outputs, _)   = weights.dim();
 		let biased_outputs   = n_outputs + 1;
 		let biased_gradients = biased_outputs;
 		let biased_shape     = weights.dim();
 
-		// Construct outputs with a `1.0` constant bias value as last element.
-		let mut outputs = Array1::zeros(biased_outputs);
-		outputs[n_outputs] = 1.0;
-
 		FullyConnectedLayer{
 			weights,
-			delta_weights: Array2::zeros(biased_shape), // Must be initialized with zeros or else computation
-			                                            // in the first iteration will be screwed!
-			outputs,
+
+			// Must be initialized with zeros or else computation
+			// in the first iteration will be screwed!
+			delta_weights: Array2::zeros(biased_shape),
+
+			// Construct outputs with a `1.0` constant bias value as last element.
+			outputs: Array1::from_iter(iter::repeat(0.0).take(n_outputs).chain(iter::once(1.0))),
+
+			// Gradients must be initialized with zeros to prevent accidentally
+			// compute invalid gradients on the first iteration.
 			gradients: Array1::zeros(biased_gradients),
+
+			// Initialize the activation function. TODO: Should be moved into its own layer.
 			activation: activation,
 		}
 	}
@@ -116,33 +122,11 @@ impl FullyConnectedLayer {
 	fn random(n_inputs: Ix, n_outputs: Ix, activation: Activation) -> Self {
 		assert!(n_inputs >= 1 && n_outputs >= 1);
 
-		// Implicitely add a bias neuron to all arrays and matrices.
-		// 
-		// In theory this is only required for gradients and both
-		// weight matrices, not for outputs. However, it is done for outputs, too,
-		// to create size-symmetry which simplifies implementation of
-		// optimized algorithms.
+		let biased_inputs = n_inputs  + 1;
+		let biased_shape  = (n_outputs, biased_inputs);
 
-		let biased_inputs    = n_inputs  + 1;
-		let biased_outputs   = n_outputs + 1;
-		let biased_gradients = biased_outputs;
-		let biased_shape     = (n_outputs, biased_inputs);
-
-		let mut outputs = Array1::zeros(biased_outputs);
-		outputs[n_outputs] = 1.0; // The last value of any outputs array represents
-		                          // the value of the bias neuron which is always `1.0`
-		                          // and should never change during computation.
-
-		// println!("FullyConnectedLayer::random() :: outputs = {}", outputs);
-
-		FullyConnectedLayer {
-			weights:       Array2::random(biased_shape, Range::new(-1.0, 1.0)), // Maybe `(-1.0, 1.0)` is a sub-optimal range?
-			delta_weights: Array2::zeros(biased_shape), // Must be initialized with zeros or else computation
-			                                            // in the first iteration will be screwed!
-			outputs,
-			gradients:     Array1::zeros(biased_gradients),
-			activation:    activation,
-		}
+		FullyConnectedLayer::with_weights(
+			Array2::random(biased_shape, Range::new(-1.0, 1.0)), activation)
 	}
 
 	/// Count output neurons of this layer.
@@ -165,6 +149,13 @@ impl FullyConnectedLayer {
 	#[inline]
 	fn output_view(&self) -> ArrayView1<f32> {
 		self.outputs.view()
+	}
+
+	/// Returns this layer's output as read-only view.
+	#[inline]
+	#[cfg(test)]
+	fn gradients_view(&self) -> ArrayView1<f32> {
+		self.gradients.view()
 	}
 
 	/// Takes input slice and performs a feed forward procedure
@@ -425,29 +416,94 @@ mod tests {
 	mod fully_connected_layer {
 		use super::*;
 
+		use std::iter;
+
+		#[test]
+		fn construction_invariants() {
+			use self::Activation::{Identity};
+			let weights = Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap();
+			let layer = FullyConnectedLayer::with_weights(weights.clone(), Identity);
+			assert_eq!(layer.weights, weights);
+			assert_eq!(layer.delta_weights, Array1::zeros(12).into_shape((3, 4)).unwrap());
+			assert_eq!(layer.gradients, Array1::zeros(4));
+			let expected_outputs = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
+			assert_eq!(layer.outputs, expected_outputs);
+		}
+
 		#[test]
 		fn feed_forward() {
 			use self::Activation::{Identity};
 			let mut layer = FullyConnectedLayer::with_weights(
-				Array2::from_shape_fn((3, 4), |(r, c)| ((4*r+c) + 1) as f32), Identity);
+				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
 			let applier = Array1::linspace(1.0, 4.0, 4);
 			let outputs = layer.feed_forward(applier.view()).to_owned();
 			let targets = Array1::from_vec(vec![30.0, 70.0, 110.0, 1.0]);
+
 			// println!("layer =\n{:?}", layer.weights);
 			// println!("applier =\n{:?}", applier);
 			// println!("outputs =\n{:?}", outputs);
 			// println!("targets =\n{:?}", targets);
+
 			assert_eq!(outputs, targets);
 		}
 
 		#[test]
 		fn update_output_gradients() {
-			// TODO
+			use self::Activation::{Identity};
+			let mut layer = FullyConnectedLayer::with_weights(
+				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
+			let expected = Array1::linspace(1.0, 3.0, 3);
+			let gradients = layer.gradients_view().to_owned();
+			let outputs   = layer.output_view().to_owned();
+			let expected_gradients = Array1::zeros(4);
+			let expected_outputs   = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
+			assert_eq!(gradients, expected_gradients);
+			assert_eq!(outputs  , expected_outputs);
+			assert_eq!(gradients, Array1::zeros(4));
+			layer.calculate_output_gradients(expected.view()).to_owned();
+			let targets   = Array1::from_vec(vec![1.0, 2.0, 3.0, 0.0]);
+			let gradients = layer.gradients_view().to_owned();
+
+			// println!("layer =\n{:?}", layer.weights);
+			// println!("applier =\n{:?}", applier);
+			// println!("outputs =\n{:?}", outputs);
+			// println!("targets =\n{:?}", targets);
+
+			assert_eq!(gradients, targets);
 		}
 
 		#[test]
-		fn update_gradients() {
-			// TODO
+		fn propagate_gradients() {
+			use self::Activation::{Identity};
+
+			let delta_weights = Array1::zeros(12).into_shape((3, 4)).unwrap();
+			let outputs = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
+
+			let fst_layer = FullyConnectedLayer{
+				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
+				delta_weights: delta_weights.clone(),
+				outputs      : outputs.clone(),
+				gradients    : Array1::linspace(10.0, 40.0, 4),
+				activation   : Identity
+			};
+
+			let mut snd_layer = FullyConnectedLayer{
+				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
+				delta_weights: delta_weights.clone(),
+				outputs      : outputs.clone(),
+				gradients    : Array1::zeros(4),
+				activation   : Identity
+			};
+
+			snd_layer.propagate_gradients(&fst_layer);
+
+			// println!("outputs =\n{:?}", outputs);
+			// println!("fst_layer =\n{:?}"  , fst_layer);
+			// println!("snd_layer =\n{:?}"  , snd_layer);
+
+			let expected_gradients = Array1::from_vec(vec![380.0, 440.0, 500.0, 560.0]);
+
+			assert_eq!(snd_layer.gradients_view().to_owned(), expected_gradients);
 		}
 
 		#[test]
