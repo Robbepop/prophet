@@ -350,17 +350,17 @@ mod tests {
 
 		use std::iter;
 
-		// #[test]
-		// fn construction_invariants() {
-		// 	use self::Activation::{Identity};
-		// 	let weights = Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap();
-		// 	let layer = FullyConnectedLayer::with_weights(weights.clone(), Identity);
-		// 	assert_eq!(layer.weights, weights);
-		// 	assert_eq!(layer.delta_weights, Array1::zeros(12).into_shape((3, 4)).unwrap());
-		// 	assert_eq!(layer.gradients, Array1::zeros(4));
-		// 	let expected_outputs = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
-		// 	assert_eq!(layer.outputs, expected_outputs);
-		// }
+		#[test]
+		fn construction_invariants() {
+			use self::Activation::{Identity};
+			let weights = Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap();
+			let layer = FullyConnectedLayer::with_weights(weights.clone(), Identity);
+			assert_eq!(layer.weights, weights);
+			assert_eq!(layer.delta_weights, Array1::zeros(12).into_shape((3, 4)).unwrap());
+			assert_eq!(layer.gradients, Array1::zeros(4));
+			let expected_outputs = Array1::from_iter(iter::repeat(0.0).take(3));
+			assert_eq!(layer.outputs, expected_outputs);
+		}
 
 		#[test]
 		fn feed_forward() {
@@ -409,7 +409,7 @@ mod tests {
 			use self::Activation::{Identity};
 
 			let delta_weights = Array1::zeros(12).into_shape((3, 4)).unwrap();
-			let outputs = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
+			let outputs = Array1::from_iter(iter::repeat(0.0).take(3));
 
 			let fst_layer = FullyConnectedLayer{
 				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
