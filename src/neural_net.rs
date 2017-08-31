@@ -255,6 +255,9 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(prev_outputs.len() + 1, self.weights.cols());
 		debug_assert_eq!(self.count_gradients(), self.weights.rows() + 1);
 
+		// ==================================================================== //
+		// OLD
+		// ==================================================================== //
 		multizip((self.weights.outer_iter_mut(),
 		          self.delta_weights.outer_iter_mut(),
 		          self.gradients.iter()))
@@ -270,6 +273,24 @@ impl FullyConnectedLayer {
 					});
 				weights_row += &delta_weights_row;
 			});
+		// ==================================================================== //
+		// NEW
+		// ==================================================================== //
+		// multizip((self.delta_weights.outer_iter_mut(),
+		//           self.gradients.iter()))
+		// 	.foreach(|(mut delta_weights_row, gradient)| {
+		// 		multizip((prev_outputs.iter().chain(&[1.0]),
+		// 		          delta_weights_row.iter_mut()))
+		// 			.foreach(|(prev_output, delta_weight)| {
+		// 				*delta_weight =
+		// 					// Individual input, magnified by the gradient and train rate
+		// 					learn_rate.0 * prev_output * gradient
+		// 					// Also add momentum which is a fraction of the previous delta weight
+		// 					+ learn_mom.0 * *delta_weight;
+		// 			});
+		// 	});
+		// self.weights += &self.delta_weights;
+		// ==================================================================== //
 
 		self.reset_gradients();
 		self.output_view()
@@ -356,7 +377,7 @@ mod tests {
 			let weights = Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap();
 			let layer = FullyConnectedLayer::with_weights(weights.clone(), Identity);
 			assert_eq!(layer.weights, weights);
-			assert_eq!(layer.delta_weights, Array1::zeros(12).into_shape((3, 4)).unwrap());
+			assert_eq!(layer.delta_weights, Array::zeros((3, 4)));
 			assert_eq!(layer.gradients, Array1::zeros(4));
 			let expected_outputs = Array1::from_iter(iter::repeat(0.0).take(3));
 			assert_eq!(layer.outputs, expected_outputs);
@@ -408,24 +429,16 @@ mod tests {
 		fn propagate_gradients() {
 			use self::Activation::{Identity};
 
-			let delta_weights = Array1::zeros(12).into_shape((3, 4)).unwrap();
-			let outputs = Array1::from_iter(iter::repeat(0.0).take(3));
-
 			let fst_layer = FullyConnectedLayer{
 				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
-				delta_weights: delta_weights.clone(),
-				outputs      : outputs.clone(),
+				delta_weights: Array::zeros((3, 4)),
+				outputs      : Array1::from_iter(iter::repeat(0.0).take(3)),
 				gradients    : Array1::linspace(10.0, 40.0, 4),
 				activation   : Identity
 			};
 
-			let mut snd_layer = FullyConnectedLayer{
-				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
-				delta_weights: delta_weights.clone(),
-				outputs      : outputs.clone(),
-				gradients    : Array1::zeros(4),
-				activation   : Identity
-			};
+			let mut snd_layer = FullyConnectedLayer::with_weights(
+				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
 
 			snd_layer.propagate_gradients(&fst_layer);
 
@@ -440,7 +453,26 @@ mod tests {
 
 		#[test]
 		fn update_weights() {
-			// TODO
+			use self::Activation::{Identity};
+			let lr = LearnRate(0.5);
+			let lm = LearnMomentum(1.0);
+			let outputs = Array1::from_iter(iter::repeat(0.0).take(3));
+			let mut layer = FullyConnectedLayer{
+				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
+				delta_weights: Array::zeros((3, 4)),
+				outputs      : Array1::from_iter(iter::repeat(0.0).take(3)),
+				gradients    : Array1::linspace(10.0, 40.0, 4),
+				activation   : Identity
+			};
+			let result_outputs = layer.update_weights(outputs.view(), lr, lm).to_owned();
+			let target_outputs = Array::from_vec(vec![0.0, 0.0, 0.0]);
+			let result_weights = layer.weights.clone();
+			let target_weights = Array::from_vec(vec![
+				1.0,  2.0,  3.0,  9.0,
+				5.0,  6.0,  7.0, 18.0,
+				9.0, 10.0, 11.0, 27.0]).into_shape((3, 4)).unwrap();
+			assert_eq!(result_outputs, target_outputs);
+			assert_eq!(result_weights, target_weights);
 		}
 	}
 }
