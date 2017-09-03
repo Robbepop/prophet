@@ -221,7 +221,8 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(self.count_gradients(), self.count_outputs() + 1);
 
 		let act = self.activation; // required because of non-lexical borrows
-		multizip((self.gradients.iter_mut(), self.outputs.iter().chain(&[1.0])))
+		use std::iter;
+		multizip((self.gradients.iter_mut(), self.outputs.iter().chain(iter::once(&1.0))))
 			.foreach(|(gradient, &output)| *gradient *= act.derived(output));
 	}
 
@@ -255,6 +256,8 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(prev_outputs.len() + 1, self.weights.cols());
 		debug_assert_eq!(self.count_gradients(), self.weights.rows() + 1);
 
+		use std::iter;
+
 		// ==================================================================== //
 		// OLD
 		// ==================================================================== //
@@ -262,7 +265,7 @@ impl FullyConnectedLayer {
 		          self.delta_weights.outer_iter_mut(),
 		          self.gradients.iter()))
 			.foreach(|(mut weights_row, mut delta_weights_row, gradient)| {
-				multizip((prev_outputs.iter().chain(&[1.0]),
+				multizip((prev_outputs.iter().chain(iter::once(&1.0)),
 				          delta_weights_row.iter_mut()))
 					.foreach(|(prev_output, delta_weight)| {
 						*delta_weight =
