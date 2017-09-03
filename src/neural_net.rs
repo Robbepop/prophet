@@ -508,7 +508,26 @@ mod tests {
 
 		#[test]
 		fn update_weights() {
-			// TODO
+			use self::Activation::{Identity};
+			let lr = LearnRate(0.5);
+			let lm = LearnMomentum(1.0);
+			let outputs = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
+			let mut layer = FullyConnectedLayer{
+				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
+				delta_weights: Array::zeros((3, 4)),
+				outputs      : Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0))),
+				gradients    : Array1::linspace(10.0, 40.0, 4),
+				activation   : Identity
+			};
+			let result_outputs = layer.update_weights(outputs.view(), lr, lm).to_owned();
+			let target_outputs = Array::from_vec(vec![0.0, 0.0, 0.0, 1.0]);
+			let result_weights = layer.weights.clone();
+			let target_weights = Array::from_vec(vec![
+				1.0,  2.0,  3.0,  9.0,
+				5.0,  6.0,  7.0, 18.0,
+				9.0, 10.0, 11.0, 27.0]).into_shape((3, 4)).unwrap();
+			assert_eq!(result_outputs, target_outputs);
+			assert_eq!(result_weights, target_weights);
 		}
 	}
 }
