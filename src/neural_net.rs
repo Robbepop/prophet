@@ -215,7 +215,6 @@ impl FullyConnectedLayer {
 
 		let act = self.activation; // Required because of non-lexical borrows.
 
-		// Just as slow as the old version below ...
 		Zip::from(&mut self.gradients.slice_mut(s![..-1]))
 				.and(&target_values)
 				.and(&self.outputs.slice(s![..-1]))
