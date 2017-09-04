@@ -277,7 +277,7 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(prev.weights.rows() + 1, prev.count_gradients());
 		debug_assert_eq!(prev.weights.cols()    , self.count_gradients());
 
-		multizip((prev.weights.outer_iter(), prev.gradients.iter()))
+		multizip((prev.weights.genrows(), prev.gradients.iter()))
 			.foreach(|(prev_weights_row, prev_gradient)| {
 				multizip((self.gradients.iter_mut(), prev_weights_row.iter()))
 					.foreach(|(gradient, weight)| *gradient += weight * prev_gradient)
@@ -301,7 +301,7 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(self.count_gradients(), self.weights.rows() + 1);
 
 		// Compute new delta weights.
-		multizip((self.delta_weights.outer_iter_mut(),
+		multizip((self.delta_weights.genrows_mut(),
 		          self.gradients.iter()))
 			.foreach(|(mut delta_weights_row, gradient)| {
 				multizip((prev_outputs.iter(),
