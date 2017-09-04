@@ -192,7 +192,7 @@ impl FullyConnectedLayer {
 
 		general_mat_vec_mul(1.0, &self.weights, &input, 1.0, &mut (self.outputs.slice_mut(s![..-1])));
 
-		self.apply_activation();
+		self.apply_activation_to_outputs();
 
 		self.output_view() // required for folding the general operation
 	}
@@ -236,19 +236,27 @@ impl FullyConnectedLayer {
 		debug_assert!(self.gradients.iter().all(|&g| g == 0.0));
 	}
 
-	/// Applies the given activation function on all gradients of this layer.
+	/// Applies this layer's activation function on all gradients of this layer.
 	/// 
 	/// ### Expects
 	/// 
 	/// - number of gradients equals number of outputs
 	/// 
-	fn apply_activation(&mut self) {
+	fn apply_activation_to_gradients(&mut self) {
 		debug_assert_eq!(self.count_gradients(), self.count_outputs());
 
 		let act = self.activation; // Required because of non-lexical borrows.
 
-		multizip((&mut self.gradients, &self.outputs))
-			.foreach(|(gradient, &output)| *gradient *= act.derived(output));
+		Zip::from(&mut self.gradients).and(&self.outputs).apply(|g, o| *g *= act.derived(*o));
+
+		// multizip((&mut self.gradients, &self.outputs))
+		// 	.foreach(|(gradient, &output)| *gradient *= act.derived(output));
+	}
+
+	/// Applies this layer's activation function on all outputs of this layer.
+	fn apply_activation_to_outputs(&mut self) {
+		let act = self.activation;
+		self.outputs.mapv_inplace(|o| act.base(o));
 	}
 
 	/// Back propagate gradients from the previous layer (in reversed order) to this layer
@@ -274,7 +282,7 @@ impl FullyConnectedLayer {
 					.foreach(|(gradient, weight)| *gradient += weight * prev_gradient)
 			});
 
-		self.apply_activation();
+		self.apply_activation_to_gradients();
 		self
 	}
 
@@ -434,15 +442,15 @@ mod tests {
 		fn feed_forward() {
 			use self::Activation::{Identity};
 			let mut layer = FullyConnectedLayer::with_weights(
-				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
-			let applier = Array1::from_iter((1..4).chain(iter::once(1)).map(|e| e as f32));
+				Array::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
+			let applier = Array::from_vec(vec![1.0, 2.0, 3.0, 1.0]);
 			let outputs = layer.feed_forward(applier.view()).to_owned();
-			let targets = Array1::from_vec(vec![18.0, 46.0, 74.0, 1.0]);
+			let targets = Array::from_vec(vec![18.0, 46.0, 74.0, 1.0]);
 
-			// println!("layer =\n{:?}", layer.weights);
-			// println!("applier =\n{:?}", applier);
-			// println!("outputs =\n{:?}", outputs);
-			// println!("targets =\n{:?}", targets);
+			println!("layer =\n{:?}", layer.weights);
+			println!("applier =\n{:?}", applier);
+			println!("outputs =\n{:?}", outputs);
+			println!("targets =\n{:?}", targets);
 
 			assert_eq!(outputs, targets);
 		}
