@@ -247,8 +247,10 @@ impl FullyConnectedLayer {
 
 		let act = self.activation; // Required because of non-lexical borrows.
 
+		// NEW CODE
 		Zip::from(&mut self.gradients).and(&self.outputs).apply(|g, o| *g *= act.derived(*o));
 
+		// OLD CODE: slightly faster sequentially, but also not as easy parallelizable as new code above ...
 		// multizip((&mut self.gradients, &self.outputs))
 		// 	.foreach(|(gradient, &output)| *gradient *= act.derived(output));
 	}
@@ -440,19 +442,40 @@ mod tests {
 
 		#[test]
 		fn feed_forward() {
-			use self::Activation::{Identity};
-			let mut layer = FullyConnectedLayer::with_weights(
-				Array::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
-			let applier = Array::from_vec(vec![1.0, 2.0, 3.0, 1.0]);
-			let outputs = layer.feed_forward(applier.view()).to_owned();
-			let targets = Array::from_vec(vec![18.0, 46.0, 74.0, 1.0]);
+			fn assert_raw_config_with_expected(
+				weights: Array2<f32>,
+				activation: Activation,
+				applier: Array1<f32>,
+				expected: Array1<f32>
+			) {
+				let mut layer = FullyConnectedLayer::with_weights(weights, activation);
+				let result = layer.feed_forward(applier.view()).to_owned();
+				assert!(result.all_close(&expected, 1e-5));
+			}
 
-			println!("layer =\n{:?}", layer.weights);
-			println!("applier =\n{:?}", applier);
-			println!("outputs =\n{:?}", outputs);
-			println!("targets =\n{:?}", targets);
+			fn assert_config_with_expected(
+				weights: Array2<f32>,
+				applier: Array1<f32>,
+				expected: Array1<f32>
+			) {
+				use self::Activation::*;
+				let activations = [Identity, Tanh, Logistic, SoftPlus, ReLU, Gaussian];
+				for act in &activations {
+					assert_raw_config_with_expected(
+						weights.clone(), *act, applier.clone(), expected.mapv(|e| act.base(e)));
+				}
+			}
 
-			assert_eq!(outputs, targets);
+			assert_config_with_expected(
+				Array::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
+				Array::from_vec(vec![1.0, 2.0, 3.0, 1.0]),
+				Array::from_vec(vec![
+					1.0*1.0 +  2.0*2.0 +  3.0*3.0 +  4.0*1.0, // = 18.0,
+					5.0*1.0 +  6.0*2.0 +  7.0*3.0 +  8.0*1.0, // = 46.0,
+					9.0*1.0 + 10.0*2.0 + 11.0*3.0 + 12.0*1.0, // = 74.0,
+					1.0 // just the bias!
+				])
+			);
 		}
 
 		#[test]
