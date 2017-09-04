@@ -171,7 +171,7 @@ impl FullyConnectedLayer {
 		// Could profit greatly from vectorization and builtin library solutions for this
 		// kind of operation w.r.t. performance gains.
 		// =================================================================================
-		Zip::from(&mut self.outputs).and(self.weights.outer_iter()).apply(|output, weights| {
+		Zip::from(&mut self.outputs).and(self.weights.genrows()).apply(|output, weights| {
 			let s   = weights.len();
 			*output = act.base(weights.slice(s![..-1]).dot(&input) + weights[s-1]);
 		});
@@ -236,7 +236,7 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(prev.weights.rows(), prev.count_gradients() - 1);
 		debug_assert_eq!(prev.weights.cols(), self.count_gradients());
 
-		multizip((prev.weights.outer_iter(), prev.gradients.iter()))
+		multizip((prev.weights.genrows(), prev.gradients.iter()))
 			.foreach(|(prev_weights_row, prev_gradient)| {
 				multizip((self.gradients.iter_mut(), prev_weights_row.iter()))
 					.foreach(|(gradient, weight)| *gradient += weight * prev_gradient)
@@ -261,8 +261,8 @@ impl FullyConnectedLayer {
 		// ==================================================================== //
 		// OLD
 		// ==================================================================== //
-		multizip((self.weights.outer_iter_mut(),
-		          self.delta_weights.outer_iter_mut(),
+		multizip((self.weights.genrows_mut(),
+		          self.delta_weights.genrows_mut(),
 		          self.gradients.iter()))
 			.foreach(|(mut weights_row, mut delta_weights_row, gradient)| {
 				multizip((prev_outputs.iter().chain(iter::once(&1.0)),
