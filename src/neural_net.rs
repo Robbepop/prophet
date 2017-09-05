@@ -257,7 +257,7 @@ impl FullyConnectedLayer {
 	/// Applies this layer's activation function on all outputs of this layer.
 	fn apply_activation_to_outputs(&mut self) {
 		let act = self.activation;
-		self.outputs.mapv_inplace(|o| act.base(o));
+		self.outputs.slice_mut(s![..-1]).mapv_inplace(|o| act.base(o));
 	}
 
 	/// Back propagate gradients from the previous layer (in reversed order) to this layer
@@ -455,13 +455,18 @@ mod tests {
 			fn assert_config_with_expected(
 				weights: Array2<f32>,
 				applier: Array1<f32>,
-				expected: Array1<f32>
+				mut expected: Array1<f32>
 			) {
 				use self::Activation::*;
 				let activations = [Identity, Tanh, Logistic, SoftPlus, ReLU, Gaussian];
 				for act in &activations {
+					let mut expected_activated = expected.clone();
+					expected_activated.slice_mut(s![..-1]).mapv_inplace(|e| act.base(e));
 					assert_raw_config_with_expected(
-						weights.clone(), *act, applier.clone(), expected.mapv(|e| act.base(e)));
+						weights.clone(), *act,
+						applier.clone(),
+						expected_activated
+					);
 				}
 			}
 
@@ -478,7 +483,7 @@ mod tests {
 		}
 
 		#[test]
-		fn update_output_gradients() {
+		fn calculate_output_gradients() {
 			use self::Activation::{Identity};
 			let mut layer = FullyConnectedLayer::with_weights(
 				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
