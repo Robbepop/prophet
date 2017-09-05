@@ -2,9 +2,9 @@
 PROPHET - Neural Network Library
 ================================
 
-|        Linux        |       Windows       |       Coverage       |          Docs         |     Crates.io      |       Licence      |
-|:-------------------:|:-------------------:|:--------------------:|:---------------------:|:------------------:|:------------------:|
-| [![travisCI][1]][2] | [![appveyor][3]][4] | [![coveralls][5]][6] | [![licence][11]][12 ] | [![chat][9]][10]   | [![licence][7]][8] |
+|        Linux        |       Windows       |       Coverage       |          Docs         |     Crates.io         |       Licence      |
+|:-------------------:|:-------------------:|:--------------------:|:---------------------:|:---------------------:|:------------------:|
+| [![travisCI][1]][2] | [![appveyor][3]][4] | [![coveralls][5]][6] | [![docs][11]][12 ]    | [![crates.io][9]][10] | [![licence][7]][8] |
 
 
 A simple neural net implementation written in Rust with a focus on cache-efficiency and sequential performance.
