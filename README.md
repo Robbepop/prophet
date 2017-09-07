@@ -41,6 +41,41 @@ Run performance test with
 cargo bench --features benches
 ```
 
+## Example: XOR Training
+
+```rust
+let (t, f) = (1.0, -1.0);
+let samples = samples![
+	[f, f] => f,
+	[t, f] => t,
+	[f, t] => t,
+	[t, t] => f
+];
+
+let net =
+	Topology::input(2)   // 2 input neurons
+	.layer(2, Tanh)      // a hidden layer with 2 neurons
+	.output(1, Tanh)     // 1 output neuron
+
+	.train(samples.clone())
+	.learn_rate(0.6)     // use learn rate of 0.6
+	.learn_momentum(0.5) // use learn momentum of 0.5
+	.log_config(
+		// Log the current state every second
+		LogConfig::TimeSteps(Duration::from_secs(1)))
+	.go()
+	.unwrap();
+
+for sample in samples {
+	let predicted = net.predict(sample.input.view());
+	multizip((predicted.iter(), sample.target.iter())).foreach(
+		|(&predicted, &expected)| {
+			(predicted.round() - expected).abs() < 0.05
+		}
+	);
+}
+```
+
 ## Planned Features
 
 - Convolutional Layers: Foundations have been layed out already!
