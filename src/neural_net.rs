@@ -279,10 +279,10 @@ impl FullyConnectedLayer {
 		// ==================================================================== //
 		// NEW
 		// ==================================================================== //
-		// multizip((self.delta_weights.outer_iter_mut(),
+		// multizip((self.delta_weights.genrows_mut(),
 		//           self.gradients.iter()))
 		// 	.foreach(|(mut delta_weights_row, gradient)| {
-		// 		multizip((prev_outputs.iter().chain(&[1.0]),
+		// 		multizip((prev_outputs.iter().chain(iter::once(&1.0)),
 		// 		          delta_weights_row.iter_mut()))
 		// 			.foreach(|(prev_output, delta_weight)| {
 		// 				*delta_weight =
