@@ -455,7 +455,7 @@ mod tests {
 			) {
 				let mut layer = FullyConnectedLayer::with_weights(weights, activation);
 				let result = layer.feed_forward(applier.view()).to_owned();
-				assert!(result.all_close(&expected, 1e-5));
+				assert!(result.all_close(&expected, 1e-6));
 			}
 
 			fn assert_config_with_expected(
@@ -490,6 +490,61 @@ mod tests {
 
 		#[test]
 		fn calculate_output_gradients() {
+			fn assert_raw_config_with_expected(
+				outputs   : Array1<f32>,
+				activation: Activation,
+				targets   : Array1<f32>,
+				expected_gradients: Array1<f32>
+			) {
+				let unbiased_dim = (outputs.dim() - 1, 1);
+				let zero_weights = Array2::zeros(unbiased_dim);
+				let mut layer = FullyConnectedLayer{
+					weights      : zero_weights.clone(),
+					delta_weights: zero_weights.clone(),
+					gradients    : Array::zeros(outputs.dim()),
+					outputs      : outputs.clone(),
+					activation
+				};
+				layer.calculate_output_gradients(targets.view());
+				let result_gradients = layer.gradients.clone();
+				assert!(result_gradients.all_close(&expected_gradients, 1e-6));
+			}
+
+			fn assert_config_with_expected(
+				outputs: Array1<f32>,
+				targets: Array1<f32>,
+				expected_gradients: Array1<f32>
+			) {
+				use self::Activation::*;
+				let activations = [Identity, Tanh, Logistic, SoftPlus, ReLU, Gaussian];
+				for act in &activations {
+					let mut expected_gradients_activated = expected_gradients.clone();
+					multizip((expected_gradients_activated.slice_mut(s![..-1]), outputs.slice(s![..-1])))
+						.foreach(|(g, o)| *g *= act.derived(*o));
+					assert_raw_config_with_expected(
+						outputs.clone(), *act,
+						targets.clone(),
+						expected_gradients_activated
+					);
+				}
+			}
+
+			assert_config_with_expected(
+				Array1::from_vec(vec![ 1.0,  2.0,  3.0,  4.0,  5.0, 1.0]),
+				Array1::from_vec(vec![10.0, 10.0, 10.0, 10.0, 10.0]),
+				Array1::from_vec(vec![
+					10.0 - 1.0,
+					10.0 - 2.0,
+					10.0 - 3.0,
+					10.0 - 4.0,
+					10.0 - 5.0,
+					0.0
+				])
+			);
+		}
+
+		#[test]
+		fn calculate_output_gradients_old() {
 			use self::Activation::{Identity};
 			let mut layer = FullyConnectedLayer::with_weights(
 				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
