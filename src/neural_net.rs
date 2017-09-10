@@ -544,31 +544,6 @@ mod tests {
 		}
 
 		#[test]
-		fn calculate_output_gradients_old() {
-			use self::Activation::{Identity};
-			let mut layer = FullyConnectedLayer::with_weights(
-				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(), Identity);
-			let expected = Array1::linspace(1.0, 3.0, 3);
-			let gradients = layer.gradients_view().to_owned();
-			let outputs   = layer.output_view().to_owned();
-			let expected_gradients = Array1::zeros(4);
-			let expected_outputs   = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
-			assert_eq!(gradients, expected_gradients);
-			assert_eq!(outputs  , expected_outputs);
-			assert_eq!(gradients, Array1::zeros(4));
-			layer.calculate_output_gradients(expected.view()).to_owned();
-			let targets   = Array1::from_vec(vec![1.0, 2.0, 3.0, 0.0]);
-			let gradients = layer.gradients_view().to_owned();
-
-			// println!("layer =\n{:?}", layer.weights);
-			// println!("applier =\n{:?}", applier);
-			// println!("outputs =\n{:?}", outputs);
-			// println!("targets =\n{:?}", targets);
-
-			assert_eq!(gradients, targets);
-		}
-
-		#[test]
 		fn propagate_gradients() {
 			use self::Activation::{Identity};
 
