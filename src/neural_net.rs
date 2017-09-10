@@ -545,6 +545,86 @@ mod tests {
 
 		#[test]
 		fn propagate_gradients() {
+			fn assert_raw_config_with_expected(
+				self_outputs: Array1<f32>,
+				activation: Activation,
+				next_weights: Array2<f32>,
+				next_gradients: Array1<f32>,
+				expected_gradients: Array1<f32>
+			) {
+				use self::Activation::{Identity};
+
+				let self_n_outputs = self_outputs.dim();
+				let self_n_inputs  = 1;
+				let self_shape     = (self_n_outputs, self_n_inputs);
+
+				let (next_n_outputs, next_n_inputs) = next_weights.dim();
+				let next_shape = next_weights.dim();
+
+				let next_outputs = Array1::from_iter(iter::repeat(0.0)
+					.take(next_n_outputs).chain(iter::once(1.0)));
+
+				let self_zero_weights = Array1::zeros(self_n_inputs * self_n_outputs).into_shape(self_shape).unwrap();
+				let next_zero_weights = Array1::zeros(next_n_inputs * next_n_outputs).into_shape(next_shape).unwrap();
+
+				let mut self_layer = FullyConnectedLayer{
+					weights      : self_zero_weights.clone(),
+					delta_weights: self_zero_weights.clone(),
+					outputs      : self_outputs,
+					gradients    : Array1::zeros(self_n_outputs),
+					activation
+				};
+
+				let next_layer = FullyConnectedLayer{
+					weights      : next_weights,
+					delta_weights: next_zero_weights.clone(),
+					outputs      : next_outputs,
+					gradients    : next_gradients,
+					activation
+				};
+
+				self_layer.propagate_gradients(&next_layer);
+				let result_gradients = self_layer.gradients.clone();
+
+				assert!(result_gradients.all_close(&expected_gradients, 1e-6));
+			}
+
+			fn assert_config_with_expected(
+				self_outputs  : Array1<f32>,
+				next_gradients: Array1<f32>,
+				next_weights  : Array2<f32>,
+				expected_gradients_without_act: Array1<f32>
+			) {
+				use self::Activation::*;
+				let activations = [Identity, Tanh, Logistic, SoftPlus, ReLU, Gaussian];
+				for act in &activations {
+					let mut expected_gradients = expected_gradients_without_act.clone();
+					multizip((&mut expected_gradients, &self_outputs))
+						.foreach(|(g, o)| *g *= act.derived(*o));
+					assert_raw_config_with_expected(
+						self_outputs.clone(), *act,
+						next_weights.clone(),
+						next_gradients.clone(),
+						expected_gradients
+					);
+				}
+			}
+
+			assert_config_with_expected(
+				Array1::from_vec(vec![ 0.25,  0.5,  0.75, 1.0]),
+				Array1::from_vec(vec![10.00, 20.0, 30.00, 0.0]),
+				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
+				Array1::from_vec(vec![
+					1.0 * 10.0 + 5.0 * 20.0 +  9.0 * 30.0, // self.gradient_1
+					2.0 * 10.0 + 6.0 * 20.0 + 10.0 * 30.0, // self.gradient_2
+					3.0 * 10.0 + 7.0 * 20.0 + 11.0 * 30.0, // self.gradient_3
+					4.0 * 10.0 + 8.0 * 20.0 + 12.0 * 30.0  // self.gradient_4
+				])
+			);
+		}
+
+		#[test]
+		fn propagate_gradients_old() {
 			use self::Activation::{Identity};
 
 			let delta_weights = Array1::zeros(12).into_shape((3, 4)).unwrap();
