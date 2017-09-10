@@ -650,8 +650,16 @@ mod tests {
 				let result_weights = self_layer.weights.clone();
 				let result_deltas  = self_layer.delta_weights.clone();
 
-				assert!(result_weights.all_close(&expected_weights, 1e-6));
-				assert!(result_deltas.all_close(&expected_deltas, 1e-6));
+				// println!("=========================");
+				// println!("expected_weights = \n{:?}\n", expected_weights);
+				// println!("result_weights   = \n{:?}\n\n", result_weights);
+
+				// println!("expected_deltas = \n{:?}\n", expected_deltas);
+				// println!("result_deltas   = \n{:?}\n\n", result_deltas);
+				// println!("=========================");
+
+				assert!(result_weights.all_close(&expected_weights, 1e-4));
+				assert!(result_deltas.all_close(&expected_deltas, 1e-4));
 			}
 
 			fn assert_raw_config(
@@ -717,6 +725,13 @@ mod tests {
 					);
 				}
 			}
+
+			assert_config(
+				Array1::from_vec(vec![7.0, 11.0, 13.0, 17.0]),
+				Array1::linspace( 1.0,  12.0, 12).into_shape((3, 4)).unwrap(),
+				Array1::linspace(10.0, 120.0, 12).into_shape((3, 4)).unwrap(),
+				Array1::from_vec(vec![11.0, 22.0, 33.0, 1.0])
+			);
 		}
 
 		#[test]
