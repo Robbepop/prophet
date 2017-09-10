@@ -625,6 +625,102 @@ mod tests {
 
 		#[test]
 		fn update_weights() {
+			fn assert_raw_config_with_expected(
+				self_gradients    : Array1<f32>,
+				self_weights      : Array2<f32>,
+				self_delta_weights: Array2<f32>,
+				prev_outputs      : Array1<f32>,
+				learn_rate        : LearnRate,
+				learn_momentum    : LearnMomentum,
+				expected_weights  : Array2<f32>,
+				expected_deltas   : Array2<f32>
+			) {
+				let (self_n_outputs, self_n_inputs) = self_weights.dim();
+				let self_outputs = Array1::from_iter(iter::repeat(0.0)
+					.take(self_n_outputs).chain(iter::once(1.0)));
+				let mut self_layer = FullyConnectedLayer{
+					weights      : self_weights,
+					delta_weights: self_delta_weights,
+					gradients    : self_gradients,
+					outputs      : self_outputs,
+					activation   : Activation::Identity
+				};
+				self_layer.update_weights(prev_outputs.view(), learn_rate, learn_momentum);
+
+				let result_weights = self_layer.weights.clone();
+				let result_deltas  = self_layer.delta_weights.clone();
+
+				assert!(result_weights.all_close(&expected_weights, 1e-6));
+				assert!(result_deltas.all_close(&expected_deltas, 1e-6));
+			}
+
+			fn assert_raw_config(
+				self_gradients    : Array1<f32>,
+				self_weights      : Array2<f32>,
+				self_delta_weights: Array2<f32>,
+				prev_outputs      : Array1<f32>,
+				learn_rate        : LearnRate,
+				learn_momentum    : LearnMomentum
+			) {
+				let LearnRate(lr)     = learn_rate;
+				let LearnMomentum(lm) = learn_momentum;
+				let mut expected_deltas = self_delta_weights.clone();
+				multizip((expected_deltas.genrows_mut(), &self_gradients)).foreach(|(mut s_dw_rows, s_g)| {
+					multizip((&mut s_dw_rows, &prev_outputs)).foreach(|(dw, p_o)| {
+						*dw = lr * s_g * (*p_o) + lm * (*dw);
+					})
+				});
+				let mut expected_weights = self_weights.clone();
+				expected_weights += &expected_deltas;
+				assert_raw_config_with_expected(
+					self_gradients.clone(),
+					self_weights.clone(),
+					self_delta_weights.clone(),
+					prev_outputs.clone(),
+					learn_rate,
+					learn_momentum,
+					expected_weights,
+					expected_deltas
+				)
+			}
+
+			fn assert_config(
+				self_gradients    : Array1<f32>,
+				self_weights      : Array2<f32>,
+				self_delta_weights: Array2<f32>,
+				prev_outputs      : Array1<f32>,
+			) {
+				let learn_rates = [
+					LearnRate(0.0),
+					LearnRate(0.1),
+					LearnRate(0.3),
+					LearnRate(0.5),
+					LearnRate(0.75),
+					LearnRate(1.0)
+				];
+				let learn_momentums = [
+					LearnMomentum(0.0),
+					LearnMomentum(0.1),
+					LearnMomentum(0.25),
+					LearnMomentum(0.5),
+					LearnMomentum(0.75),
+					LearnMomentum(1.0)
+				];
+				use itertools::Itertools;
+				for (lr, lm) in learn_rates.iter().cartesian_product(&learn_momentums) {
+					assert_raw_config(
+						self_gradients.clone(),
+						self_weights.clone(),
+						self_delta_weights.clone(),
+						prev_outputs.clone(),
+						*lr, *lm
+					);
+				}
+			}
+		}
+
+		#[test]
+		fn update_weights_old() {
 			use self::Activation::{Identity};
 			let lr = LearnRate(0.5);
 			let lm = LearnMomentum(1.0);
