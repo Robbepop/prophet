@@ -35,8 +35,8 @@
 //! 
 //! // create the topology for our neural network
 //! let top = Topology::input(2) // has two input neurons
-//! 	.layer(3, Tanh)          // with 3 neurons in the first hidden layer
-//! 	.layer(2, Tanh)          // and 2 neurons in the second hidden layer
+//! 	.layer(4, Tanh)          // with 4 neurons in the first hidden layer
+//! 	.layer(3, Tanh)          // and 3 neurons in the second hidden layer
 //! 	.output(1, Tanh);        // and 1 neuron in the output layer
 //! 
 //! let mut net = top.train(train_samples)
@@ -44,7 +44,7 @@
 //! 	.learn_momentum(0.6) // use the given learn momentum
 //! 	.log_config(LogConfig::Iterations(100)) // log state every 100 iterations
 //! 	.scheduling(Scheduling::Random)         // use random sample scheduling
-//! 	.criterion(Criterion::RecentMSE(0.05))  // train until the recent MSE is below 0.05
+//! 	.criterion(Criterion::RecentMSE(0.03))  // train until the recent MSE is below 0.03
 //! 
 //! 	.go()      // start the training session
 //! 	.unwrap(); // be ashamed to unwrap a Result
