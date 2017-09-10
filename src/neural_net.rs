@@ -624,40 +624,6 @@ mod tests {
 		}
 
 		#[test]
-		fn propagate_gradients_old() {
-			use self::Activation::{Identity};
-
-			let delta_weights = Array1::zeros(12).into_shape((3, 4)).unwrap();
-			let outputs = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
-
-			let fst_layer = FullyConnectedLayer{
-				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
-				delta_weights: delta_weights.clone(),
-				outputs      : outputs.clone(),
-				gradients    : Array1::linspace(10.0, 40.0, 4),
-				activation   : Identity
-			};
-
-			let mut snd_layer = FullyConnectedLayer{
-				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
-				delta_weights: delta_weights.clone(),
-				outputs      : outputs.clone(),
-				gradients    : Array1::zeros(4),
-				activation   : Identity
-			};
-
-			snd_layer.propagate_gradients(&fst_layer);
-
-			// println!("outputs =\n{:?}", outputs);
-			// println!("fst_layer =\n{:?}"  , fst_layer);
-			// println!("snd_layer =\n{:?}"  , snd_layer);
-
-			let expected_gradients = Array1::from_vec(vec![380.0, 440.0, 500.0, 560.0]);
-
-			assert_eq!(snd_layer.gradients_view().to_owned(), expected_gradients);
-		}
-
-		#[test]
 		fn update_weights() {
 			use self::Activation::{Identity};
 			let lr = LearnRate(0.5);
