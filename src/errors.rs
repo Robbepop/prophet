@@ -27,7 +27,23 @@ pub enum ErrorKind {
 
 	/// Occures when trying to create a `LayerSize` that 
 	/// represents zero (0) neurons.
-	ZeroLayerSize
+	ZeroLayerSize,
+
+	/// Occures when trying to create an `OutputBuffer`
+	/// with zero non-bias neuron values.
+	ZeroSizedOutputBuffer,
+
+	/// Occures when trying to create a `GradientBuffer`
+	/// representing zero values.
+	ZeroSizedGradientBuffer,
+
+	/// Occures upon creating a `WeightsMatrix`
+	/// for `0` (zero) inputs.
+	ZeroInputsWeightsMatrix,
+
+	/// Occures upon creating a `WeightsMatrix`
+	/// for `0` (zero) outputs.
+	ZeroOutputsWeightsMatrix,
 }
 
 /// The error class used in `Prophet`.
@@ -132,6 +148,42 @@ impl Error {
 		Error{
 			kind: ErrorKind::UnmatchingTargetSampleSize,
 			message: format!("Tried to create an target sample with {:?} neurons while {:?} are required.", actual, req),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `ZeroSizedOutputBuffer` error.
+	pub(crate) fn zero_sized_output_buffer() -> Error {
+		Error{
+			kind: ErrorKind::ZeroSizedOutputBuffer,
+			message: format!("Tried to create an OutputBuffer representing zero non-bias values."),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `ZeroSizedOutputBuffer` error.
+	pub(crate) fn zero_sized_gradient_buffer() -> Error {
+		Error{
+			kind: ErrorKind::ZeroSizedGradientBuffer,
+			message: format!("Tried to create an GradientBuffer representing zero values."),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `ZeroInputsWeightsMatrix` error.
+	pub(crate) fn zero_inputs_weights_matrix() -> Error {
+		Error{
+			kind: ErrorKind::ZeroInputsWeightsMatrix,
+			message: format!("Tried to create a WeightsMatrix for zero inputs. Must be at least one!"),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `ZeroInputsWeightsMatrix` error.
+	pub(crate) fn zero_outputs_weights_matrix() -> Error {
+		Error{
+			kind: ErrorKind::ZeroOutputsWeightsMatrix,
+			message: format!("Tried to create a WeightsMatrix for zero outputs. Must be at least one!"),
 			annotation: None
 		}
 	}
