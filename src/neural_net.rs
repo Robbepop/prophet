@@ -328,13 +328,12 @@ impl NeuralNet {
 	///
 	/// This constructor should only be used internally!
 	fn from_vec(inputs: usize, layers: Vec<FullyConnectedLayer>) -> Self {
+		use std::iter;
+
 		assert!(!layers.is_empty());
-		let mut biased_input = Array1::zeros(inputs + 1);
-		biased_input[inputs] = 1.0; // Set bias value which is always `1.0`.
-		                                // This initial value should never be overwritten.
-		debug_assert_eq!(biased_input[inputs], 1.0);
+
 		NeuralNet {
-			input : biased_input,
+			input : Array::from_iter(iter::repeat(0.0).take(inputs).chain(iter::once(1.0))),
 			layers: layers
 		}
 	}
