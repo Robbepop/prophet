@@ -31,7 +31,11 @@ pub enum ErrorKind {
 
 	/// Occures when trying to create an `OutputBuffer`
 	/// with zero non-bias neuron values.
-	ZeroSizedOutputBuffer,
+	ZeroSizedSignalBuffer,
+
+	/// Occures when trying to assign a non-matching number of input
+	/// signals to a buffer.
+	NonMatchingNumberOfSignals,
 
 	/// Occures when trying to create a `GradientBuffer`
 	/// representing zero values.
@@ -153,9 +157,9 @@ impl Error {
 	}
 
 	/// Creates a new `ZeroSizedOutputBuffer` error.
-	pub(crate) fn zero_sized_output_buffer() -> Error {
+	pub(crate) fn zero_sized_signal_buffer() -> Error {
 		Error{
-			kind: ErrorKind::ZeroSizedOutputBuffer,
+			kind: ErrorKind::ZeroSizedSignalBuffer,
 			message: format!("Tried to create an OutputBuffer representing zero non-bias values."),
 			annotation: None
 		}
@@ -184,6 +188,30 @@ impl Error {
 		Error{
 			kind: ErrorKind::ZeroOutputsWeightsMatrix,
 			message: format!("Tried to create a WeightsMatrix for zero outputs. Must be at least one!"),
+			annotation: None
+		}
+	}
+
+	pub(crate) fn non_matching_assign_signals(assigned: usize, available: usize) -> Error {
+		Error{
+			kind: ErrorKind::NonMatchingNumberOfSignals,
+			message: format!(
+				"Tired to assign {:?} signal values to a SignalBuffer of length {:?} (not respecting the bias signal).",
+					assigned,
+					available
+			),
+			annotation: None
+		}
+	}
+
+	pub(crate) fn non_matching_number_of_signals(source: usize, required: usize) -> Error {
+		Error{
+			kind: ErrorKind::NonMatchingNumberOfSignals,
+			message: format!(
+				"Tired to create a SignalBuffer with length {:?} from a source of input values with length {:?}",
+					required,
+					source
+			),
 			annotation: None
 		}
 	}

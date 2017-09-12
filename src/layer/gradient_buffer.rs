@@ -17,4 +17,14 @@ impl GradientBuffer {
 	pub fn reset_to_zeros(&mut self) {
 		self.0.fill(0.0)
 	}
+
+	#[inline]
+	pub fn view(&self) -> ArrayView1<f32> {
+		self.0.view()
+	}
+
+	#[inline]
+	pub fn view_mut(&mut self) -> ArrayViewMut1<f32> {
+		self.0.view_mut()
+	}
 }

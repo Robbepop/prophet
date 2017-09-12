@@ -123,7 +123,7 @@ mod activation;
 mod errors;
 mod utils;
 
-mod layer;
+pub mod layer;
 
 pub mod topology;
 pub mod topology_new;
