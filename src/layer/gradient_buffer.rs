@@ -12,4 +12,9 @@ impl GradientBuffer {
 		}
 		Ok(GradientBuffer(Array1::zeros(len)))
 	}
+
+	#[inline]
+	pub fn reset_to_zeros(&mut self) {
+		self.0.fill(0.0)
+	}
 }
