@@ -1,6 +1,7 @@
 mod signal_buffer;
 mod gradient_buffer;
 mod weights_matrix;
+mod traits;
 
 pub use self::signal_buffer::SignalBuffer;
 pub use self::gradient_buffer::GradientBuffer;
