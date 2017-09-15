@@ -4,7 +4,7 @@ use errors::{Result};
 use activation::Activation;
 
 #[derive(Debug, Clone, PartialEq)]
-struct ActivationLayer {
+pub struct ActivationLayer {
 	outputs  : SignalBuffer,
 	gradients: GradientBuffer,
 	act      : Activation

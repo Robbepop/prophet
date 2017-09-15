@@ -4,7 +4,7 @@ use layer::weights_matrix::WeightsMatrix;
 use errors::{Result};
 
 #[derive(Debug, Clone, PartialEq)]
-struct FullyConnectedLayer {
+pub struct FullyConnectedLayer {
 	weights  : WeightsMatrix,
 	deltas   : WeightsMatrix,
 	outputs  : SignalBuffer,
