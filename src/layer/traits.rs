@@ -1,8 +1,8 @@
 use layer::SignalBuffer;
 use utils::{LearnRate, LearnMomentum};
 
-pub(crate) trait FeedForward {
-	fn feed_forward(&mut self, signal: &SignalBuffer);
+pub(crate) trait ProcessSignal {
+	fn process_signal(&mut self, signal: &SignalBuffer);
 }
 
 pub(crate) trait OutputSignal {
