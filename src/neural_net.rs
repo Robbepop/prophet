@@ -396,24 +396,13 @@ impl<'a, A> UpdateGradients<A> for NeuralNet
 	}
 }
 
-impl<'b, A> UpdateWeights<A> for NeuralNet
-	where A: Into<ArrayView1<'b, f32>>
+impl UpdateWeights for NeuralNet
 {
 	fn update_weights(
 		&mut self, 
-		_input: A, // No longer needed due to layer sizes revamp!
 		rate: LearnRate,
 		momentum: LearnMomentum
 	) {
-		// let input = input.into(); // Not needed any longer due to revamp of layer sizes!
-
-		// debug_assert_eq!(input.len() + 1, self.input.len()); // Not needed any longer due to revamp of layer sizes!
-
-		// Copy the user provided inputs into a buffer that is
-		// extended to additionally store the bias values (which is always `1.0`).
-		// This is used by the implementation internals for optimizations.
-		// self.input.slice_mut(s![..-1]).assign(&input); // Not needed any longer due to revamp of layer sizes!
-
 		// Update the weights of this neural network from first to last layer.
 		if let Some((first, tail)) = self.layers.split_first_mut() {
 			tail.iter_mut()

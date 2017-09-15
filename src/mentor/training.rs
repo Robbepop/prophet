@@ -362,7 +362,7 @@ impl Training {
 				self.deviation.update(output, sample.target);
 			}
 			self.disciple.update_gradients(sample.target);
-			self.disciple.update_weights(sample.input, self.learn_rate, self.learn_mom);
+			self.disciple.update_weights(self.learn_rate, self.learn_mom);
 			self.iterations.bump();
 		}
 		self.try_log();

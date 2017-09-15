@@ -23,7 +23,7 @@ pub trait UpdateGradients<T> {
 /// Used by learning procedures.
 ///
 /// This trait should only be used internally!
-pub trait UpdateWeights<I> {
+pub trait UpdateWeights {
 	/// Updates weights based on the given input data and the current gradients.
-	fn update_weights(&mut self, input: I, rate: LearnRate, momentum: LearnMomentum);
+	fn update_weights(&mut self, rate: LearnRate, momentum: LearnMomentum);
 }
