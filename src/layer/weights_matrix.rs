@@ -46,4 +46,14 @@ impl WeightsMatrix {
 	pub fn outputs(&self) -> usize {
 		self.0.rows()
 	}
+
+	#[inline]
+	pub fn view(&self) -> ArrayView2<f32> {
+		self.0.view()
+	}
+
+	#[inline]
+	pub fn view_mut(&mut self) -> ArrayViewMut2<f32> {
+		self.0.view_mut()
+	}
 }
