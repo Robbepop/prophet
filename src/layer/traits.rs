@@ -20,7 +20,7 @@ pub(crate) trait HasGradientBuffer {
 }
 
 pub(crate) trait PropagateGradients {
-	fn propagate_gradients<P>(&mut self, propagator: P)
+	fn propagate_gradients<P>(&self, propagated: &mut P)
 		where P: HasGradientBuffer;
 }
 

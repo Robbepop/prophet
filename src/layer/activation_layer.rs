@@ -37,7 +37,7 @@ impl ActivationLayer {
 
 impl ProcessSignal for ActivationLayer {
 	fn process_signal(&mut self, signal: &SignalBuffer) {
-		if self.output_signal().len() != signal.len() {
+		if self.len() != signal.len() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error. (Needs to change trait.) 
 		}
 		let act = self.act; // Required since borrow-checker doesn't allow
@@ -64,12 +64,32 @@ impl CalculateErrorGradients for ActivationLayer {
 }
 
 impl PropagateGradients for ActivationLayer {
-	fn propagate_gradients<P>(&mut self, propagator: P)
+	fn propagate_gradients<P>(&self, propagated: &mut P)
 		where P: HasGradientBuffer
 	{
 		unimplemented!()
 	}
 }
+
+// fn propagate_gradients(
+// 	&mut self,
+//     prev: &FullyConnectedLayer
+// )
+//     -> &Self
+// {
+// 	debug_assert_eq!(prev.weights.rows() + 1, prev.count_gradients());
+// 	debug_assert_eq!(prev.weights.cols()    , self.count_gradients());
+
+// 	multizip((prev.weights.genrows(), prev.gradients.iter()))
+// 		.foreach(|(prev_weights_row, prev_gradient)| {
+// 			multizip((self.gradients.iter_mut(), prev_weights_row.iter()))
+// 				.foreach(|(gradient, weight)| *gradient += weight * prev_gradient)
+// 		});
+
+// 	self.apply_activation_to_gradients();
+// 	self
+// }
+
 
 impl HasOutputSignal for ActivationLayer {
 	fn output_signal(&self) -> &SignalBuffer {
