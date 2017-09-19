@@ -746,4 +746,54 @@ mod tests {
 			assert_eq!(result_weights, target_weights);
 		}
 	}
+
+	#[test]
+	fn equivalence() {
+		use self::Activation::{Identity, Tanh};
+
+		let mut merged = FullyConnectedLayer{
+			weights: Array::from_vec(vec![
+					1.0, 2.0, 3.0,
+					4.0, 5.0, 6.0
+				]).into_shape((2, 3)).unwrap(),
+			delta_weights: Array::zeros((2, 3)),
+			outputs: Array::zeros(3),
+			gradients: Array::zeros(3),
+			activation: Tanh
+		};
+
+		let mut weights_part = FullyConnectedLayer{
+			weights: Array::from_vec(vec![
+					1.0, 2.0, 3.0,
+					4.0, 5.0, 6.0
+				]).into_shape((2, 3)).unwrap(),
+			delta_weights: Array::zeros((2, 3)),
+			outputs: Array::zeros(3),
+			gradients: Array::zeros(3),
+			activation: Identity
+		};
+
+		let mut activation_part = FullyConnectedLayer{
+			weights: Array::from_vec(vec![
+					1.0, 0.0, 0.0,
+					0.0, 1.0, 0.0,
+					0.0, 0.0, 1.0
+				]).into_shape((3, 3)).unwrap(),
+			delta_weights: Array::zeros((3, 3)),
+			outputs: Array::zeros(4),
+			gradients: Array::zeros(4),
+			activation: Tanh
+		};
+
+		let input = Array::from_vec(vec![0.1, 0.2, 0.3]);
+
+		let result_merged = merged.feed_forward(input.view()).to_owned();
+		println!("result_merged = {:?}", result_merged);
+		let result_split_temp = weights_part.feed_forward(input.view()).to_owned();
+		println!("result_split_temp = {:?}", result_split_temp);
+		let result_split = activation_part.feed_forward(result_split_temp.view()).to_owned();
+		println!("result_split = {:?}", result_split);
+
+		assert_eq!(result_merged, result_split.slice(s![..-1]));
+	}
 }
