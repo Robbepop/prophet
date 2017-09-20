@@ -55,22 +55,33 @@ impl ActivationLayer {
 }
 
 impl ProcessInputSignal for ActivationLayer {
-	fn process_input_signal(&mut self, signal: &SignalBuffer) {
-		if self.len() != signal.len() {
+	fn process_input_signal(&mut self, input_signal: &SignalBuffer) {
+		if self.len() != input_signal.len() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
 		}
 		let act = self.act; // Required since borrow-checker doesn't allow
 		                    // using `self.act` within method-call context.
-		self.outputs.view_mut().mapv_inplace(|o| act.base(o))
+		use ndarray::Zip;
+		Zip::from(&mut self.inputs.view_mut())
+			.and(&mut self.outputs.view_mut())
+			.and(&input_signal.view())
+			.apply(|s_i, s_o, &p_i| {
+				*s_i = p_i; // Note: Required for correct back propagation!
+				*s_o = act.base(p_i);
+			});
 	}
 }
 
 impl CalculateOutputErrorSignal for ActivationLayer {
 	fn calculate_output_error_signal(&mut self, target_signals: &SignalBuffer) {
+		if self.len() != target_signals.len() {
+			// Note: Target signals do not respect bias values.
+			//       We could model this in a way that `target_signals` are simply one element shorter.
+			//       Or they have also `1.0` as their last element which eliminates 
+			//       the resulting error signal's last element to `0.0`.
+			panic!("Error: unmatching length of output signal and target signal") // TODO: Replace this with error.
+		}
 		use ndarray::Zip;
-
-		debug_assert_eq!(self.output_signal().biased_len(), target_signals.len()); // No calculation for bias neurons.
-
 		Zip::from(&mut self.error_signal.view_mut())
 			.and(&self.outputs.view())
 			.and(&target_signals.view())
