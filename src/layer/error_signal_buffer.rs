@@ -3,21 +3,21 @@ use ndarray::prelude::*;
 use errors::{Error, Result};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct GradientBuffer(Array1<f32>);
+pub struct ErrorSignalBuffer(Array1<f32>);
 
-impl GradientBuffer {
-	pub fn zeros(len: usize) -> Result<GradientBuffer> {
+impl ErrorSignalBuffer {
+	pub fn zeros(len: usize) -> Result<ErrorSignalBuffer> {
 		if len == 0 {
 			return Err(Error::zero_sized_gradient_buffer())
 		}
-		Ok(GradientBuffer(Array1::zeros(len + 1)))
+		Ok(ErrorSignalBuffer(Array1::zeros(len + 1)))
 	}
 
-	pub fn with_values<'a, T>(input: T) -> Result<GradientBuffer>
+	pub fn with_values<'a, T>(input: T) -> Result<ErrorSignalBuffer>
 		where T: Into<ArrayView1<'a, f32>>
 	{
 		let input = input.into();
-		let mut buf = GradientBuffer::zeros(input.dim())?;
+		let mut buf = ErrorSignalBuffer::zeros(input.dim())?;
 		buf.0.assign(&input);
 		Ok(buf)
 	}
@@ -50,5 +50,10 @@ impl GradientBuffer {
 	#[inline]
 	pub fn biased_view(&self) -> ArrayView1<f32> {
 		self.0.view()
+	}
+
+	#[inline]
+	pub fn biased_view_mut(&mut self) -> ArrayViewMut1<f32> {
+		self.0.view_mut()
 	}
 }

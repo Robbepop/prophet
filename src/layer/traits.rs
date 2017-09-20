@@ -1,8 +1,8 @@
-use layer::{SignalBuffer, GradientBuffer};
+use layer::{SignalBuffer, ErrorSignalBuffer};
 use utils::{LearnRate, LearnMomentum};
 
-pub(crate) trait ProcessSignal {
-	fn process_signal(&mut self, signal: &SignalBuffer);
+pub(crate) trait ProcessInputSignal {
+	fn process_input_signal(&mut self, signal: &SignalBuffer);
 }
 
 pub(crate) trait HasOutputSignal {
@@ -10,20 +10,20 @@ pub(crate) trait HasOutputSignal {
 	fn output_signal_mut(&mut self) -> &mut SignalBuffer;
 }
 
-pub(crate) trait CalculateErrorGradients {
-	fn calculate_gradient_descent(&mut self, target_signals: &SignalBuffer);
+pub(crate) trait CalculateOutputErrorSignal {
+	fn calculate_output_error_signal(&mut self, target_signals: &SignalBuffer);
 }
 
-pub(crate) trait HasGradientBuffer {
-	fn gradients(&self) -> &GradientBuffer;
-	fn gradients_mut(&mut self) -> &mut GradientBuffer;
+pub(crate) trait HasErrorSignal {
+	fn error_signal(&self) -> &ErrorSignalBuffer;
+	fn error_signal_mut(&mut self) -> &mut ErrorSignalBuffer;
 }
 
-pub(crate) trait PropagateGradients {
-	fn propagate_gradients<P>(&self, propagated: &mut P)
-		where P: HasGradientBuffer;
+pub(crate) trait PropagateErrorSignal {
+	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
+		where P: HasErrorSignal;
 }
 
-pub(crate) trait ApplyGradients {
-	fn apply_gradients(&mut self, signal: &SignalBuffer, lr: LearnRate, lm: LearnMomentum);
+pub(crate) trait ApplyErrorSignalCorrection {
+	fn apply_error_signal_correction(&mut self, signal: &SignalBuffer, lr: LearnRate, lm: LearnMomentum);
 }

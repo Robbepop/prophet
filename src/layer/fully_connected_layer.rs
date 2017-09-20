@@ -1,11 +1,11 @@
 use layer::signal_buffer::SignalBuffer;
-use layer::gradient_buffer::GradientBuffer;
+use layer::error_signal_buffer::ErrorSignalBuffer;
 use layer::weights_matrix::WeightsMatrix;
 use layer::traits::{
-	ProcessSignal,
-	CalculateErrorGradients,
+	ProcessInputSignal,
+	CalculateOutputErrorSignal,
 	HasOutputSignal,
-	HasGradientBuffer
+	HasErrorSignal,
 };
 use errors::{Result};
 
@@ -14,7 +14,7 @@ pub struct FullyConnectedLayer {
 	weights  : WeightsMatrix,
 	deltas   : WeightsMatrix,
 	outputs  : SignalBuffer,
-	gradients: GradientBuffer
+	gradients: ErrorSignalBuffer
 }
 
 impl FullyConnectedLayer {
@@ -24,7 +24,7 @@ impl FullyConnectedLayer {
 			weights,
 			deltas   : WeightsMatrix::zeros(inputs, outputs)?,
 			outputs  : SignalBuffer::zeros(outputs)?,
-			gradients: GradientBuffer::zeros(outputs)?,
+			gradients: ErrorSignalBuffer::zeros(outputs)?,
 		})
 	}
 
@@ -34,8 +34,8 @@ impl FullyConnectedLayer {
 	}
 }
 
-impl ProcessSignal for FullyConnectedLayer {
-	fn process_signal(&mut self, signal: &SignalBuffer) {
+impl ProcessInputSignal for FullyConnectedLayer {
+	fn process_input_signal(&mut self, signal: &SignalBuffer) {
 		if self.output_signal().len() != signal.len() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error. (Needs to change trait.) 
 		}
@@ -44,8 +44,8 @@ impl ProcessSignal for FullyConnectedLayer {
 	}
 }
 
-impl CalculateErrorGradients for FullyConnectedLayer {
-	fn calculate_gradient_descent(&mut self, target_signal: &SignalBuffer) {
+impl CalculateOutputErrorSignal for FullyConnectedLayer {
+	fn calculate_output_error_signal(&mut self, target_signal: &SignalBuffer) {
 		if self.output_signal().len() != target_signal.len() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error. (Needs to change trait.) 
 		}
@@ -70,12 +70,12 @@ impl HasOutputSignal for FullyConnectedLayer {
 	}
 }
 
-impl HasGradientBuffer for FullyConnectedLayer {
-	fn gradients(&self) -> &GradientBuffer {
+impl HasErrorSignal for FullyConnectedLayer {
+	fn error_signal(&self) -> &ErrorSignalBuffer {
 		&self.gradients
 	}
 
-	fn gradients_mut(&mut self) -> &mut GradientBuffer {
+	fn error_signal_mut(&mut self) -> &mut ErrorSignalBuffer {
 		&mut self.gradients
 	}
 }
