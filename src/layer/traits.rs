@@ -28,3 +28,8 @@ pub(crate) trait PropagateErrorSignal {
 pub(crate) trait ApplyErrorSignalCorrection {
 	fn apply_error_signal_correction(&mut self, signal: &SignalBuffer, lr: LearnRate, lm: LearnMomentum);
 }
+
+pub(crate) trait SizedLayer {
+	fn inputs(&self) -> usize;
+	fn outputs(&self) -> usize;
+}

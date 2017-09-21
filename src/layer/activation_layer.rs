@@ -1,6 +1,7 @@
 use layer::signal_buffer::SignalBuffer;
 use layer::error_signal_buffer::ErrorSignalBuffer;
 use layer::traits::{
+	SizedLayer,
 	HasOutputSignal,
 	HasErrorSignal,
 	ProcessInputSignal,
@@ -141,5 +142,15 @@ impl HasErrorSignal for ActivationLayer {
 
 	fn error_signal_mut(&mut self) -> &mut ErrorSignalBuffer {
 		&mut self.error_signal
+	}
+}
+
+impl SizedLayer for ActivationLayer {
+	fn inputs(&self) -> usize {
+		self.inputs.len()
+	}
+
+	fn outputs(&self) -> usize {
+		self.outputs.len()
 	}
 }

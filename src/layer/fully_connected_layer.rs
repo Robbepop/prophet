@@ -2,6 +2,7 @@ use layer::signal_buffer::SignalBuffer;
 use layer::error_signal_buffer::ErrorSignalBuffer;
 use layer::matrix_base::{WeightsMatrix, DeltaWeightsMatrix};
 use layer::traits::{
+	SizedLayer,
 	ProcessInputSignal,
 	CalculateOutputErrorSignal,
 	PropagateErrorSignal,
@@ -109,5 +110,15 @@ impl HasErrorSignal for FullyConnectedLayer {
 
 	fn error_signal_mut(&mut self) -> &mut ErrorSignalBuffer {
 		&mut self.error_signal
+	}
+}
+
+impl SizedLayer for FullyConnectedLayer {
+	fn inputs(&self) -> usize {
+		self.weights.inputs()
+	}
+
+	fn outputs(&self) -> usize {
+		self.weights.outputs()
 	}
 }
