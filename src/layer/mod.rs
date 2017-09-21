@@ -6,6 +6,7 @@ mod layer;
 
 mod fully_connected_layer;
 mod activation_layer;
+mod container_layer;
 
 // pub use self::signal_buffer::SignalBuffer;
 // pub use self::error_signal_buffer::ErrorSignalBuffer;
@@ -22,4 +23,3 @@ pub use self::activation_layer::ActivationLayer;
 // 	PropagateErrorSignal,
 // 	ApplyErrorSignalCorrection
 // };
-
