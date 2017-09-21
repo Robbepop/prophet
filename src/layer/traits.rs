@@ -1,4 +1,5 @@
-use layer::{SignalBuffer, ErrorSignalBuffer};
+use layer::signal_buffer::SignalBuffer;
+use layer::error_signal_buffer::ErrorSignalBuffer;
 use utils::{LearnRate, LearnMomentum};
 
 pub(crate) trait ProcessInputSignal {

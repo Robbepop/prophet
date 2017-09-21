@@ -1,6 +1,6 @@
 use layer::signal_buffer::SignalBuffer;
 use layer::error_signal_buffer::ErrorSignalBuffer;
-use layer::weights_matrix::{WeightsMatrix, DeltaWeightsMatrix};
+use layer::matrix_base::{WeightsMatrix, DeltaWeightsMatrix};
 use layer::traits::{
 	ProcessInputSignal,
 	CalculateOutputErrorSignal,
