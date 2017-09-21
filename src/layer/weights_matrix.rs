@@ -1,5 +1,6 @@
 
 use ndarray::prelude::*;
+use ndarray::iter::{Lanes, LanesMut};
 use ndarray_rand::RandomExt;
 use errors::{Error, Result};
 use rand::distributions::Range;
@@ -55,5 +56,15 @@ impl WeightsMatrix {
 	#[inline]
 	pub fn view_mut(&mut self) -> ArrayViewMut2<f32> {
 		self.0.view_mut()
+	}
+
+	#[inline]
+	pub fn genrows(&self) -> Lanes<f32, Ix1> {
+		self.0.genrows()
+	}
+
+	#[inline]
+	pub fn genrows_mut(&mut self) -> LanesMut<f32, Ix1> {
+		self.0.genrows_mut()
 	}
 }
