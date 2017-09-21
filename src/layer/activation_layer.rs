@@ -22,16 +22,16 @@ pub struct ActivationLayer {
 	/// Maybe this situation could be improved in the future by using references
 	/// or shared ownership of the input with the previous layer ... but then again
 	/// we had to know our previous layer.
-	inputs   : SignalBuffer,
+	inputs: SignalBuffer,
 	/// The outputs of this activation layer.
 	/// 
 	/// This is basically equivalent to the input transformed with the activation
 	/// of this layer.
-	outputs  : SignalBuffer,
+	outputs: SignalBuffer,
 	/// The buffer for the back propagated error signal.
 	error_signal: ErrorSignalBuffer,
 	/// The activation function of this `ActivationLayer`.
-	act      : Activation
+	act: Activation
 }
 
 impl ActivationLayer {
