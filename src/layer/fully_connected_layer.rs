@@ -78,9 +78,17 @@ impl PropagateErrorSignal for FullyConnectedLayer {
 }
 
 impl ApplyErrorSignalCorrection for FullyConnectedLayer {
-	fn apply_error_signal_correction(&mut self, _input_signal: &SignalBuffer, _lr: LearnRate, _lm: LearnMomentum) {
-		// Nothing to do here since there are no weights that could be updated!
-		unimplemented!()
+	fn apply_error_signal_correction(&mut self, input_signal: &SignalBuffer, lr: LearnRate, lm: LearnMomentum) {
+		use std::ops::AddAssign;
+		use ndarray::Zip;
+		use itertools::*;
+		multizip((self.deltas.genrows_mut(), self.error_signal.view())).foreach(|(mut s_drow, &s_e)| {
+			Zip::from(&mut s_drow.view_mut()).and(&input_signal.view()).apply(|s_dw, &p_i| {
+				*s_dw = (1.0 - lm.0) * lr.0 * p_i * s_e + lm.0 * *s_dw;
+			});
+		});
+		self.weights.view_mut().add_assign(&self.deltas.view());
+		self.error_signal.reset_to_zeros();
 	}
 }
 
