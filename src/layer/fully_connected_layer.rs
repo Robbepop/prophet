@@ -64,15 +64,21 @@ impl CalculateOutputErrorSignal for FullyConnectedLayer {
 }
 
 impl PropagateErrorSignal for FullyConnectedLayer {
-	fn propagate_error_signal<P>(&mut self, _propagated: &mut P)
+	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
 		where P: HasErrorSignal
 	{
-		unimplemented!()
+		use ndarray::Zip;
+		use itertools::*;
+		multizip((self.weights.genrows(), self.error_signal.view())).foreach(|(s_wrow, &s_e)| {
+			Zip::from(&mut propagated.error_signal_mut().view_mut()).and(&s_wrow.view()).apply(|p_e, &s_w| {
+				*p_e += s_w * s_e;
+			})
+		})
 	}
 }
 
 impl ApplyErrorSignalCorrection for FullyConnectedLayer {
-	fn apply_error_signal_correction(&mut self, _signal: &SignalBuffer, _lr: LearnRate, _lm: LearnMomentum) {
+	fn apply_error_signal_correction(&mut self, _input_signal: &SignalBuffer, _lr: LearnRate, _lm: LearnMomentum) {
 		// Nothing to do here since there are no weights that could be updated!
 		unimplemented!()
 	}
