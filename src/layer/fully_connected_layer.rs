@@ -1,6 +1,6 @@
 use layer::signal_buffer::SignalBuffer;
 use layer::error_signal_buffer::ErrorSignalBuffer;
-use layer::weights_matrix::WeightsMatrix;
+use layer::weights_matrix::{WeightsMatrix, DeltaWeightsMatrix};
 use layer::traits::{
 	ProcessInputSignal,
 	CalculateOutputErrorSignal,
@@ -15,7 +15,7 @@ use utils::{LearnRate, LearnMomentum};
 #[derive(Debug, Clone, PartialEq)]
 pub struct FullyConnectedLayer {
 	weights     : WeightsMatrix,
-	deltas      : WeightsMatrix,
+	deltas      : DeltaWeightsMatrix,
 	outputs     : SignalBuffer,
 	error_signal: ErrorSignalBuffer
 }
@@ -25,7 +25,7 @@ impl FullyConnectedLayer {
 		let (inputs, outputs) = (weights.inputs(), weights.outputs());
 		Ok(FullyConnectedLayer{
 			weights,
-			deltas      : WeightsMatrix::zeros(inputs, outputs)?,
+			deltas      : DeltaWeightsMatrix::zeros(inputs, outputs)?,
 			outputs     : SignalBuffer::zeros(outputs)?,
 			error_signal: ErrorSignalBuffer::zeros(outputs)?,
 		})
@@ -79,7 +79,7 @@ impl PropagateErrorSignal for FullyConnectedLayer {
 
 impl ApplyErrorSignalCorrection for FullyConnectedLayer {
 	fn apply_error_signal_correction(&mut self, input_signal: &SignalBuffer, lr: LearnRate, lm: LearnMomentum) {
-		use std::ops::AddAssign;
+		// use std::ops::AddAssign;
 		use ndarray::Zip;
 		use itertools::*;
 		multizip((self.deltas.genrows_mut(), self.error_signal.view())).foreach(|(mut s_drow, &s_e)| {
@@ -87,7 +87,7 @@ impl ApplyErrorSignalCorrection for FullyConnectedLayer {
 				*s_dw = (1.0 - lm.0) * lr.0 * p_i * s_e + lm.0 * *s_dw;
 			});
 		});
-		self.weights.view_mut().add_assign(&self.deltas.view());
+		self.weights.apply_delta_weights(&self.deltas);
 		self.error_signal.reset_to_zeros();
 	}
 }

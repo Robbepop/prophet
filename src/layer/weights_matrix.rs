@@ -4,12 +4,25 @@ use ndarray::iter::{Lanes, LanesMut};
 use ndarray_rand::RandomExt;
 use errors::{Error, Result};
 use rand::distributions::Range;
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct WeightsMatrix(Array2<f32>);
+pub struct MatrixBase<E>{
+	data: Array2<f32>,
+	marker: PhantomData<E>
+}
 
-impl WeightsMatrix {
-	pub fn zeros(inputs: usize, outputs: usize) -> Result<WeightsMatrix> {
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct WeightsMarker;
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct DeltaWeightsMarker;
+
+pub type WeightsMatrix = MatrixBase<WeightsMarker>;
+pub type DeltaWeightsMatrix = MatrixBase<DeltaWeightsMarker>;
+
+impl DeltaWeightsMatrix {
+	pub fn zeros(inputs: usize, outputs: usize) -> Result<DeltaWeightsMatrix> {
 		if inputs == 0 {
 			return Err(Error::zero_inputs_weights_matrix())
 		}
@@ -19,11 +32,14 @@ impl WeightsMatrix {
 		let biased_inputs = inputs + 1;
 		let biased_shape  = (outputs,  biased_inputs);
 		let total         =  outputs * biased_inputs;
-		Ok(WeightsMatrix(
-			Array::zeros(total).into_shape(biased_shape).unwrap()
-		))
+		Ok(DeltaWeightsMatrix{
+			data: Array::zeros(total).into_shape(biased_shape).unwrap(),
+			marker: PhantomData
+		})
 	}
+}
 
+impl WeightsMatrix {
 	pub fn random(inputs: usize, outputs: usize) -> Result<WeightsMatrix> {
 		if inputs == 0 {
 			return Err(Error::zero_inputs_weights_matrix())
@@ -33,38 +49,46 @@ impl WeightsMatrix {
 		}
 		let biased_inputs = inputs + 1;
 		let biased_shape  = (outputs, biased_inputs);
-		Ok(WeightsMatrix(
-			Array2::random(biased_shape, Range::new(-1.0, 1.0))
-		))
+		Ok(WeightsMatrix{
+			data: Array2::random(biased_shape, Range::new(-1.0, 1.0)),
+			marker: PhantomData
+		})
 	}
 
+	pub fn apply_delta_weights(&mut self, deltas: &DeltaWeightsMatrix) {
+		use std::ops::AddAssign;
+		self.data.view_mut().add_assign(&deltas.view());
+	}
+}
+
+impl<E> MatrixBase<E> {
 	#[inline]
 	pub fn inputs(&self) -> usize {
-		self.0.cols()
+		self.data.cols()
 	}
 
 	#[inline]
 	pub fn outputs(&self) -> usize {
-		self.0.rows()
+		self.data.rows()
 	}
 
 	#[inline]
 	pub fn view(&self) -> ArrayView2<f32> {
-		self.0.view()
+		self.data.view()
 	}
 
 	#[inline]
 	pub fn view_mut(&mut self) -> ArrayViewMut2<f32> {
-		self.0.view_mut()
+		self.data.view_mut()
 	}
 
 	#[inline]
 	pub fn genrows(&self) -> Lanes<f32, Ix1> {
-		self.0.genrows()
+		self.data.genrows()
 	}
 
 	#[inline]
 	pub fn genrows_mut(&mut self) -> LanesMut<f32, Ix1> {
-		self.0.genrows_mut()
+		self.data.genrows_mut()
 	}
 }
