@@ -14,6 +14,7 @@ mod container_layer;
 
 pub use self::fully_connected_layer::FullyConnectedLayer;
 pub use self::activation_layer::ActivationLayer;
+pub use self::container_layer::ContainerLayer;
 
 // pub(crate) use self::traits::{
 // 	ProcessInputSignal,
