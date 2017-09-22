@@ -72,7 +72,8 @@ impl ProcessInputSignal for ContainerLayer {
 				layer.process_input_signal(prev_output_signal);
 				layer.output_signal()
 			});
-		} else {
+		}
+		else {
 			unreachable!(
 				"Reached code marked as unreachable in `ContainerLayer::process_input_signal: \
 				 This code is unreachable since ContainerLayers cannot have an empty set of child layers");
@@ -87,10 +88,21 @@ impl CalculateOutputErrorSignal for ContainerLayer {
 }
 
 impl PropagateErrorSignal for ContainerLayer {
-	fn propagate_error_signal<P>(&mut self, _propagated: &mut P)
+	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
 		where P: HasErrorSignal
 	{
-		unimplemented!()
+		if let Some((last, predecessors)) = self.childs.split_last_mut() {
+			predecessors.iter_mut().rev().fold(last, |layer, prev_layer| {
+				layer.propagate_error_signal(prev_layer);
+				prev_layer
+			});
+		}
+		else {
+			unreachable!(
+				"Reached code marked as unreachable in `ContainerLayer::propagate_error_signal: \
+				 This code is unreachable since ContainerLayers cannot have an empty set of child layers");
+		};
+		self.input_layer_mut().propagate_error_signal(propagated)
 	}
 }
 
@@ -105,7 +117,8 @@ impl ApplyErrorSignalCorrection for ContainerLayer {
 					layer.apply_error_signal_correction(prev_output_signal, rate, momentum);
 					layer.output_signal()
 				});
-		} else {
+		}
+		else {
 			unreachable!(
 				"Reached code marked as unreachable in `ContainerLayer::apply_error_signal_correction: \
 				 This code is unreachable since ContainerLayers cannot have an empty set of child layers");
