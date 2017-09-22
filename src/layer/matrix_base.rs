@@ -64,6 +64,11 @@ impl WeightsMatrix {
 impl<E> MatrixBase<E> {
 	#[inline]
 	pub fn inputs(&self) -> usize {
+		self.data.cols() - 1
+	}
+
+	#[inline]
+	pub fn biased_inputs(&self) -> usize {
 		self.data.cols()
 	}
 
@@ -90,5 +95,86 @@ impl<E> MatrixBase<E> {
 	#[inline]
 	pub fn genrows_mut(&mut self) -> LanesMut<f32, Ix1> {
 		self.data.genrows_mut()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn zeros_data() {
+		let z = DeltaWeightsMatrix::zeros(2, 5).unwrap();
+		let e = DeltaWeightsMatrix{
+			data: Array::zeros((5, 3)),
+			marker: PhantomData
+		};
+		assert_eq!(z, e);
+	}
+
+	#[test]
+	fn zeros_failure() {
+		assert_eq!(
+			DeltaWeightsMatrix::zeros(0, 1),
+			Err(Error::zero_inputs_weights_matrix()));
+		assert_eq!(
+			DeltaWeightsMatrix::zeros(1, 0),
+			Err(Error::zero_outputs_weights_matrix()));
+		assert_eq!(
+			DeltaWeightsMatrix::zeros(0, 0),
+			Err(Error::zero_inputs_weights_matrix()));
+	}
+
+	#[test]
+	fn zeros_sizes() {
+		let m = DeltaWeightsMatrix::zeros(2, 5).unwrap();
+		assert_eq!(m.inputs(), 2);
+		assert_eq!(m.biased_inputs(), 3);
+		assert_eq!(m.outputs(), 5);
+	}
+
+	#[test]
+	fn random_sizes() {
+		let r = WeightsMatrix::random(2, 5).unwrap();
+		assert_eq!(r.inputs(), 2);
+		assert_eq!(r.biased_inputs(), 3);
+		assert_eq!(r.outputs(), 5);
+	}
+
+	#[test]
+	fn random_data() {
+		let r = WeightsMatrix::random(2, 5).unwrap();
+		let z = WeightsMatrix{
+			data: Array::zeros((5, 3)),
+			marker: PhantomData
+		};
+		assert!(r.view().all_close(&z.view(), 1.0));
+	}
+
+	#[test]
+	fn apply_delta_weights() {
+		let mut w = WeightsMatrix{
+			data: Array::from_vec(vec![
+				 1.0,  2.0,  3.0,
+				10.0, 20.0, 30.0
+			]).into_shape((2, 3)).unwrap(),
+			marker: PhantomData
+		};
+		let d = DeltaWeightsMatrix{
+			data: Array::from_vec(vec![
+				0.1, 0.2, 0.3,
+				1.0, 2.0, 3.0
+			]).into_shape((2, 3)).unwrap(),
+			marker: PhantomData
+		};
+		w.apply_delta_weights(&d);
+		let expected_w = WeightsMatrix{
+			data: Array::from_vec(vec![
+				 1.1,  2.2,  3.3,
+				11.0, 22.0, 33.0
+			]).into_shape((2, 3)).unwrap(),
+			marker: PhantomData
+		};
+		assert!(w.view().all_close(&expected_w.view(), 1e-10))
 	}
 }
