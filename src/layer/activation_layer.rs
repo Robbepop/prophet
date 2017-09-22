@@ -47,17 +47,11 @@ impl ActivationLayer {
 			act
 		})
 	}
-
-	/// Returns the length of this `ActivationLayer`.
-	#[inline]
-	pub fn len(&self) -> usize {
-		self.outputs.view().dim()
-	}
 }
 
 impl ProcessInputSignal for ActivationLayer {
 	fn process_input_signal(&mut self, input_signal: &SignalBuffer) {
-		if self.len() != input_signal.len() {
+		if self.inputs() != input_signal.len() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
 		}
 		let act = self.act; // Required since borrow-checker doesn't allow
@@ -75,7 +69,7 @@ impl ProcessInputSignal for ActivationLayer {
 
 impl CalculateOutputErrorSignal for ActivationLayer {
 	fn calculate_output_error_signal(&mut self, target_signals: &SignalBuffer) {
-		if self.len() != target_signals.len() {
+		if self.outputs() != target_signals.len() {
 			// Note: Target signals do not respect bias values.
 			//       We could model this in a way that `target_signals` are simply one element shorter.
 			//       Or they have also `1.0` as their last element which eliminates 
@@ -97,7 +91,7 @@ impl PropagateErrorSignal for ActivationLayer {
 	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
 		where P: HasErrorSignal
 	{
-		if self.len() != propagated.error_signal().len() {
+		if self.inputs() != propagated.error_signal().len() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
 		}
 		use ndarray::Zip;
