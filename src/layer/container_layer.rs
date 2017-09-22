@@ -109,14 +109,13 @@ impl PropagateErrorSignal for ContainerLayer {
 impl ApplyErrorSignalCorrection for ContainerLayer {
 	fn apply_error_signal_correction(&mut self, prev_output_signal: &SignalBuffer, rate: LearnRate, momentum: LearnMomentum) {
 		if let Some((first, tail)) = self.childs.split_first_mut() {
-			tail.iter_mut()
-				.fold({
-					first.apply_error_signal_correction(prev_output_signal, rate, momentum);
-					first.output_signal()
-				}, |prev_output_signal, layer| {
-					layer.apply_error_signal_correction(prev_output_signal, rate, momentum);
-					layer.output_signal()
-				});
+			tail.iter_mut().fold({
+				first.apply_error_signal_correction(prev_output_signal, rate, momentum);
+				first.output_signal()
+			}, |prev_output_signal, layer| {
+				layer.apply_error_signal_correction(prev_output_signal, rate, momentum);
+				layer.output_signal()
+			});
 		}
 		else {
 			unreachable!(
