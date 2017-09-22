@@ -13,12 +13,21 @@ use layer::traits::{
 use errors::{Result};
 use utils::{LearnRate, LearnMomentum};
 
+/// `ContainerLayer` is itself a neuronal layer that contains other layers in sequential order.
+/// 
+/// It forwards signals and information flow to its child layers in the correct order.
+/// With this layer kind it is possible to stack layer hierachies and modularize layer topologies.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ContainerLayer {
 	childs: Vec<Layer>
 }
 
 impl ContainerLayer {
+	/// Creates a new `ContainerLayer` from the given vector of layers.
+	/// 
+	/// # Errors
+	/// 
+	/// This fails if the given vector is empty.
 	pub fn from_vec(layers: Vec<Layer>) -> Result<ContainerLayer> {
 		if layers.len() == 0 {
 			panic!("ContainerLayer requires to contain at least one child layer."); // TODO: Rewrite as error.
@@ -28,21 +37,25 @@ impl ContainerLayer {
 		})
 	}
 
+	/// Returns a reference to the input child layer.
 	#[inline]
 	fn input_layer(&self) -> &Layer {
 		self.childs.first().unwrap()
 	}
 
+	/// Returns a mutable reference to the input child layer.
 	#[inline]
 	fn input_layer_mut(&mut self) -> &mut Layer {
 		self.childs.first_mut().unwrap()
 	}
 
+	/// Returns a reference to the output child layer.
 	#[inline]
 	fn output_layer(&self) -> &Layer {
 		self.childs.last().unwrap()
 	}
 
+	/// Returns a mutable reference to the output child layer.
 	#[inline]
 	fn output_layer_mut(&mut self) -> &mut Layer {
 		self.childs.last_mut().unwrap()
@@ -51,7 +64,20 @@ impl ContainerLayer {
 
 impl ProcessInputSignal for ContainerLayer {
 	fn process_input_signal(&mut self, input_signal: &SignalBuffer) {
-		unimplemented!()
+		if let Some((first, tail)) = self.childs.split_first_mut() {
+			tail.iter_mut()
+				.fold({
+					first.process_input_signal(&input_signal);
+					first.output_signal()
+				}, |prev_output_signal, layer| {
+					layer.process_input_signal(&prev_output_signal);
+					layer.output_signal()
+				});
+		} else {
+			unreachable!(
+				"This code is unreachable since ContainerLayers \
+				 cannot have an empty set of child layers");
+		}
 	}
 }
 
@@ -62,7 +88,7 @@ impl CalculateOutputErrorSignal for ContainerLayer {
 }
 
 impl PropagateErrorSignal for ContainerLayer {
-	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
+	fn propagate_error_signal<P>(&mut self, _propagated: &mut P)
 		where P: HasErrorSignal
 	{
 		unimplemented!()
