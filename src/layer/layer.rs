@@ -33,6 +33,12 @@ impl From<FullyConnectedLayer> for Layer {
 	}
 }
 
+impl From<ContainerLayer> for Layer {
+	fn from(c_layer: ContainerLayer) -> Self {
+		Layer::Container(c_layer)
+	}
+}
+
 impl ProcessInputSignal for Layer {
 	fn process_input_signal(&mut self, input_signal: &SignalBuffer) {
 		match *self {
