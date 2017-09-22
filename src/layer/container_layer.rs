@@ -63,20 +63,19 @@ impl ContainerLayer {
 }
 
 impl ProcessInputSignal for ContainerLayer {
-	fn process_input_signal(&mut self, input_signal: &SignalBuffer) {
+	fn process_input_signal(&mut self, prev_output_signal: &SignalBuffer) {
 		if let Some((first, tail)) = self.childs.split_first_mut() {
-			tail.iter_mut()
-				.fold({
-					first.process_input_signal(&input_signal);
-					first.output_signal()
-				}, |prev_output_signal, layer| {
-					layer.process_input_signal(&prev_output_signal);
-					layer.output_signal()
-				});
+			tail.iter_mut().fold({
+				first.process_input_signal(prev_output_signal);
+				first.output_signal()
+			}, |prev_output_signal, layer| {
+				layer.process_input_signal(prev_output_signal);
+				layer.output_signal()
+			});
 		} else {
 			unreachable!(
-				"This code is unreachable since ContainerLayers \
-				 cannot have an empty set of child layers");
+				"Reached code marked as unreachable in `ContainerLayer::process_input_signal: \
+				 This code is unreachable since ContainerLayers cannot have an empty set of child layers");
 		}
 	}
 }
@@ -96,8 +95,21 @@ impl PropagateErrorSignal for ContainerLayer {
 }
 
 impl ApplyErrorSignalCorrection for ContainerLayer {
-	fn apply_error_signal_correction(&mut self, _signal: &SignalBuffer, _lr: LearnRate, _lm: LearnMomentum) {
-		unimplemented!()
+	fn apply_error_signal_correction(&mut self, prev_output_signal: &SignalBuffer, rate: LearnRate, momentum: LearnMomentum) {
+		if let Some((first, tail)) = self.childs.split_first_mut() {
+			tail.iter_mut()
+				.fold({
+					first.apply_error_signal_correction(prev_output_signal, rate, momentum);
+					first.output_signal()
+				}, |prev_output_signal, layer| {
+					layer.apply_error_signal_correction(prev_output_signal, rate, momentum);
+					layer.output_signal()
+				});
+		} else {
+			unreachable!(
+				"Reached code marked as unreachable in `ContainerLayer::apply_error_signal_correction: \
+				 This code is unreachable since ContainerLayers cannot have an empty set of child layers");
+		}
 	}
 }
 
