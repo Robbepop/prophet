@@ -65,6 +65,21 @@ impl ContainerLayer {
 	fn output_layer_mut(&mut self) -> &mut Layer {
 		self.childs.last_mut().unwrap()
 	}
+
+	/// Propagates the error signal from the last internal child layer to the first.
+	fn propagate_error_signal_internally(&mut self) {
+		if let Some((last, predecessors)) = self.childs.split_last_mut() {
+			predecessors.iter_mut().rev().fold(last, |layer, prev_layer| {
+				layer.propagate_error_signal(prev_layer);
+				prev_layer
+			});
+		}
+		else {
+			unreachable!(
+				"Reached code marked as unreachable in `ContainerLayer::propagate_error_signal: \
+				 This code is unreachable since ContainerLayers cannot have an empty set of child layers");
+		};
+	}
 }
 
 impl ProcessInputSignal for ContainerLayer {
@@ -96,17 +111,7 @@ impl PropagateErrorSignal for ContainerLayer {
 	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
 		where P: HasErrorSignal
 	{
-		if let Some((last, predecessors)) = self.childs.split_last_mut() {
-			predecessors.iter_mut().rev().fold(last, |layer, prev_layer| {
-				layer.propagate_error_signal(prev_layer);
-				prev_layer
-			});
-		}
-		else {
-			unreachable!(
-				"Reached code marked as unreachable in `ContainerLayer::propagate_error_signal: \
-				 This code is unreachable since ContainerLayers cannot have an empty set of child layers");
-		};
+		self.propagate_error_signal_internally();
 		self.input_layer_mut().propagate_error_signal(propagated)
 	}
 }
