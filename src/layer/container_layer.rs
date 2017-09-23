@@ -27,10 +27,15 @@ impl ContainerLayer {
 	/// 
 	/// # Errors
 	/// 
-	/// This fails if the given vector is empty.
+	/// This fails if the given vector is empty or when the input and output sizes of the
+	/// given layers within the vector do not match.
 	pub fn from_vec(layers: Vec<Layer>) -> Result<ContainerLayer> {
 		if layers.len() == 0 {
 			panic!("ContainerLayer requires to contain at least one child layer."); // TODO: Rewrite as error.
+		}
+		use itertools::Itertools;
+		if layers.iter().tuple_windows().any(|(l, r)| l.outputs() != r.inputs()) {
+			panic!("ContainerLayer requires all given layers to match their neighbours inputs and outputs.") // TODO: Rewrite as error.
 		}
 		Ok(ContainerLayer{
 			childs: layers
