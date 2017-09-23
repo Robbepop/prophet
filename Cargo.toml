@@ -6,7 +6,7 @@ authors = ["Robbepop"]
 license = "MIT"
 readme  = "README.md"
 
-keywords   = ["deep-learning", "neural-networks", "machine-learning", "classifier"]
+keywords   = ["learning", "neural", "machine-learning", "classifier"]
 categories = ["science"]
 
 # homepage    = "https://github.com/robbepop/prophet"
