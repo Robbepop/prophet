@@ -11,9 +11,10 @@ A simple neural net implementation written in Rust with a focus on cache-efficie
 
 Currently only supports supervised learning with fully connected layers.
 
-## How to use
+## How to
 
-The preferred way to download prophet is via cargo or github.
+The preferred way to set-up prophet is via cargo.
+Download with cargo or directly via [crates.io](https://crates.io/crates/prophet).
 
 Compile prophet with
 
@@ -43,19 +44,25 @@ cargo bench --features benches
 
 ## Example: XOR Training
 
-```rust
-let (t, f) = (1.0, -1.0);
-let samples = samples![
-	[f, f] => f,
-	[t, f] => t,
-	[f, t] => t,
-	[t, t] => f
-];
+Define your XOR samples with ...
 
+```rust
+let (t, f) = (1.0, -1.0); // In our samples 1.0 stands for true and -1.0 stands for false.
+let samples = samples![
+	[f, f] => f, // false XOR false <=> false
+	[t, f] => t, // true  XOR false <=> true
+	[f, t] => t, // false XOR true  <=> true
+	[t, t] => f  // true  XOR true  <=> false
+];
+```
+
+Then define your neural net topology and start training it ...
+
+```rust
 let net =
-	Topology::input(2)   // 2 input neurons
-	.layer(2, Tanh)      // a hidden layer with 2 neurons
-	.output(1, Tanh)     // 1 output neuron
+	Topology::input(2) // 2 input neurons
+	.layer(2, Tanh)    // a hidden layer with 2 neurons
+	.output(1, Tanh)   // 1 output neuron
 
 	.train(samples.clone())
 	.learn_rate(0.6)     // use learn rate of 0.6
@@ -65,7 +72,11 @@ let net =
 		LogConfig::TimeSteps(Duration::from_secs(1)))
 	.go()
 	.unwrap();
+```
 
+Now you may want to check if learning was successful ...
+
+```rust
 for sample in samples {
 	let predicted = net.predict(sample.input.view());
 	multizip((predicted.iter(), sample.target.iter())).foreach(
@@ -78,9 +89,9 @@ for sample in samples {
 
 ## Planned Features
 
-- Convolutional Layers: Foundations have been layed out already!
-- GPGPU Support by Vulkano
-- More flexible learning methods
+- Convolutional layers: Foundations have been layed out already!
+- Parallel computation via GPGPU support using Vulkano or similar.
+- More flexible learning methods.
 
 ## Release Notes (YYYY/MM/DD)
 
