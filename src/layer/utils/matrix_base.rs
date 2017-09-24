@@ -1,10 +1,12 @@
-
 use ndarray::prelude::*;
 use ndarray::iter::{Lanes, LanesMut};
 use ndarray_rand::RandomExt;
-use errors::{Error, Result};
+
 use rand::distributions::Range;
+
 use std::marker::PhantomData;
+
+use errors::{Error, Result};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MatrixBase<E>{
@@ -149,6 +151,19 @@ mod tests {
 			marker: PhantomData
 		};
 		assert!(r.view().all_close(&z.view(), 1.0));
+	}
+
+	#[test]
+	fn random_failure() {
+		assert_eq!(
+			WeightsMatrix::random(0, 1),
+			Err(Error::zero_inputs_weights_matrix()));
+		assert_eq!(
+			WeightsMatrix::random(1, 0),
+			Err(Error::zero_outputs_weights_matrix()));
+		assert_eq!(
+			WeightsMatrix::random(0, 0),
+			Err(Error::zero_inputs_weights_matrix()));
 	}
 
 	#[test]

@@ -1,6 +1,8 @@
 use layer::layer::Layer;
-use layer::signal_buffer::SignalBuffer;
-use layer::error_signal_buffer::ErrorSignalBuffer;
+use layer::utils::{
+	SignalBuffer,
+	ErrorSignalBuffer
+};
 use layer::traits::{
 	SizedLayer,
 	HasOutputSignal,

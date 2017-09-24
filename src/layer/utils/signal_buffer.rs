@@ -1,5 +1,5 @@
-
 use ndarray::prelude::*;
+
 use errors::{Error, Result};
 
 /// The `SignalBuffer` is a utility structure that stores an amount of signals equal

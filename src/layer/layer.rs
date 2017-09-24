@@ -1,6 +1,5 @@
 use layer::{ActivationLayer, FullyConnectedLayer, ContainerLayer};
-use layer::error_signal_buffer::ErrorSignalBuffer;
-use layer::signal_buffer::SignalBuffer;
+use layer::utils::{SignalBuffer, ErrorSignalBuffer};
 use layer::traits::{
 	SizedLayer,
 	ProcessInputSignal,
@@ -12,14 +11,13 @@ use layer::traits::{
 };
 use utils::{LearnRate, LearnMomentum};
 
-use self::Layer::{Activation, FullyConnected, Container};
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Layer {
 	Activation(ActivationLayer),
 	FullyConnected(FullyConnectedLayer),
 	Container(ContainerLayer)
 }
+use self::Layer::{Activation, FullyConnected, Container};
 
 impl From<ActivationLayer> for Layer {
 	fn from(act_layer: ActivationLayer) -> Self {

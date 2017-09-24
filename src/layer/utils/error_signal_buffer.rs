@@ -1,5 +1,5 @@
-
 use ndarray::prelude::*;
+
 use errors::{Error, Result};
 
 #[derive(Debug, Clone, PartialEq)]
