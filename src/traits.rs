@@ -16,7 +16,7 @@ pub trait Predict<I> {
 /// This trait should only be used internally!
 pub(crate) trait UpdateGradients<T> {
 	/// Performs gradient descent within the neural network.
-	fn update_gradients(&mut self, target: T);
+	fn update_gradients(&mut self, expected: T);
 }
 
 /// Types that can adjust their internal weights.
