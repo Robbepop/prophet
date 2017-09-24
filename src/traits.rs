@@ -14,7 +14,7 @@ pub trait Predict<I> {
 /// Used by learning procedures.
 ///
 /// This trait should only be used internally!
-pub trait UpdateGradients<T> {
+pub(crate) trait UpdateGradients<T> {
 	/// Performs gradient descent within the neural network.
 	fn update_gradients(&mut self, target: T);
 }
@@ -23,7 +23,18 @@ pub trait UpdateGradients<T> {
 /// Used by learning procedures.
 ///
 /// This trait should only be used internally!
-pub trait UpdateWeights {
+pub(crate) trait UpdateWeights {
 	/// Updates weights based on the given input data and the current gradients.
 	fn update_weights(&mut self, rate: LearnRate, momentum: LearnMomentum);
+}
+
+pub mod prelude {
+	#[doc(no_inline)]
+	pub use super::Predict;
+
+	#[doc(no_inline)]
+	pub(crate) use super::{
+		UpdateGradients,
+		UpdateWeights
+	};
 }

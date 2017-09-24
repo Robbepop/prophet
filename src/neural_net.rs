@@ -4,12 +4,14 @@
 use std::vec::Vec;
 
 use rand::distributions::Range;
+
 use ndarray_rand::RandomExt;
 use ndarray::prelude::*;
 use ndarray::{Zip, Ix};
+
 use itertools::{multizip, Itertools};
 
-use traits::{Predict, UpdateGradients, UpdateWeights};
+use traits::prelude::*;
 use utils::{LearnRate, LearnMomentum};
 use activation::Activation;
 use topology::*;
