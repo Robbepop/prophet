@@ -32,3 +32,16 @@ pub(crate) trait SizedLayer {
 	fn inputs(&self) -> usize;
 	fn outputs(&self) -> usize;
 }
+
+pub mod prelude {
+	#[doc(no_inline)]
+	pub(crate) use super::{
+		SizedLayer,
+		HasOutputSignal,
+		HasErrorSignal,
+		ProcessInputSignal,
+		CalculateOutputErrorSignal,
+		PropagateErrorSignal,
+		ApplyErrorSignalCorrection
+	};
+}

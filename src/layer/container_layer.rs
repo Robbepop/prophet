@@ -3,15 +3,7 @@ use layer::utils::{
 	SignalBuffer,
 	ErrorSignalBuffer
 };
-use layer::traits::{
-	SizedLayer,
-	HasOutputSignal,
-	HasErrorSignal,
-	ProcessInputSignal,
-	CalculateOutputErrorSignal,
-	PropagateErrorSignal,
-	ApplyErrorSignalCorrection,
-};
+use layer::traits::prelude::*;
 use errors::{Result};
 use utils::{LearnRate, LearnMomentum};
 

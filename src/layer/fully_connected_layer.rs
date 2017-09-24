@@ -4,15 +4,7 @@ use layer::utils::{
 	WeightsMatrix,
 	DeltaWeightsMatrix
 };
-use layer::traits::{
-	SizedLayer,
-	ProcessInputSignal,
-	CalculateOutputErrorSignal,
-	PropagateErrorSignal,
-	ApplyErrorSignalCorrection,
-	HasOutputSignal,
-	HasErrorSignal,
-};
+use layer::traits::prelude::*;
 use errors::{Result};
 use utils::{LearnRate, LearnMomentum};
 

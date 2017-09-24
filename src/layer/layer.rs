@@ -1,14 +1,6 @@
 use layer::{ActivationLayer, FullyConnectedLayer, ContainerLayer};
 use layer::utils::{SignalBuffer, ErrorSignalBuffer};
-use layer::traits::{
-	SizedLayer,
-	ProcessInputSignal,
-	CalculateOutputErrorSignal,
-	PropagateErrorSignal,
-	ApplyErrorSignalCorrection,
-	HasOutputSignal,
-	HasErrorSignal,
-};
+use layer::traits::prelude::*;
 use utils::{LearnRate, LearnMomentum};
 
 #[derive(Debug, Clone, PartialEq)]

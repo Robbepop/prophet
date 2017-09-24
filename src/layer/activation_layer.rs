@@ -1,13 +1,5 @@
 use layer::utils::{SignalBuffer, ErrorSignalBuffer};
-use layer::traits::{
-	SizedLayer,
-	HasOutputSignal,
-	HasErrorSignal,
-	ProcessInputSignal,
-	CalculateOutputErrorSignal,
-	PropagateErrorSignal,
-	ApplyErrorSignalCorrection,
-};
+use layer::traits::prelude::*;
 use utils::{LearnRate, LearnMomentum};
 use errors::{Result};
 use activation::Activation;
