@@ -123,7 +123,9 @@ mod activation;
 mod errors;
 mod utils;
 
-pub mod layer;
+pub(crate) mod layer;
+
+mod nn;
 
 pub mod topology;
 pub mod topology_new;
