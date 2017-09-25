@@ -1,4 +1,4 @@
-pub mod utils;
+pub(crate) mod utils;
 mod traits;
 mod layer;
 
