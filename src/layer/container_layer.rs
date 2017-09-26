@@ -24,7 +24,7 @@ impl ContainerLayer {
 	/// This fails if the given vector is empty or when the input and output sizes of the
 	/// given layers within the vector do not match.
 	pub fn from_vec(layers: Vec<Layer>) -> Result<ContainerLayer> {
-		if layers.len() == 0 {
+		if layers.is_empty() {
 			panic!("ContainerLayer requires to contain at least one child layer."); // TODO: Rewrite as error.
 		}
 		use itertools::Itertools;
