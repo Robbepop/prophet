@@ -76,7 +76,7 @@ pub(crate) trait BiasedAccess<B>
 	fn data(&self) -> ArrayView1<f32>;
 }
 
-pub(crate) trait BiasedAccessMut<B>
+pub(crate) trait BiasedAccessMut<B>: BiasedAccess<B>
 	where B: marker::Biased
 {
 	fn biased_view_mut(&mut self) -> SignalViewMut<B>;
@@ -84,15 +84,63 @@ pub(crate) trait BiasedAccessMut<B>
 	fn data_mut(&mut self) -> ArrayViewMut1<f32>;
 }
 
-pub(crate) trait UnbiasedAccess<B> {
+pub(crate) trait UnbiasedAccess<B>
+	where B: marker::Unbiased
+{
 	fn unbiased_len(&self) -> usize;
 	fn unbiased_view(&self) -> SignalView<B>;
 	fn data(&self) -> ArrayView1<f32>;
 }
 
-pub(crate) trait UnbiasedAccessMut<B> {
+pub(crate) trait UnbiasedAccessMut<B>: UnbiasedAccess<B>
+	where B: marker::Unbiased
+{
 	fn unbiased_view_mut(&mut self) -> SignalViewMut<B>;
 	fn data_mut(&mut self) -> ArrayViewMut1<f32>;
+}
+
+impl<B> SignalBuffer<B>
+	where B: marker::Biased
+{
+	/// Creates a new biased `SignalBuffer` with a variable length of `len` and an
+	/// additional bias value.
+	/// 
+	/// So a call to `BiasedSignalBuffer::zeros(5)` actually constructs a buffer
+	/// of length `6` with the last value set to `1.0`.
+	/// 
+	/// # Errors
+	/// 
+	/// Returns an error when trying to create a `BiasedSignalBuffer` with a length of zero.
+	/// 
+	#[inline]
+	fn zeros_with_bias(len: usize) -> Result<SignalBuffer<B>> {
+		use std::iter;
+		if len == 0 {
+			return Err(Error::zero_sized_signal_buffer())
+		}
+		Ok(SignalBuffer{
+			data: Array::from_iter(iter::repeat(0.0)
+				.take(len)
+				.chain(iter::once(B::DEFAULT_BIAS_VALUE))
+			),
+			marker: PhantomData
+		})
+	}
+}
+
+impl<B> SignalBuffer<B>
+	where B: marker::Unbiased
+{
+	#[inline]
+	fn zeros(len: usize) -> Result<SignalBuffer<B>> {
+		if len == 0 {
+			return Err(Error::zero_sized_signal_buffer())
+		}
+		Ok(SignalBuffer{
+			data: Array::zeros(len),
+			marker: PhantomData
+		})
+	}
 }
 
 impl<D, B> BiasedAccess<B> for BufferBase<D, B>
@@ -199,30 +247,6 @@ impl<D, B> UnbiasedAccessMut<B> for BufferBase<D, B>
 }
 
 // impl BiasedSignalBuffer {
-// 	/// Creates a new `BiasedSignalBuffer` with a variable length of `len` and an
-// 	/// additional constant bias value of `1.0`.
-// 	/// 
-// 	/// So a call to `BiasedSignalBuffer::zeros(5)` actually constructs a buffer
-// 	/// of length `6` with the last value set to `1.0`.
-// 	/// 
-// 	/// # Errors
-// 	/// 
-// 	/// Returns an error when trying to create a `BiasedSignalBuffer` with a length of zero.
-// 	/// 
-// 	pub fn zeros(len: usize) -> Result<BiasedSignalBuffer> {
-// 		use std::iter;
-// 		if len == 0 {
-// 			return Err(Error::zero_sized_signal_buffer())
-// 		}
-// 		Ok(BiasedSignalBuffer{
-// 			data: Array::from_iter(iter::repeat(0.0)
-// 				.take(len)
-// 				.chain(iter::once(1.0))
-// 			),
-// 			marker: PhantomData
-// 		})
-// 	}
-
 // 	/// Creates a new `BiasedSignalBuffer` with its variable signals set
 // 	/// to the given `input` and the last signal set to `1.0`.
 // 	/// 
@@ -288,16 +312,6 @@ impl<D, B> UnbiasedAccessMut<B> for BufferBase<D, B>
 // }
 
 // impl ErrorSignalBuffer {
-// 	pub fn zeros(len: usize) -> Result<ErrorSignalBuffer> {
-// 		if len == 0 {
-// 			return Err(Error::zero_sized_gradient_buffer())
-// 		}
-// 		Ok(ErrorSignalBuffer{
-// 			data: Array1::zeros(len + 1),
-// 			marker: PhantomData
-// 		})
-// 	}
-
 // 	pub fn with_values<'a, T>(input: T) -> Result<ErrorSignalBuffer>
 // 		where T: Into<UnbiasedSignalView<'a>>
 // 	{
