@@ -15,10 +15,9 @@ pub(crate) struct BufferBase<D, B>
 	marker: PhantomData<B>
 }
 
-pub(crate) type SignalView<'a, B> = BufferBase<ViewRepr<&'a f32>, B>;
-pub(crate) type SignalViewMut<'a, B> = BufferBase<ViewRepr<&'a mut f32>, B>;
-
-pub(crate) type SignalBuffer<B> = BufferBase<OwnedRepr<f32>, B>;
+pub(crate) type BufferView<'a, B> = BufferBase<ViewRepr<&'a f32>, B>;
+pub(crate) type BufferViewMut<'a, B> = BufferBase<ViewRepr<&'a mut f32>, B>;
+pub(crate) type Buffer<B> = BufferBase<OwnedRepr<f32>, B>;
 
 mod marker {
 	pub(crate) trait Biased {
@@ -51,36 +50,36 @@ mod marker {
 	impl Unbiased for UnbiasedErrorSignal {}
 }
 
-pub(crate) type BiasedSignalView<'a> = SignalView<'a, marker::BiasedSignal>;
-pub(crate) type UnbiasedSignalView<'a> = SignalView<'a, marker::UnbiasedSignal>;
-pub(crate) type BiasedErrorSignalView<'a> = SignalView<'a, marker::BiasedErrorSignal>;
-pub(crate) type UnbiasedErrorSignalView<'a> = SignalView<'a, marker::UnbiasedErrorSignal>;
+pub(crate) type BiasedSignalView<'a> = BufferView<'a, marker::BiasedSignal>;
+pub(crate) type UnbiasedSignalView<'a> = BufferView<'a, marker::UnbiasedSignal>;
+pub(crate) type BiasedErrorSignalView<'a> = BufferView<'a, marker::BiasedErrorSignal>;
+pub(crate) type UnbiasedErrorSignalView<'a> = BufferView<'a, marker::UnbiasedErrorSignal>;
 
-pub(crate) type BiasedSignalViewMut<'a> = SignalViewMut<'a, marker::BiasedSignal>;
-pub(crate) type UnbiasedSignalViewMut<'a> = SignalViewMut<'a, marker::UnbiasedSignal>;
-pub(crate) type BiasedErrorSignalViewMut<'a> = SignalViewMut<'a, marker::BiasedErrorSignal>;
-pub(crate) type UnbiasedErrorSignalViewMut<'a> = SignalViewMut<'a, marker::UnbiasedErrorSignal>;
+pub(crate) type BiasedSignalViewMut<'a> = BufferViewMut<'a, marker::BiasedSignal>;
+pub(crate) type UnbiasedSignalViewMut<'a> = BufferViewMut<'a, marker::UnbiasedSignal>;
+pub(crate) type BiasedErrorSignalViewMut<'a> = BufferViewMut<'a, marker::BiasedErrorSignal>;
+pub(crate) type UnbiasedErrorSignalViewMut<'a> = BufferViewMut<'a, marker::UnbiasedErrorSignal>;
 
-pub(crate) type BiasedSignalBuffer = SignalBuffer<marker::BiasedSignal>;
-pub(crate) type UnbiasedSignalBuffer = SignalBuffer<marker::UnbiasedSignal>;
-pub(crate) type BiasedErrorSignalBuffer = SignalBuffer<marker::BiasedErrorSignal>;
-pub(crate) type UnbiasedErrorSignalBuffer = SignalBuffer<marker::UnbiasedErrorSignal>;
+pub(crate) type BiasedSignalBuffer = Buffer<marker::BiasedSignal>;
+pub(crate) type UnbiasedSignalBuffer = Buffer<marker::UnbiasedSignal>;
+pub(crate) type BiasedErrorSignalBuffer = Buffer<marker::BiasedErrorSignal>;
+pub(crate) type UnbiasedErrorSignalBuffer = Buffer<marker::UnbiasedErrorSignal>;
 
 pub(crate) trait BiasedAccess<B>
 	where B: marker::Biased
 {
 	fn biased_len(&self) -> usize;
 	fn unbiased_len(&self) -> usize;
-	fn biased_view(&self) -> SignalView<B>;
-	fn unbiased_view(&self) -> SignalView<B::Unbiased>;
+	fn biased_view(&self) -> BufferView<B>;
+	fn unbiased_view(&self) -> BufferView<B::Unbiased>;
 	fn data(&self) -> ArrayView1<f32>;
 }
 
 pub(crate) trait BiasedAccessMut<B>: BiasedAccess<B>
 	where B: marker::Biased
 {
-	fn biased_view_mut(&mut self) -> SignalViewMut<B>;
-	fn unbiased_view_mut(&mut self) -> SignalViewMut<B::Unbiased>;
+	fn biased_view_mut(&mut self) -> BufferViewMut<B>;
+	fn unbiased_view_mut(&mut self) -> BufferViewMut<B::Unbiased>;
 	fn data_mut(&mut self) -> ArrayViewMut1<f32>;
 }
 
@@ -88,18 +87,18 @@ pub(crate) trait UnbiasedAccess<B>
 	where B: marker::Unbiased
 {
 	fn unbiased_len(&self) -> usize;
-	fn unbiased_view(&self) -> SignalView<B>;
+	fn unbiased_view(&self) -> BufferView<B>;
 	fn data(&self) -> ArrayView1<f32>;
 }
 
 pub(crate) trait UnbiasedAccessMut<B>: UnbiasedAccess<B>
 	where B: marker::Unbiased
 {
-	fn unbiased_view_mut(&mut self) -> SignalViewMut<B>;
+	fn unbiased_view_mut(&mut self) -> BufferViewMut<B>;
 	fn data_mut(&mut self) -> ArrayViewMut1<f32>;
 }
 
-impl<B> SignalBuffer<B>
+impl<B> Buffer<B>
 	where B: marker::Biased
 {
 	/// Creates a new biased `SignalBuffer` with a variable length of `len` and an
@@ -113,12 +112,12 @@ impl<B> SignalBuffer<B>
 	/// Returns an error when trying to create a `BiasedSignalBuffer` with a length of zero.
 	/// 
 	#[inline]
-	fn zeros_with_bias(len: usize) -> Result<SignalBuffer<B>> {
+	fn zeros_with_bias(len: usize) -> Result<Buffer<B>> {
 		use std::iter;
 		if len == 0 {
 			return Err(Error::zero_sized_signal_buffer())
 		}
-		Ok(SignalBuffer{
+		Ok(Buffer{
 			data: Array::from_iter(iter::repeat(0.0)
 				.take(len)
 				.chain(iter::once(B::DEFAULT_BIAS_VALUE))
@@ -128,15 +127,15 @@ impl<B> SignalBuffer<B>
 	}
 }
 
-impl<B> SignalBuffer<B>
+impl<B> Buffer<B>
 	where B: marker::Unbiased
 {
 	#[inline]
-	fn zeros(len: usize) -> Result<SignalBuffer<B>> {
+	fn zeros(len: usize) -> Result<Buffer<B>> {
 		if len == 0 {
 			return Err(Error::zero_sized_signal_buffer())
 		}
-		Ok(SignalBuffer{
+		Ok(Buffer{
 			data: Array::zeros(len),
 			marker: PhantomData
 		})
@@ -158,16 +157,16 @@ impl<D, B> BiasedAccess<B> for BufferBase<D, B>
 	}
 
 	#[inline]
-	fn biased_view(&self) -> SignalView<B> {
-		SignalView{
+	fn biased_view(&self) -> BufferView<B> {
+		BufferView{
 			data: self.data.view(),
 			marker: PhantomData
 		}
 	}
 
 	#[inline]
-	fn unbiased_view(&self) -> SignalView<B::Unbiased> {
-		SignalView{
+	fn unbiased_view(&self) -> BufferView<B::Unbiased> {
+		BufferView{
 			data: self.data.slice(s![..-1]),
 			marker: PhantomData
 		}
@@ -184,16 +183,16 @@ impl<D, B> BiasedAccessMut<B> for BufferBase<D, B>
 	      B: marker::Biased
 {
 	#[inline]
-	fn biased_view_mut(&mut self) -> SignalViewMut<B> {
-		SignalViewMut{
+	fn biased_view_mut(&mut self) -> BufferViewMut<B> {
+		BufferViewMut{
 			data: self.data.view_mut(),
 			marker: PhantomData
 		}
 	}
 
 	#[inline]
-	fn unbiased_view_mut(&mut self) -> SignalViewMut<B::Unbiased> {
-		SignalViewMut{
+	fn unbiased_view_mut(&mut self) -> BufferViewMut<B::Unbiased> {
+		BufferViewMut{
 			data: self.data.slice_mut(s![..-1]),
 			marker: PhantomData
 		}
@@ -215,8 +214,8 @@ impl<D, B> UnbiasedAccess<B> for BufferBase<D, B>
 	}
 
 	#[inline]
-	fn unbiased_view(&self) -> SignalView<B> {
-		SignalView{
+	fn unbiased_view(&self) -> BufferView<B> {
+		BufferView{
 			data: self.data.view(),
 			marker: PhantomData
 		}
@@ -233,8 +232,8 @@ impl<D, B> UnbiasedAccessMut<B> for BufferBase<D, B>
 	      B: marker::Unbiased
 {
 	#[inline]
-	fn unbiased_view_mut(&mut self) -> SignalViewMut<B> {
-		SignalViewMut{
+	fn unbiased_view_mut(&mut self) -> BufferViewMut<B> {
+		BufferViewMut{
 			data: self.data.view_mut(),
 			marker: PhantomData
 		}
