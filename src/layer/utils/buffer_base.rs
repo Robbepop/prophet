@@ -9,8 +9,7 @@ use ndarray::{Data, DataMut, ViewRepr, OwnedRepr};
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct BufferBase<D, B>
-	where D: Data,
-	      D::Elem: Debug + PartialEq
+	where D: Data<Elem = f32>
 {
 	data: ArrayBase<D, Ix1>,
 	marker: PhantomData<B>
@@ -94,8 +93,7 @@ pub(crate) trait UnbiasedAccessMut<B> {
 }
 
 impl<D, B> BiasedAccess<B> for BufferBase<D, B>
-	where D: Data,
-	      D::Elem: Debug + PartialEq,
+	where D: Data<Elem = f32>,
 	      B: marker::Biased
 {
 	#[inline]
@@ -110,75 +108,90 @@ impl<D, B> BiasedAccess<B> for BufferBase<D, B>
 
 	#[inline]
 	fn biased_view(&self) -> SignalView<B> {
-		unimplemented!()
+		SignalView{
+			data: self.data.view(),
+			marker: PhantomData
+		}
 	}
 
 	#[inline]
 	fn unbiased_view(&self) -> SignalView<B::Unbiased> {
-		unimplemented!()
+		SignalView{
+			data: self.data.slice(s![..-1]),
+			marker: PhantomData
+		}
 	}
 
 	#[inline]
 	fn data(&self) -> ArrayView1<f32> {
-		unimplemented!()
+		self.data.view()
 	}
 }
 
 impl<D, B> BiasedAccessMut<B> for BufferBase<D, B>
-	where D: DataMut,
-	      D::Elem: Debug + PartialEq,
+	where D: DataMut<Elem = f32>,
 	      B: marker::Biased
 {
 	#[inline]
 	fn biased_view_mut(&mut self) -> SignalViewMut<B> {
-		unimplemented!()
+		SignalViewMut{
+			data: self.data.view_mut(),
+			marker: PhantomData
+		}
 	}
 
 	#[inline]
 	fn unbiased_view_mut(&mut self) -> SignalViewMut<B::Unbiased> {
-		unimplemented!()
+		SignalViewMut{
+			data: self.data.slice_mut(s![..-1]),
+			marker: PhantomData
+		}
 	}
 
 	#[inline]
 	fn data_mut(&mut self) -> ArrayViewMut1<f32> {
-		unimplemented!()
+		self.data.view_mut()
 	}
 }
 
 impl<D, B> UnbiasedAccess<B> for BufferBase<D, B>
-	where D: Data,
-	      D::Elem: Debug + PartialEq,
+	where D: Data<Elem = f32>,
 	      B: marker::Unbiased
 {
 	#[inline]
 	fn unbiased_len(&self) -> usize {
-		self.data.dim() - 1
+		self.data.dim()
 	}
 
 	#[inline]
 	fn unbiased_view(&self) -> SignalView<B> {
-		unimplemented!()
+		SignalView{
+			data: self.data.view(),
+			marker: PhantomData
+		}
 	}
 
 	#[inline]
 	fn data(&self) -> ArrayView1<f32> {
-		unimplemented!()
+		self.data.view()
 	}
 }
 
 impl<D, B> UnbiasedAccessMut<B> for BufferBase<D, B>
-	where D: DataMut,
-	      D::Elem: Debug + PartialEq,
+	where D: DataMut<Elem = f32>,
 	      B: marker::Unbiased
 {
 	#[inline]
 	fn unbiased_view_mut(&mut self) -> SignalViewMut<B> {
-		unimplemented!()
+		SignalViewMut{
+			data: self.data.view_mut(),
+			marker: PhantomData
+		}
 	}
 
 	#[inline]
 	fn data_mut(&mut self) -> ArrayViewMut1<f32> {
-		unimplemented!()
+		self.data.view_mut()
 	}
 }
 
