@@ -48,6 +48,13 @@ pub enum ErrorKind {
 	/// Occures upon creating a `WeightsMatrix`
 	/// for `0` (zero) outputs.
 	ZeroOutputsWeightsMatrix,
+
+	/// Occures when doing some generic operation (e.g. assigning) with
+	/// two buffers of unequal sizes.
+	UnmatchingBufferSizes{
+		lhs_size: usize,
+		rhs_size: usize
+	}
 }
 
 /// The error class used in `Prophet`.
@@ -89,16 +96,16 @@ impl Error {
 	// 	Error{kind, message, annotation: None}
 	// }
 
-	// /// Consumes this error and returns itself with the given annotation added to it.
-	// /// 
-	// /// Note: This will replace an already existing annotation.
-	// #[inline]
-	// pub(crate) fn with_annotation<A>(mut self, annotation: A) -> Error
-	// 	where A: Into<String>
-	// {
-	// 	self.annotation = Some(annotation.into());
-	// 	self
-	// }
+	/// Consumes this error and returns itself with the given annotation added to it.
+	/// 
+	/// Note: This will replace an already existing annotation.
+	#[inline]
+	pub(crate) fn with_annotation<A>(mut self, annotation: A) -> Error
+		where A: Into<String>
+	{
+		self.annotation = Some(annotation.into());
+		self
+	}
 }
 
 impl Error {
@@ -211,6 +218,18 @@ impl Error {
 				"Tired to create a SignalBuffer with length {:?} from a source of input values with length {:?}",
 					required,
 					source
+			),
+			annotation: None
+		}
+	}
+
+	pub(crate) fn unmatching_buffer_sizes(lhs_size: usize, rhs_size: usize) -> Error {
+		Error{
+			kind: ErrorKind::UnmatchingBufferSizes{lhs_size, rhs_size},
+			message: format!(
+				"Tried to operate on buffers with non-matching sizes of {:?} and {:?} elements.",
+				lhs_size,
+				rhs_size
 			),
 			annotation: None
 		}
