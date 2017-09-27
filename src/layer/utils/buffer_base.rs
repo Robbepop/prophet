@@ -23,6 +23,7 @@ pub(crate) type SignalBuffer<B> = BufferBase<OwnedRepr<f32>, B>;
 mod marker {
 	pub(crate) trait Biased {
 		type Unbiased;
+		const DEFAULT_BIAS_VALUE: f32;
 	}
 	pub(crate) trait Unbiased {}
 
@@ -40,10 +41,12 @@ mod marker {
 
 	impl Biased for BiasedSignal {
 		type Unbiased = UnbiasedSignal;
+		const DEFAULT_BIAS_VALUE: f32 = 1.0;
 	}
 	impl Unbiased for UnbiasedSignal {}
 	impl Biased for BiasedErrorSignal {
 		type Unbiased = UnbiasedErrorSignal;
+		const DEFAULT_BIAS_VALUE: f32 = 0.0;
 	}
 	impl Unbiased for UnbiasedErrorSignal {}
 }
