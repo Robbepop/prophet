@@ -1,4 +1,5 @@
 use ndarray::prelude::*;
+use ndarray;
 
 use errors::{Error, Result};
 
@@ -65,37 +66,17 @@ pub(crate) type UnbiasedSignalBuffer = Buffer<marker::UnbiasedSignal>;
 pub(crate) type BiasedErrorSignalBuffer = Buffer<marker::BiasedErrorSignal>;
 pub(crate) type UnbiasedErrorSignalBuffer = Buffer<marker::UnbiasedErrorSignal>;
 
-pub(crate) trait BiasedAccess<B>
-	where B: marker::Biased
-{
-	fn biased_len(&self) -> usize;
-	fn unbiased_len(&self) -> usize;
-	fn biased_view(&self) -> BufferView<B>;
-	fn unbiased_view(&self) -> BufferView<B::Unbiased>;
-	fn data(&self) -> ArrayView1<f32>;
-}
+pub(crate) type Iter<'a> = ndarray::iter::Iter<'a, f32, Ix1>;
+pub(crate) type IterMut<'a> = ndarray::iter::IterMut<'a, f32, Ix1>;
 
-pub(crate) trait BiasedAccessMut<B>: BiasedAccess<B>
-	where B: marker::Biased
-{
-	fn biased_view_mut(&mut self) -> BufferViewMut<B>;
-	fn unbiased_view_mut(&mut self) -> BufferViewMut<B::Unbiased>;
-	fn data_mut(&mut self) -> ArrayViewMut1<f32>;
-}
-
-pub(crate) trait UnbiasedAccess<B>
-	where B: marker::Unbiased
-{
-	fn unbiased_len(&self) -> usize;
-	fn unbiased_view(&self) -> BufferView<B>;
-	fn data(&self) -> ArrayView1<f32>;
-}
-
-pub(crate) trait UnbiasedAccessMut<B>: UnbiasedAccess<B>
-	where B: marker::Unbiased
-{
-	fn unbiased_view_mut(&mut self) -> BufferViewMut<B>;
-	fn data_mut(&mut self) -> ArrayViewMut1<f32>;
+impl<B> Buffer<B> {
+	#[inline]
+	pub fn from_raw_parts(data: Array1<f32>) -> Result<Buffer<B>> {
+		if data.dim() == 0 {
+			return Err(Error::zero_sized_signal_buffer())
+		}
+		Ok(Buffer{data, marker: PhantomData})
+	}
 }
 
 impl<B> Buffer<B>
@@ -112,7 +93,7 @@ impl<B> Buffer<B>
 	/// Returns an error when trying to create a `BiasedSignalBuffer` with a length of zero.
 	/// 
 	#[inline]
-	fn zeros_with_bias(len: usize) -> Result<Buffer<B>> {
+	pub fn zeros_with_bias(len: usize) -> Result<Buffer<B>> {
 		use std::iter;
 		if len == 0 {
 			return Err(Error::zero_sized_signal_buffer())
@@ -131,7 +112,7 @@ impl<B> Buffer<B>
 	where B: marker::Unbiased
 {
 	#[inline]
-	fn zeros(len: usize) -> Result<Buffer<B>> {
+	pub fn zeros(len: usize) -> Result<Buffer<B>> {
 		if len == 0 {
 			return Err(Error::zero_sized_signal_buffer())
 		}
@@ -140,24 +121,34 @@ impl<B> Buffer<B>
 			marker: PhantomData
 		})
 	}
+
+	#[inline]
+	pub fn reset_to_zeros(&mut self) {
+		self.data.fill(0.0)
+	}
+
+	pub fn assign(&mut self, rhs: &BufferView<B>) -> Result<()> {
+		if self.len() != rhs.len() {
+			return Err(
+				Error::unmatching_buffer_sizes(self.len(), rhs.len())
+					.with_annotation("Occured in unbiased Buffer::assign method.")
+			)
+		}
+		self.data.assign(&rhs.data());
+		Ok(())
+	}
 }
 
-impl<D, B> BiasedAccess<B> for BufferBase<D, B>
-	where D: Data<Elem = f32>,
-	      B: marker::Biased
+impl<D, B> BufferBase<D, B>
+	where D: Data<Elem = f32>
 {
 	#[inline]
-	fn biased_len(&self) -> usize {
+	pub fn len(&self) -> usize {
 		self.data.dim()
 	}
 
 	#[inline]
-	fn unbiased_len(&self) -> usize {
-		self.data.dim() - 1
-	}
-
-	#[inline]
-	fn biased_view(&self) -> BufferView<B> {
+	pub fn view(&self) -> BufferView<B> {
 		BufferView{
 			data: self.data.view(),
 			marker: PhantomData
@@ -165,25 +156,34 @@ impl<D, B> BiasedAccess<B> for BufferBase<D, B>
 	}
 
 	#[inline]
-	fn unbiased_view(&self) -> BufferView<B::Unbiased> {
+	pub fn iter(&self) -> Iter {
+		self.data.iter()
+	}
+
+	#[inline]
+	pub fn data(&self) -> ArrayView1<f32> {
+		self.data.view()
+	}
+}
+
+impl<D, B> BufferBase<D, B>
+	where D: Data<Elem = f32>,
+	      B: marker::Biased
+{
+	#[inline]
+	pub fn unbias(&self) -> BufferView<B::Unbiased> {
 		BufferView{
 			data: self.data.slice(s![..-1]),
 			marker: PhantomData
 		}
 	}
-
-	#[inline]
-	fn data(&self) -> ArrayView1<f32> {
-		self.data.view()
-	}
 }
 
-impl<D, B> BiasedAccessMut<B> for BufferBase<D, B>
-	where D: DataMut<Elem = f32>,
-	      B: marker::Biased
+impl<D, B> BufferBase<D, B>
+	where D: DataMut<Elem = f32>
 {
 	#[inline]
-	fn biased_view_mut(&mut self) -> BufferViewMut<B> {
+	pub fn view_mut(&mut self) -> BufferViewMut<B> {
 		BufferViewMut{
 			data: self.data.view_mut(),
 			marker: PhantomData
@@ -191,137 +191,49 @@ impl<D, B> BiasedAccessMut<B> for BufferBase<D, B>
 	}
 
 	#[inline]
-	fn unbiased_view_mut(&mut self) -> BufferViewMut<B::Unbiased> {
+	pub fn iter_mut(&mut self) -> IterMut {
+		self.data.iter_mut()
+	}
+
+	#[inline]
+	pub fn data_mut(&mut self) -> ArrayViewMut1<f32> {
+		self.data.view_mut()
+	}
+}
+
+impl<D, B> BufferBase<D, B>
+	where D: DataMut<Elem = f32>,
+	      B: marker::Biased
+{
+	#[inline]
+	pub fn unbias_mut(&mut self) -> BufferViewMut<B::Unbiased> {
 		BufferViewMut{
 			data: self.data.slice_mut(s![..-1]),
 			marker: PhantomData
 		}
 	}
-
-	#[inline]
-	fn data_mut(&mut self) -> ArrayViewMut1<f32> {
-		self.data.view_mut()
-	}
 }
 
-impl<D, B> UnbiasedAccess<B> for BufferBase<D, B>
-	where D: Data<Elem = f32>,
-	      B: marker::Unbiased
+impl<'a, D, B> IntoIterator for &'a BufferBase<D, B>
+	where D: Data<Elem = f32>
 {
-	#[inline]
-	fn unbiased_len(&self) -> usize {
-		self.data.dim()
-	}
+	type Item = &'a D::Elem;
+	type IntoIter = Iter<'a>;
 
 	#[inline]
-	fn unbiased_view(&self) -> BufferView<B> {
-		BufferView{
-			data: self.data.view(),
-			marker: PhantomData
-		}
-	}
-
-	#[inline]
-	fn data(&self) -> ArrayView1<f32> {
-		self.data.view()
+	fn into_iter(self) -> Self::IntoIter {
+		self.iter()
 	}
 }
 
-impl<D, B> UnbiasedAccessMut<B> for BufferBase<D, B>
-	where D: DataMut<Elem = f32>,
-	      B: marker::Unbiased
+impl<'a, D, B> IntoIterator for &'a mut BufferBase<D, B>
+	where D: DataMut<Elem = f32>
 {
-	#[inline]
-	fn unbiased_view_mut(&mut self) -> BufferViewMut<B> {
-		BufferViewMut{
-			data: self.data.view_mut(),
-			marker: PhantomData
-		}
-	}
+	type Item = &'a mut D::Elem;
+	type IntoIter = IterMut<'a>;
 
 	#[inline]
-	fn data_mut(&mut self) -> ArrayViewMut1<f32> {
-		self.data.view_mut()
+	fn into_iter(self) -> Self::IntoIter {
+		self.iter_mut()
 	}
 }
-
-// impl BiasedSignalBuffer {
-// 	/// Creates a new `BiasedSignalBuffer` with its variable signals set
-// 	/// to the given `input` and the last signal set to `1.0`.
-// 	/// 
-// 	/// # Errors
-// 	/// 
-// 	/// Returns an error when the length of `input` is zero.
-// 	///  
-// 	pub fn with_values(input: ArrayView1<f32>) -> Result<BiasedSignalBuffer> {
-// 		if input.dim() == 0 {
-// 			return Err(Error::zero_sized_signal_buffer())
-// 		}
-// 		let mut buf = BiasedSignalBuffer::zeros(input.dim())?;
-// 		buf.assign(input)?;
-// 		Ok(buf)
-// 	}
-
-// 	/// Creates a new `BiasedSignalBuffer` with its variable signals set
-// 	/// to the first `len` values of the given `source` iterator.
-// 	/// 
-// 	/// # Errors
-// 	/// 
-// 	/// Returns an error ...
-// 	/// 
-// 	/// - if `source` generates less items than required by the given `len`.
-// 	/// 
-// 	/// - if `len` is equal to zero.
-// 	pub fn from_iter<I>(len: usize, source: I) -> Result<BiasedSignalBuffer>
-// 		where I: Iterator<Item=f32>
-// 	{
-// 		use std::iter;
-// 		if len == 0 {
-// 			return Err(Error::zero_sized_signal_buffer())
-// 		}
-// 		let result = BiasedSignalBuffer{
-// 			data: Array::from_iter(source
-// 				.take(len)
-// 				.chain(iter::once(1.0))),
-// 			marker: PhantomData
-// 		};
-// 		if result.len() != len {
-// 			return Err(Error::non_matching_number_of_signals(result.len(), len))
-// 		}
-// 		Ok(result)
-// 	}
-
-// 	/// Assigns the non-bias contents of this `BiasedSignalBuffer` to the contents
-// 	/// of the given `values`.
-// 	/// 
-// 	/// # Errors
-// 	/// 
-// 	/// Returns an error if the length `values` does not match the length
-// 	/// of this buffer without respect to its bias value.
-// 	///  
-// 	pub fn assign<'a, T>(&mut self, values: T) -> Result<()>
-// 		where T: Into<UnbiasedSignalView<'a>>
-// 	{
-// 		let values = values.into();
-// 		if self.len() != values.len() {
-// 			return Err(Error::non_matching_assign_signals(values.len(), self.len()))
-// 		}
-// 		Ok(self.data.assign(&values.view()))
-// 	}
-// }
-
-// impl ErrorSignalBuffer {
-// 	pub fn with_values<'a, T>(input: T) -> Result<ErrorSignalBuffer>
-// 		where T: Into<UnbiasedSignalView<'a>>
-// 	{
-// 		let input = input.into();
-// 		let mut buf = ErrorSignalBuffer::zeros(input.len())?;
-// 		buf.data.assign(&input.view());
-// 		Ok(buf)
-// 	}
-
-// 	#[inline]
-// 	pub fn reset_to_zeros(&mut self) {
-// 		self.data.fill(0.0)
-// 	}
-// }
