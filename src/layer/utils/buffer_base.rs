@@ -195,10 +195,6 @@ impl<D, B> UnbiasedAccessMut<B> for BufferBase<D, B>
 	}
 }
 
-// pub type BiasedSignalBuffer = BufferBase<marker::Signal>;
-
-// pub type ErrorSignalBuffer = BufferBase<marker::ErrorSignal>;
-
 // impl BiasedSignalBuffer {
 // 	/// Creates a new `BiasedSignalBuffer` with a variable length of `len` and an
 // 	/// additional constant bias value of `1.0`.
@@ -311,68 +307,5 @@ impl<D, B> UnbiasedAccessMut<B> for BufferBase<D, B>
 // 	#[inline]
 // 	pub fn reset_to_zeros(&mut self) {
 // 		self.data.fill(0.0)
-// 	}
-// }
-
-// impl<E> BufferBase<E> {
-// 	/// Returns the length of this `BiasedSignalBuffer` *without* respect to its bias value.
-// 	#[inline]
-// 	pub fn len(&self) -> usize {
-// 		self.view().dim()
-// 	}
-
-// 	/// Returns the length of this `BiasedSignalBuffer` *with* respect to its bias value.
-// 	#[inline]
-// 	pub fn biased_len(&self) -> usize {
-// 		self.biased_view().dim()
-// 	}
-
-// 	/// Returns a view to the contents of this `BiasedSignalBuffer` *with* respect to its bias value.
-// 	#[inline]
-// 	pub fn biased_view(&self) -> ArrayView1<f32> {
-// 		self.data.view()
-// 	}
-
-// 	/// Returns a view to the contents of this `BiasedSignalBuffer` *without* respect to its bias value.
-// 	#[inline]
-// 	pub fn view(&self) -> ArrayView1<f32> {
-// 		self.data.slice(s![..-1])
-// 	}
-
-// 	/// Returns a mutable view to the contents of this `BiasedSignalBuffer` *without* respect to its bias value.
-// 	#[inline]
-// 	pub fn view_mut(&mut self) -> ArrayViewMut1<f32> {
-// 		self.data.slice_mut(s![..-1])
-// 	}
-// }
-
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct UnbiasedSignalView<'a>(ArrayView1<'a, f32>);
-
-// impl<'a, T> From<T> for UnbiasedSignalView<'a>
-// 	where T: Into<ArrayView1<'a, f32>>
-// {
-// 	fn from(view: T) -> Self {
-// 		UnbiasedSignalView(view.into())
-// 	}
-// }
-
-// impl<'a> From<&'a BiasedSignalBuffer> for UnbiasedSignalView<'a> {
-// 	fn from(signal_buf: &'a BiasedSignalBuffer) -> Self {
-// 		signal_buf.view().into()
-// 	}
-// }
-
-// impl<'a> UnbiasedSignalView<'a> {
-// 	/// Returns the length of this `UnbiasedSignalView`.
-// 	#[inline]
-// 	pub fn len(&self) -> usize {
-// 		self.0.dim()
-// 	}
-
-// 	/// Returns a view to the contents of this `UnbiasedSignalView`.
-// 	#[inline]
-// 	pub fn view(&self) -> ArrayView1<f32> {
-// 		self.0.view()
 // 	}
 // }
