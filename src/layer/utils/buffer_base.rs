@@ -5,9 +5,10 @@ use errors::{Error, Result};
 
 use std::marker::PhantomData;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub(crate) struct BufferBase<D, B>
-	where D: ndarray::Data<Elem = f32>
+	where D: ndarray::Data<Elem = f32>,
+	      B: marker::Marker
 {
 	data: ArrayBase<D, Ix1>,
 	marker: PhantomData<B>
@@ -18,11 +19,13 @@ pub(crate) type BufferViewMut<'a, B> = BufferBase<ndarray::ViewRepr<&'a mut f32>
 pub(crate) type Buffer<B> = BufferBase<ndarray::OwnedRepr<f32>, B>;
 
 mod marker {
-	pub(crate) trait Biased {
-		type Unbiased;
+	pub(crate) trait Marker: Copy + Clone + PartialEq {}
+
+	pub(crate) trait Biased: Marker {
+		type Unbiased: Marker;
 		const DEFAULT_BIAS_VALUE: f32;
 	}
-	pub(crate) trait Unbiased {}
+	pub(crate) trait Unbiased: Marker {}
 
 	#[derive(Debug, Copy, Clone, PartialEq)]
 	pub struct BiasedSignal;
@@ -40,12 +43,19 @@ mod marker {
 		type Unbiased = UnbiasedSignal;
 		const DEFAULT_BIAS_VALUE: f32 = 1.0;
 	}
-	impl Unbiased for UnbiasedSignal {}
+
 	impl Biased for BiasedErrorSignal {
 		type Unbiased = UnbiasedErrorSignal;
 		const DEFAULT_BIAS_VALUE: f32 = 0.0;
 	}
+
+	impl Unbiased for UnbiasedSignal {}
 	impl Unbiased for UnbiasedErrorSignal {}
+
+	impl Marker for BiasedSignal {}
+	impl Marker for UnbiasedSignal {}
+	impl Marker for BiasedErrorSignal {}
+	impl Marker for UnbiasedErrorSignal {}
 }
 
 pub(crate) type BiasedSignalView<'a> = BufferView<'a, marker::BiasedSignal>;
@@ -66,7 +76,29 @@ pub(crate) type UnbiasedErrorSignalBuffer = Buffer<marker::UnbiasedErrorSignal>;
 pub(crate) type Iter<'a> = ndarray::iter::Iter<'a, f32, Ix1>;
 pub(crate) type IterMut<'a> = ndarray::iter::IterMut<'a, f32, Ix1>;
 
-impl<B> Buffer<B> {
+impl<D, B> PartialEq for BufferBase<D, B>
+	where D: ndarray::Data<Elem = f32>,
+	      B: marker::Marker
+{
+	fn eq(&self, rhs: &Self) -> bool {
+		self.data == rhs.data
+	}
+}
+
+impl<B> Clone for Buffer<B>
+	where B: marker::Marker
+{
+	fn clone(&self) -> Buffer<B> {
+		Buffer{
+			data: self.data.clone(),
+			marker: PhantomData
+		}
+	}
+}
+
+impl<B> Buffer<B>
+	where B: marker::Marker
+{
 	#[inline]
 	pub fn from_raw_parts(data: Array1<f32>) -> Result<Buffer<B>> {
 		if data.dim() == 0 {
@@ -137,7 +169,8 @@ impl<B> Buffer<B>
 }
 
 impl<D, B> BufferBase<D, B>
-	where D: ndarray::Data<Elem = f32>
+	where D: ndarray::Data<Elem = f32>,
+	      B: marker::Marker
 {
 	#[inline]
 	pub fn len(&self) -> usize {
@@ -165,7 +198,7 @@ impl<D, B> BufferBase<D, B>
 
 impl<D, B> BufferBase<D, B>
 	where D: ndarray::Data<Elem = f32>,
-	      B: marker::Biased
+	      B: marker::Biased,
 {
 	#[inline]
 	pub fn unbias(&self) -> BufferView<B::Unbiased> {
@@ -177,7 +210,8 @@ impl<D, B> BufferBase<D, B>
 }
 
 impl<D, B> BufferBase<D, B>
-	where D: ndarray::DataMut<Elem = f32>
+	where D: ndarray::DataMut<Elem = f32>,
+	      B: marker::Marker
 {
 	#[inline]
 	pub fn view_mut(&mut self) -> BufferViewMut<B> {
@@ -212,7 +246,8 @@ impl<D, B> BufferBase<D, B>
 }
 
 impl<'a, D, B> IntoIterator for &'a BufferBase<D, B>
-	where D: ndarray::Data<Elem = f32>
+	where D: ndarray::Data<Elem = f32>,
+	      B: marker::Marker
 {
 	type Item = &'a D::Elem;
 	type IntoIter = Iter<'a>;
@@ -224,7 +259,8 @@ impl<'a, D, B> IntoIterator for &'a BufferBase<D, B>
 }
 
 impl<'a, D, B> IntoIterator for &'a mut BufferBase<D, B>
-	where D: ndarray::DataMut<Elem = f32>
+	where D: ndarray::DataMut<Elem = f32>,
+	      B: marker::Marker
 {
 	type Item = &'a mut D::Elem;
 	type IntoIter = IterMut<'a>;
