@@ -2,9 +2,9 @@
 PROPHET - Neural Network Library
 ================================
 
-|        Linux        |       Windows       |       Coverage       |          Docs         |     Crates.io         |       Licence      |
-|:-------------------:|:-------------------:|:--------------------:|:---------------------:|:---------------------:|:------------------:|
-| [![travisCI][1]][2] | [![appveyor][3]][4] | [![coveralls][5]][6] | [![docs][11]][12 ]    | [![crates.io][9]][10] | [![licence][7]][8] |
+|       Linux       |       Windows       |       Coverage      |          Docs         |     Crates.io         |       Licence      |
+|:-----------------:|:-------------------:|:-------------------:|:---------------------:|:---------------------:|:------------------:|
+| [![travis][1]][2] | [![appveyor][3]][4] | [![coverage][5]][6] | [![docs][11]][12 ]    | [![crates.io][9]][10] | [![licence][7]][8] |
 
 
 A simple neural net implementation written in Rust with a focus on cache-efficiency and sequential performance.
@@ -118,7 +118,7 @@ for sample in samples {
 [5]: https://coveralls.io/repos/github/Robbepop/prophet/badge.svg?branch=master
 [6]: https://coveralls.io/github/Robbepop/prophet?branch=master
 [7]: https://img.shields.io/badge/license-MIT-blue.svg
-[8]: ./LICENCE
+[8]: https://github.com/Robbepop/prophet/blob/master/LICENSE
 [9]: https://img.shields.io/crates/v/prophet.svg
 [10]: https://crates.io/crates/prophet
 [11]: https://docs.rs/prophet/badge.svg
