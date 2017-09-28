@@ -1,13 +1,13 @@
 use ndarray::ArrayView1;
 
-use layer::utils::{SignalBuffer};
+use layer::utils::prelude::*;
 use layer::{ContainerLayer};
 use traits::prelude::*;
 use utils::{LearnRate, LearnMomentum};
 
 #[derive(Debug, Clone, PartialEq)]
 struct NeuralNet {
-	input: SignalBuffer,
+	input: BiasedSignalBuffer,
 	layers: ContainerLayer
 }
 
@@ -20,9 +20,9 @@ impl<'a, I> Predict<I> for NeuralNet
 	}
 }
 
-impl<'a> Predict<&'a SignalBuffer> for NeuralNet {
+impl<'a> Predict<BiasedSignalView<'a>> for NeuralNet {
 	/// Implementation for inputs that do respect a bias value.
-	fn predict(&mut self, _input: &SignalBuffer) -> ArrayView1<f32> {
+	fn predict(&mut self, _input: BiasedSignalView) -> ArrayView1<f32> {
 		unimplemented!()
 	}
 }

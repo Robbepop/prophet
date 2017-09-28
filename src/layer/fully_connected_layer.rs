@@ -1,9 +1,4 @@
-use layer::utils::{
-	SignalBuffer,
-	ErrorSignalBuffer,
-	WeightsMatrix,
-	DeltaWeightsMatrix
-};
+use layer::utils::prelude::*;
 use layer::traits::prelude::*;
 use errors::{Result};
 use utils::{LearnRate, LearnMomentum};
@@ -12,8 +7,8 @@ use utils::{LearnRate, LearnMomentum};
 pub struct FullyConnectedLayer {
 	weights     : WeightsMatrix,
 	deltas      : DeltaWeightsMatrix,
-	outputs     : SignalBuffer,
-	error_signal: ErrorSignalBuffer
+	outputs     : BiasedSignalBuffer,
+	error_signal: BiasedErrorSignalBuffer
 }
 
 impl FullyConnectedLayer {
@@ -22,8 +17,8 @@ impl FullyConnectedLayer {
 		Ok(FullyConnectedLayer{
 			weights,
 			deltas      : DeltaWeightsMatrix::zeros(inputs, outputs)?,
-			outputs     : SignalBuffer::zeros(outputs)?,
-			error_signal: ErrorSignalBuffer::zeros(outputs)?,
+			outputs     : BiasedSignalBuffer::zeros_with_bias(outputs)?,
+			error_signal: BiasedErrorSignalBuffer::zeros_with_bias(outputs)?,
 		})
 	}
 
@@ -34,24 +29,24 @@ impl FullyConnectedLayer {
 }
 
 impl ProcessInputSignal for FullyConnectedLayer {
-	fn process_input_signal(&mut self, input_signal: &SignalBuffer) {
+	fn process_input_signal(&mut self, input_signal: BiasedSignalView) {
 		if self.output_signal().len() != input_signal.len() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
 		}
 		use ndarray::linalg::general_mat_vec_mul;
-		general_mat_vec_mul(1.0, &self.weights.view(), &input_signal.biased_view(), 1.0, &mut self.outputs.view_mut())
+		general_mat_vec_mul(1.0, &self.weights.view(), &input_signal.data(), 1.0, &mut self.outputs.unbias_mut().data_mut())
 	}
 }
 
 impl CalculateOutputErrorSignal for FullyConnectedLayer {
-	fn calculate_output_error_signal(&mut self, target_signal: &SignalBuffer) {
+	fn calculate_output_error_signal(&mut self, target_signal: UnbiasedSignalView) {
 		if self.output_signal().len() != target_signal.len() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
 		}
 		use ndarray::Zip;
-		Zip::from(&mut self.error_signal.view_mut())
-			.and(&self.outputs.view())
-			.and(&target_signal.view())
+		Zip::from(&mut self.error_signal.unbias_mut().data_mut())
+			.and(&self.outputs.unbias().data())
+			.and(&target_signal.data())
 			.apply(|e, &o, &t| {
 				*e = t - o
 			}
@@ -65,21 +60,23 @@ impl PropagateErrorSignal for FullyConnectedLayer {
 	{
 		use ndarray::Zip;
 		use itertools::*;
-		multizip((self.weights.genrows(), self.error_signal.view())).foreach(|(s_wrow, &s_e)| {
-			Zip::from(&mut propagated.error_signal_mut().view_mut()).and(&s_wrow.view()).apply(|p_e, &s_w| {
-				*p_e += s_w * s_e;
-			})
+		multizip((self.weights.genrows(), &self.error_signal.unbias())).foreach(|(s_wrow, &s_e)| {
+			Zip::from(&mut propagated.error_signal_mut().unbias_mut().data_mut())
+				.and(&s_wrow.view())
+				.apply(|p_e, &s_w| {
+					*p_e += s_w * s_e;
+				})
 		})
 	}
 }
 
 impl ApplyErrorSignalCorrection for FullyConnectedLayer {
-	fn apply_error_signal_correction(&mut self, input_signal: &SignalBuffer, lr: LearnRate, lm: LearnMomentum) {
+	fn apply_error_signal_correction(&mut self, input_signal: BiasedSignalView, lr: LearnRate, lm: LearnMomentum) {
 		// use std::ops::AddAssign;
 		use ndarray::Zip;
 		use itertools::*;
-		multizip((self.deltas.genrows_mut(), self.error_signal.view())).foreach(|(mut s_drow, &s_e)| {
-			Zip::from(&mut s_drow.view_mut()).and(&input_signal.view()).apply(|s_dw, &p_i| {
+		multizip((self.deltas.genrows_mut(), &self.error_signal.unbias())).foreach(|(mut s_drow, &s_e)| {
+			Zip::from(&mut s_drow.view_mut()).and(input_signal.unbias().data()).apply(|s_dw, &p_i| {
 				*s_dw = (1.0 - lm.0) * lr.0 * p_i * s_e + lm.0 * *s_dw;
 			});
 		});
@@ -89,22 +86,22 @@ impl ApplyErrorSignalCorrection for FullyConnectedLayer {
 }
 
 impl HasOutputSignal for FullyConnectedLayer {
-	fn output_signal(&self) -> &SignalBuffer {
-		&self.outputs
+	fn output_signal(&self) -> BiasedSignalView {
+		self.outputs.view()
 	}
 
-	fn output_signal_mut(&mut self) -> &mut SignalBuffer {
-		&mut self.outputs
+	fn output_signal_mut(&mut self) -> BiasedSignalViewMut {
+		self.outputs.view_mut()
 	}
 }
 
 impl HasErrorSignal for FullyConnectedLayer {
-	fn error_signal(&self) -> &ErrorSignalBuffer {
-		&self.error_signal
+	fn error_signal(&self) -> BiasedErrorSignalView {
+		self.error_signal.view()
 	}
 
-	fn error_signal_mut(&mut self) -> &mut ErrorSignalBuffer {
-		&mut self.error_signal
+	fn error_signal_mut(&mut self) -> BiasedErrorSignalViewMut {
+		self.error_signal.view_mut()
 	}
 }
 

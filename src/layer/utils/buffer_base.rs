@@ -27,6 +27,8 @@ mod marker {
 	}
 	pub(crate) trait Unbiased: Marker {}
 
+	pub(crate) trait ErrorSignal: Marker {}
+
 	#[derive(Debug, Copy, Clone, PartialEq)]
 	pub struct BiasedSignal;
 
@@ -51,6 +53,9 @@ mod marker {
 
 	impl Unbiased for UnbiasedSignal {}
 	impl Unbiased for UnbiasedErrorSignal {}
+
+	impl ErrorSignal for BiasedErrorSignal {}
+	impl ErrorSignal for UnbiasedErrorSignal {}
 
 	impl Marker for BiasedSignal {}
 	impl Marker for UnbiasedSignal {}
@@ -150,12 +155,22 @@ impl<B> Buffer<B>
 			marker: PhantomData
 		})
 	}
+}
 
+impl<D, B> BufferBase<D, B>
+	where D: ndarray::DataMut<Elem = f32>,
+	      B: marker::ErrorSignal
+{
 	#[inline]
 	pub fn reset_to_zeros(&mut self) {
 		self.data.fill(0.0)
 	}
+}
 
+impl<D, B> BufferBase<D, B>
+	where D: ndarray::DataMut<Elem = f32>,
+	      B: marker::Unbiased
+{
 	pub fn assign(&mut self, rhs: &BufferView<B>) -> Result<()> {
 		if self.len() != rhs.len() {
 			return Err(

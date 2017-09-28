@@ -1,8 +1,5 @@
 use layer::layer::Layer;
-use layer::utils::{
-	SignalBuffer,
-	ErrorSignalBuffer
-};
+use layer::utils::prelude::*;
 use layer::traits::prelude::*;
 use errors::{Result};
 use utils::{LearnRate, LearnMomentum};
@@ -77,7 +74,7 @@ impl ContainerLayer {
 }
 
 impl ProcessInputSignal for ContainerLayer {
-	fn process_input_signal(&mut self, prev_output_signal: &SignalBuffer) {
+	fn process_input_signal(&mut self, prev_output_signal: BiasedSignalView) {
 		if let Some((first, tail)) = self.childs.split_first_mut() {
 			tail.iter_mut().fold({
 				first.process_input_signal(prev_output_signal);
@@ -96,7 +93,7 @@ impl ProcessInputSignal for ContainerLayer {
 }
 
 impl CalculateOutputErrorSignal for ContainerLayer {
-	fn calculate_output_error_signal(&mut self, target_signals: &SignalBuffer) {
+	fn calculate_output_error_signal(&mut self, target_signals: UnbiasedSignalView) {
 		self.output_layer_mut().calculate_output_error_signal(target_signals)
 	}
 }
@@ -111,7 +108,7 @@ impl PropagateErrorSignal for ContainerLayer {
 }
 
 impl ApplyErrorSignalCorrection for ContainerLayer {
-	fn apply_error_signal_correction(&mut self, prev_output_signal: &SignalBuffer, rate: LearnRate, momentum: LearnMomentum) {
+	fn apply_error_signal_correction(&mut self, prev_output_signal: BiasedSignalView, rate: LearnRate, momentum: LearnMomentum) {
 		if let Some((first, tail)) = self.childs.split_first_mut() {
 			tail.iter_mut().fold({
 				first.apply_error_signal_correction(prev_output_signal, rate, momentum);
@@ -130,21 +127,21 @@ impl ApplyErrorSignalCorrection for ContainerLayer {
 }
 
 impl HasOutputSignal for ContainerLayer {
-	fn output_signal(&self) -> &SignalBuffer {
+	fn output_signal(&self) -> BiasedSignalView {
 		self.output_layer().output_signal()
 	}
 
-	fn output_signal_mut(&mut self) -> &mut SignalBuffer {
+	fn output_signal_mut(&mut self) -> BiasedSignalViewMut {
 		self.output_layer_mut().output_signal_mut()
 	}
 }
 
 impl HasErrorSignal for ContainerLayer {
-	fn error_signal(&self) -> &ErrorSignalBuffer {
+	fn error_signal(&self) -> BiasedErrorSignalView {
 		self.output_layer().error_signal()
 	}
 
-	fn error_signal_mut(&mut self) -> &mut ErrorSignalBuffer {
+	fn error_signal_mut(&mut self) -> BiasedErrorSignalViewMut {
 		self.output_layer_mut().error_signal_mut()
 	}
 }

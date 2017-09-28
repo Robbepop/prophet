@@ -1,22 +1,22 @@
-use layer::utils::{SignalBuffer, ErrorSignalBuffer};
+use layer::utils::prelude::*;
 use utils::{LearnRate, LearnMomentum};
 
 pub(crate) trait ProcessInputSignal {
-	fn process_input_signal(&mut self, signal: &SignalBuffer);
+	fn process_input_signal(&mut self, signal: BiasedSignalView);
 }
 
 pub(crate) trait HasOutputSignal {
-	fn output_signal(&self) -> &SignalBuffer;
-	fn output_signal_mut(&mut self) -> &mut SignalBuffer;
+	fn output_signal(&self) -> BiasedSignalView;
+	fn output_signal_mut(&mut self) -> BiasedSignalViewMut;
 }
 
 pub(crate) trait CalculateOutputErrorSignal {
-	fn calculate_output_error_signal(&mut self, target_signals: &SignalBuffer);
+	fn calculate_output_error_signal(&mut self, target_signals: UnbiasedSignalView);
 }
 
 pub(crate) trait HasErrorSignal {
-	fn error_signal(&self) -> &ErrorSignalBuffer;
-	fn error_signal_mut(&mut self) -> &mut ErrorSignalBuffer;
+	fn error_signal(&self) -> BiasedErrorSignalView;
+	fn error_signal_mut(&mut self) -> BiasedErrorSignalViewMut;
 }
 
 pub(crate) trait PropagateErrorSignal {
@@ -25,7 +25,7 @@ pub(crate) trait PropagateErrorSignal {
 }
 
 pub(crate) trait ApplyErrorSignalCorrection {
-	fn apply_error_signal_correction(&mut self, signal: &SignalBuffer, lr: LearnRate, lm: LearnMomentum);
+	fn apply_error_signal_correction(&mut self, signal: BiasedSignalView, lr: LearnRate, lm: LearnMomentum);
 }
 
 pub(crate) trait SizedLayer {

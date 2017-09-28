@@ -1,5 +1,5 @@
 use layer::{ActivationLayer, FullyConnectedLayer, ContainerLayer};
-use layer::utils::{SignalBuffer, ErrorSignalBuffer};
+use layer::utils::prelude::*;
 use layer::traits::prelude::*;
 use utils::{LearnRate, LearnMomentum};
 
@@ -30,7 +30,7 @@ impl From<ContainerLayer> for Layer {
 }
 
 impl ProcessInputSignal for Layer {
-	fn process_input_signal(&mut self, input_signal: &SignalBuffer) {
+	fn process_input_signal(&mut self, input_signal: BiasedSignalView) {
 		match *self {
 			Activation(ref mut layer) => layer.process_input_signal(input_signal),
 			FullyConnected(ref mut layer) => layer.process_input_signal(input_signal),
@@ -40,7 +40,7 @@ impl ProcessInputSignal for Layer {
 }
 
 impl CalculateOutputErrorSignal for Layer {
-	fn calculate_output_error_signal(&mut self, target_signals: &SignalBuffer) {
+	fn calculate_output_error_signal(&mut self, target_signals: UnbiasedSignalView) {
 		match *self {
 			Activation(ref mut layer) => layer.calculate_output_error_signal(target_signals),
 			FullyConnected(ref mut layer) => layer.calculate_output_error_signal(target_signals),
@@ -62,7 +62,7 @@ impl PropagateErrorSignal for Layer {
 }
 
 impl ApplyErrorSignalCorrection for Layer {
-	fn apply_error_signal_correction(&mut self, signal: &SignalBuffer, lr: LearnRate, lm: LearnMomentum) {
+	fn apply_error_signal_correction(&mut self, signal: BiasedSignalView, lr: LearnRate, lm: LearnMomentum) {
 		match *self {
 			Activation(ref mut layer) => layer.apply_error_signal_correction(signal, lr, lm),
 			FullyConnected(ref mut layer) => layer.apply_error_signal_correction(signal, lr, lm),
@@ -72,7 +72,7 @@ impl ApplyErrorSignalCorrection for Layer {
 }
 
 impl HasOutputSignal for Layer {
-	fn output_signal(&self) -> &SignalBuffer {
+	fn output_signal(&self) -> BiasedSignalView {
 		match *self {
 			Activation(ref layer) => layer.output_signal(),
 			FullyConnected(ref layer) => layer.output_signal(),
@@ -80,7 +80,7 @@ impl HasOutputSignal for Layer {
 		}
 	}
 
-	fn output_signal_mut(&mut self) -> &mut SignalBuffer {
+	fn output_signal_mut(&mut self) -> BiasedSignalViewMut {
 		match *self {
 			Activation(ref mut layer) => layer.output_signal_mut(),
 			FullyConnected(ref mut layer) => layer.output_signal_mut(),
@@ -90,7 +90,7 @@ impl HasOutputSignal for Layer {
 }
 
 impl HasErrorSignal for Layer {
-	fn error_signal(&self) -> &ErrorSignalBuffer {
+	fn error_signal(&self) -> BiasedErrorSignalView {
 		match *self {
 			Activation(ref layer) => layer.error_signal(),
 			FullyConnected(ref layer) => layer.error_signal(),
@@ -98,7 +98,7 @@ impl HasErrorSignal for Layer {
 		}
 	}
 
-	fn error_signal_mut(&mut self) -> &mut ErrorSignalBuffer {
+	fn error_signal_mut(&mut self) -> BiasedErrorSignalViewMut {
 		match *self {
 			Activation(ref mut layer) => layer.error_signal_mut(),
 			FullyConnected(ref mut layer) => layer.error_signal_mut(),

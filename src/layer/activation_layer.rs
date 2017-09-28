@@ -1,4 +1,4 @@
-use layer::utils::{SignalBuffer, ErrorSignalBuffer};
+use layer::utils::prelude::*;
 use layer::traits::prelude::*;
 use utils::{LearnRate, LearnMomentum};
 use errors::{Result};
@@ -14,14 +14,14 @@ pub struct ActivationLayer {
 	/// Maybe this situation could be improved in the future by using references
 	/// or shared ownership of the input with the previous layer ... but then again
 	/// we had to know our previous layer.
-	inputs: SignalBuffer,
+	inputs: BiasedSignalBuffer,
 	/// The outputs of this activation layer.
 	/// 
 	/// This is basically equivalent to the input transformed with the activation
 	/// of this layer.
-	outputs: SignalBuffer,
+	outputs: BiasedSignalBuffer,
 	/// The buffer for the back propagated error signal.
-	error_signal: ErrorSignalBuffer,
+	error_signal: BiasedErrorSignalBuffer,
 	/// The activation function of this `ActivationLayer`.
 	act: Activation
 }
@@ -32,25 +32,25 @@ impl ActivationLayer {
 	/// an activation function.
 	pub fn with_activation(len: usize, act: Activation) -> Result<Self> {
 		Ok(ActivationLayer{
-			inputs      : SignalBuffer::zeros(len)?,
-			outputs     : SignalBuffer::zeros(len)?,
-			error_signal: ErrorSignalBuffer::zeros(len)?,
+			inputs      : BiasedSignalBuffer::zeros_with_bias(len)?,
+			outputs     : BiasedSignalBuffer::zeros_with_bias(len)?,
+			error_signal: BiasedErrorSignalBuffer::zeros_with_bias(len)?,
 			act
 		})
 	}
 }
 
 impl ProcessInputSignal for ActivationLayer {
-	fn process_input_signal(&mut self, input_signal: &SignalBuffer) {
+	fn process_input_signal(&mut self, input_signal: BiasedSignalView) {
 		if self.inputs() != input_signal.len() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
 		}
 		let act = self.act; // Required since borrow-checker doesn't allow
 		                    // using `self.act` within method-call context.
 		use ndarray::Zip;
-		Zip::from(&mut self.inputs.view_mut())
-			.and(&mut self.outputs.view_mut())
-			.and(&input_signal.view())
+		Zip::from(&mut self.inputs.unbias_mut().data_mut())
+			.and(&mut self.outputs.unbias_mut().data_mut())
+			.and(&input_signal.unbias().data())
 			.apply(|s_i, s_o, &p_i| {
 				*s_i = p_i; // Note: Required for correct back propagation!
 				*s_o = act.base(p_i);
@@ -59,7 +59,7 @@ impl ProcessInputSignal for ActivationLayer {
 }
 
 impl CalculateOutputErrorSignal for ActivationLayer {
-	fn calculate_output_error_signal(&mut self, target_signals: &SignalBuffer) {
+	fn calculate_output_error_signal(&mut self, target_signals: UnbiasedSignalView) {
 		if self.outputs() != target_signals.len() {
 			// Note: Target signals do not respect bias values.
 			//       We could model this in a way that `target_signals` are simply one element shorter.
@@ -68,9 +68,9 @@ impl CalculateOutputErrorSignal for ActivationLayer {
 			panic!("Error: unmatching length of output signal and target signal") // TODO: Replace this with error.
 		}
 		use ndarray::Zip;
-		Zip::from(&mut self.error_signal.view_mut())
-			.and(&self.outputs.view())
-			.and(&target_signals.view())
+		Zip::from(&mut self.error_signal.unbias_mut().data_mut())
+			.and(&self.outputs.unbias().data())
+			.and(&target_signals.data())
 			.apply(|e, &o, &t| {
 				*e = t - o
 			}
@@ -89,9 +89,9 @@ impl PropagateErrorSignal for ActivationLayer {
 		let act = self.act;
 		// Calculate the gradients and multiply them to the current
 		// error signal and propagate the result to the next layer.
-		Zip::from(&mut propagated.error_signal_mut().biased_view_mut())
-			.and(&self.inputs.biased_view())
-			.and(&self.error_signal.biased_view())
+		Zip::from(&mut propagated.error_signal_mut().data_mut())
+			.and(&self.inputs.data())
+			.and(&self.error_signal.data())
 			.apply(|o_e, &s_n, &s_e| {
 				*o_e += s_e * act.derived(s_n)
 			});
@@ -105,28 +105,28 @@ impl PropagateErrorSignal for ActivationLayer {
 }
 
 impl ApplyErrorSignalCorrection for ActivationLayer {
-	fn apply_error_signal_correction(&mut self, _signal: &SignalBuffer, _lr: LearnRate, _lm: LearnMomentum) {
+	fn apply_error_signal_correction(&mut self, _signal: BiasedSignalView, _lr: LearnRate, _lm: LearnMomentum) {
 		// Nothing to do here since there are no weights that could be updated!
 	}
 }
 
 impl HasOutputSignal for ActivationLayer {
-	fn output_signal(&self) -> &SignalBuffer {
-		&self.outputs
+	fn output_signal(&self) -> BiasedSignalView {
+		self.outputs.view()
 	}
 
-	fn output_signal_mut(&mut self) -> &mut SignalBuffer {
-		&mut self.outputs
+	fn output_signal_mut(&mut self) -> BiasedSignalViewMut {
+		self.outputs.view_mut()
 	}
 }
 
 impl HasErrorSignal for ActivationLayer {
-	fn error_signal(&self) -> &ErrorSignalBuffer {
-		&self.error_signal
+	fn error_signal(&self) -> BiasedErrorSignalView {
+		self.error_signal.view()
 	}
 
-	fn error_signal_mut(&mut self) -> &mut ErrorSignalBuffer {
-		&mut self.error_signal
+	fn error_signal_mut(&mut self) -> BiasedErrorSignalViewMut {
+		self.error_signal.view_mut()
 	}
 }
 
