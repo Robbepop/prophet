@@ -5,20 +5,17 @@ use errors::{Error, Result};
 
 use std::marker::PhantomData;
 
-use std::fmt::Debug;
-use ndarray::{Data, DataMut, ViewRepr, OwnedRepr};
-
 #[derive(Debug, PartialEq)]
 pub(crate) struct BufferBase<D, B>
-	where D: Data<Elem = f32>
+	where D: ndarray::Data<Elem = f32>
 {
 	data: ArrayBase<D, Ix1>,
 	marker: PhantomData<B>
 }
 
-pub(crate) type BufferView<'a, B> = BufferBase<ViewRepr<&'a f32>, B>;
-pub(crate) type BufferViewMut<'a, B> = BufferBase<ViewRepr<&'a mut f32>, B>;
-pub(crate) type Buffer<B> = BufferBase<OwnedRepr<f32>, B>;
+pub(crate) type BufferView<'a, B> = BufferBase<ndarray::ViewRepr<&'a f32>, B>;
+pub(crate) type BufferViewMut<'a, B> = BufferBase<ndarray::ViewRepr<&'a mut f32>, B>;
+pub(crate) type Buffer<B> = BufferBase<ndarray::OwnedRepr<f32>, B>;
 
 mod marker {
 	pub(crate) trait Biased {
@@ -140,7 +137,7 @@ impl<B> Buffer<B>
 }
 
 impl<D, B> BufferBase<D, B>
-	where D: Data<Elem = f32>
+	where D: ndarray::Data<Elem = f32>
 {
 	#[inline]
 	pub fn len(&self) -> usize {
@@ -167,7 +164,7 @@ impl<D, B> BufferBase<D, B>
 }
 
 impl<D, B> BufferBase<D, B>
-	where D: Data<Elem = f32>,
+	where D: ndarray::Data<Elem = f32>,
 	      B: marker::Biased
 {
 	#[inline]
@@ -180,7 +177,7 @@ impl<D, B> BufferBase<D, B>
 }
 
 impl<D, B> BufferBase<D, B>
-	where D: DataMut<Elem = f32>
+	where D: ndarray::DataMut<Elem = f32>
 {
 	#[inline]
 	pub fn view_mut(&mut self) -> BufferViewMut<B> {
@@ -202,7 +199,7 @@ impl<D, B> BufferBase<D, B>
 }
 
 impl<D, B> BufferBase<D, B>
-	where D: DataMut<Elem = f32>,
+	where D: ndarray::DataMut<Elem = f32>,
 	      B: marker::Biased
 {
 	#[inline]
@@ -215,7 +212,7 @@ impl<D, B> BufferBase<D, B>
 }
 
 impl<'a, D, B> IntoIterator for &'a BufferBase<D, B>
-	where D: Data<Elem = f32>
+	where D: ndarray::Data<Elem = f32>
 {
 	type Item = &'a D::Elem;
 	type IntoIter = Iter<'a>;
@@ -227,7 +224,7 @@ impl<'a, D, B> IntoIterator for &'a BufferBase<D, B>
 }
 
 impl<'a, D, B> IntoIterator for &'a mut BufferBase<D, B>
-	where D: DataMut<Elem = f32>
+	where D: ndarray::DataMut<Elem = f32>
 {
 	type Item = &'a mut D::Elem;
 	type IntoIter = IterMut<'a>;
