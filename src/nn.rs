@@ -2,6 +2,10 @@ use ndarray::ArrayView1;
 
 use traits::prelude::*;
 use layer::utils::prelude::*;
+use layer::{
+	HasOutputSignal,
+	ProcessInputSignal
+};
 use layer::{ContainerLayer};
 use utils::{LearnRate, LearnMomentum};
 
@@ -15,8 +19,12 @@ impl<'a, I> Predict<I> for NeuralNet
 	where I: Into<UnbiasedSignalView<'a>>
 {
 	/// Implementation for inputs that do not respect a bias value.
-	fn predict(&mut self, _input: I) -> ArrayView1<f32> {
-		unimplemented!()
+	fn predict(&mut self, input: I) -> ArrayView1<f32> {
+		// let input = input.into();
+		// self.input.unbias_mut().assign(&input);
+		// self.layers.process_input_signal(self.input.view());
+		// self.layers.output_signal().unbias().data()
+		unimplemented!() // TODO: Debug above code.
 	}
 }
 
