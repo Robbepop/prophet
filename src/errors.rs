@@ -54,7 +54,23 @@ pub enum ErrorKind {
 	UnmatchingBufferSizes{
 		lhs_size: usize,
 		rhs_size: usize
+	},
+
+	/// Occures when trying to create a `SampleCollection` from an empty set of samples.
+	EmptySampleCollection,
+
+	/// Occures when trying to create a `SampleCollection` from a set of samples with unmatching input lengths.
+	UnmatchingSampleInputLength{
+		required_len: usize,
+		actual_len: usize
+	},
+
+	/// Occures when trying to create a `SampleCollection` from a set of samples with unmatching input lengths.
+	UnmatchingSampleExpectedLength{
+		required_len: usize,
+		actual_len: usize
 	}
+
 }
 
 /// The error class used in `Prophet`.
@@ -234,6 +250,34 @@ impl Error {
 			annotation: None
 		}
 	}
+
+	/// Creates a new `EmptySampleCollection` error.
+	pub(crate) fn empty_sample_collection() -> Error {
+		Error{
+			kind: ErrorKind::EmptySampleCollection,
+			message: format!("Tried to create a SampleCollection from an empty set of samples!"),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `UnmatchingSampleInputLength` error.
+	pub(crate) fn unmatching_sample_input_len(required_len: usize, actual_len: usize) -> Error {
+		Error{
+			kind: ErrorKind::UnmatchingSampleInputLength{required_len, actual_len},
+			message: format!("Tried to create a SampleCollection from an set of samples with unmatching input lengths!"),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `UnmatchingSampleExpectedLength` error.
+	pub(crate) fn unmatching_sample_expected_len(required_len: usize, actual_len: usize) -> Error {
+		Error{
+			kind: ErrorKind::UnmatchingSampleExpectedLength{required_len, actual_len},
+			message: format!("Tried to create a SampleCollection from an set of samples with unmatching expected lengths!"),
+			annotation: None
+		}
+	}
+
 }
 
 impl<T> Into<Result<T>> for Error {
