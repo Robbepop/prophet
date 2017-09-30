@@ -28,6 +28,35 @@ pub(crate) trait UpdateWeights {
 	fn update_weights(&mut self, rate: LearnRate, momentum: LearnMomentum);
 }
 
+use layer::utils::{UnbiasedSignalView};
+
+pub(crate) trait PredictWithTarget<'i, 'e, I, E>
+	where I: Into<UnbiasedSignalView<'i>>,
+	      E: Into<UnbiasedSignalView<'e>>,
+	      Self: Sized
+{
+	fn predict_with_target<'nn>(&'nn mut self, _input: I, _expected: E) -> ReadyToOptimizePredict<'nn, 'i, 'e, I, E, Self> {
+		unimplemented!()
+	}
+}
+
+use std::marker::PhantomData;
+
+pub(crate) struct ReadyToOptimizePredict<'nn, 'i, 'e, I: 'i, E: 'e, NN: 'nn>
+	where NN: PredictWithTarget<'i, 'e, I, E>,
+	      I : Into<UnbiasedSignalView<'i>>,
+	      E : Into<UnbiasedSignalView<'e>>
+{
+	nn: &'nn mut NN,
+	marker: PhantomData<(&'i I, &'e E)>
+}
+
+pub(crate) trait OptimizePredict {
+	fn optimize_predict(&mut self, _lr: LearnRate, _lm: LearnMomentum) {
+		unimplemented!()
+	}
+}
+
 pub mod prelude {
 	#[doc(no_inline)]
 	pub use super::Predict;
