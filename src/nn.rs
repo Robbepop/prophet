@@ -15,16 +15,21 @@ struct NeuralNet {
 	layers: ContainerLayer
 }
 
+impl NeuralNet {
+	fn get_layers(&self) -> &ContainerLayer {
+		&self.layers
+	}
+}
+
 impl<'a, I> Predict<I> for NeuralNet
 	where I: Into<UnbiasedSignalView<'a>>
 {
 	/// Implementation for inputs that do not respect a bias value.
 	fn predict(&mut self, input: I) -> ArrayView1<f32> {
-		// let input = input.into();
-		// self.input.unbias_mut().assign(&input);
-		// self.layers.process_input_signal(self.input.view());
-		// self.layers.output_signal().unbias().data()
-		unimplemented!() // TODO: Debug above code.
+		let input = input.into();
+		self.input.unbias_mut().assign(&input).unwrap(); // TODO: do proper error handling
+		self.layers.process_input_signal(self.input.view());
+		self.get_layers().output_signal().unbias().data()
 	}
 }
 
