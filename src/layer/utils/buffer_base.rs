@@ -23,7 +23,9 @@ pub(crate) type BufferViewMut<'a, B> = BufferBase<ViewMutRepr<'a>, B>;
 pub(crate) type Buffer<B> = BufferBase<OwnedRepr, B>;
 
 mod marker {
-	pub(crate) trait Marker: Copy + Clone + PartialEq {}
+	use std::hash::Hash;
+
+	pub(crate) trait Marker: Copy + Clone + PartialEq + Hash {}
 
 	pub(crate) trait Biased: Marker {
 		type Unbiased: Marker;
@@ -33,16 +35,16 @@ mod marker {
 
 	pub(crate) trait ErrorSignal: Marker {}
 
-	#[derive(Debug, Copy, Clone, PartialEq)]
+	#[derive(Debug, Copy, Clone, PartialEq, Hash)]
 	pub struct BiasedSignal;
 
-	#[derive(Debug, Copy, Clone, PartialEq)]
+	#[derive(Debug, Copy, Clone, PartialEq, Hash)]
 	pub struct UnbiasedSignal;
 
-	#[derive(Debug, Copy, Clone, PartialEq)]
+	#[derive(Debug, Copy, Clone, PartialEq, Hash)]
 	pub struct BiasedErrorSignal;
 
-	#[derive(Debug, Copy, Clone, PartialEq)]
+	#[derive(Debug, Copy, Clone, PartialEq, Hash)]
 	pub struct UnbiasedErrorSignal;
 
 	impl Biased for BiasedSignal {
@@ -105,15 +107,15 @@ impl<B> Clone for Buffer<B>
 	}
 }
 
-impl<B> Buffer<B>
-	where B: marker::Marker
+impl<D, B> BufferBase<D, B>
+	where D: ndarray::Data<Elem = f32>,
+	      B: marker::Marker
 {
-	#[inline]
-	pub fn from_raw_parts(data: Array1<f32>) -> Result<Buffer<B>> {
+	pub fn from_raw(data: ArrayBase<D, Ix1>) -> Result<BufferBase<D, B>> {
 		if data.dim() == 0 {
 			return Err(Error::zero_sized_signal_buffer())
 		}
-		Ok(Buffer{data, marker: PhantomData})
+		Ok(BufferBase{data, marker: PhantomData})
 	}
 }
 
