@@ -126,6 +126,7 @@ mod utils;
 pub(crate) mod layer;
 
 mod nn;
+mod sample;
 
 pub mod topology;
 pub mod topology_new;
