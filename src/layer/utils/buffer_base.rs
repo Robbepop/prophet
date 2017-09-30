@@ -205,38 +205,37 @@ impl<D, B> BufferBase<D, B>
 	}
 
 	#[inline]
+	pub fn data(&self) -> ArrayView1<f32> {
+		self.data.view()
+	}
+
+	#[inline]
 	pub fn iter(&self) -> Iter {
 		self.data.iter()
 	}
 }
 
-impl<B> BufferBase<OwnedRepr, B>
+impl<'a, B> BufferView<'a, B>
 	where B: marker::Marker
 {
 	#[inline]
-	pub fn data(&self) -> ArrayView1<f32> {
-		self.data.view()
+	pub fn into_data(self) -> ArrayView1<'a, f32> {
+		self.data
 	}
 }
 
-impl<'a, B> BufferBase<ViewRepr<'a>, B>
+impl<'a, B> BufferViewMut<'a, B>
 	where B: marker::Marker
 {
 	#[inline]
-	pub fn data(&self) -> ArrayView1<'a, f32> {
-		unsafe{ // TODO: This entire block is probably a very bad idea.
-		        //       However, things seem to work now as intended.
-		        //       This should be replaced by some proper and safe technique asap.
-		        //       Also I should be punished for it ...
-			let v: ArrayView1<f32> = self.data.view();
-			use std::mem;
-			mem::transmute::<ArrayView1<f32>, ArrayView1<'a, f32>>(v)
-		}
+	pub fn into_data_mut(self) -> ArrayViewMut1<'a, f32> {
+		self.data
 	}
 }
 
-impl<B> BufferBase<OwnedRepr, B>
-	where B: marker::Biased
+impl<D, B> BufferBase<D, B>
+	where D: ndarray::Data<Elem = f32>,
+	      B: marker::Biased,
 {
 	#[inline]
 	pub fn unbias(&self) -> BufferView<B::Unbiased> {
@@ -247,37 +246,16 @@ impl<B> BufferBase<OwnedRepr, B>
 	}
 }
 
-impl<'a, B> BufferBase<ViewRepr<'a>, B>
+impl<'a, B> BufferView<'a, B>
 	where B: marker::Biased
 {
 	#[inline]
-	pub fn unbias(&self) -> BufferView<'a, B::Unbiased> {
-		BufferView{
-			data: unsafe{ // TODO: This entire block is probably a very bad idea.
-			              //       However, things seem to work now as intended.
-			              //       This should be replaced by some proper and safe technique asap.
-			              //       Also I should be punished for it ...
-				let v = self.data.slice(s![..-1]);
-				use std::mem;
-				mem::transmute::<ArrayView1<f32>, ArrayView1<'a, f32>>(v)
-			},
-			marker: PhantomData
-		}
+	pub fn into_unbiased(self) -> BufferView<'a, B::Unbiased> {
+		let mut data = self.data;
+		data.islice(s![..-1]);
+		BufferView{data, marker: PhantomData}
 	}
 }
-
-// impl<D, B> BufferBase<D, B>
-// 	where D: ndarray::Data<Elem = f32>,
-// 	      B: marker::Biased,
-// {
-// 	#[inline]
-// 	pub fn unbias(&self) -> BufferView<B::Unbiased> {
-// 		BufferView{
-// 			data: self.data.slice(s![..-1]),
-// 			marker: PhantomData
-// 		}
-// 	}
-// }
 
 impl<D, B> BufferBase<D, B>
 	where D: ndarray::DataMut<Elem = f32>,

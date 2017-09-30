@@ -29,7 +29,7 @@ impl<'a, I> Predict<I> for NeuralNet
 		let input = input.into();
 		self.input.unbias_mut().assign(&input).unwrap(); // TODO: do proper error handling
 		self.layers.process_input_signal(self.input.view());
-		self.get_layers().output_signal().unbias().data()
+		self.get_layers().output_signal().into_unbiased().into_data()
 	}
 }
 
