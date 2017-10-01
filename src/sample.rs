@@ -160,12 +160,16 @@ struct RandomSampleScheduler{
 }
 
 impl RandomSampleScheduler {
+	/// Creates a new `RandomSampleScheduler` from the given `SampleCollection`.
 	pub fn new(samples: SampleCollection) -> RandomSampleScheduler {
 		RandomSampleScheduler{samples, rng: rand::weak_rng()}
 	}
 
-	// TODO
-	// rng.choose(choices) method: https://docs.rs/rand/0.3.16/rand/trait.Rng.html#method.choose
+	/// Returns a reference to the next randomly scheduled `Sample`.
+	fn next_sample(&mut self) -> &Sample {
+		use rand::Rng;
+		self.rng.choose(self.samples.as_slice()).unwrap()
+	}
 }
 
 /// Creates a new `SampleCollection`.
