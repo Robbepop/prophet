@@ -92,7 +92,7 @@ impl SampleCollection {
 				if sample.input().len() != input_len {
 					return Err(Error::unmatching_sample_input_len(input_len, sample.input().len()))
 				}
-				if sample.expected().len() == expected_len {
+				if sample.expected().len() != expected_len {
 					return Err(Error::unmatching_sample_expected_len(input_len, sample.input().len()))
 				}
 			}
@@ -400,23 +400,25 @@ mod tests {
 		use super::*;
 
 		#[test]
-		fn create() {
-			assert!(false);
-		}
-
-		#[test]
 		fn next_sample() {
-			assert!(false);
+			use sample::SampleScheduler;
+			let samples = samples![
+				[1.0, 2.0] => 3.0,
+				[42.0, 1337.0] => 0.0,
+				[10.0, 1.0] => 0.1
+			].unwrap();
+			let mut scheduler = SequentialSampleScheduler::new(samples.clone());
+			assert_eq!(*scheduler.next_sample(), samples.as_slice()[0]);
+			assert_eq!(*scheduler.next_sample(), samples.as_slice()[1]);
+			assert_eq!(*scheduler.next_sample(), samples.as_slice()[2]);
+			assert_eq!(*scheduler.next_sample(), samples.as_slice()[0]);
+			assert_eq!(*scheduler.next_sample(), samples.as_slice()[1]);
+			assert_eq!(*scheduler.next_sample(), samples.as_slice()[2]);
 		}
 	}
 
 	mod rand_scheduler {
 		use super::*;
-
-		#[test]
-		fn create() {
-			assert!(false);
-		}
 
 		#[test]
 		fn next_sample() {
