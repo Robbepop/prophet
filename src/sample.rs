@@ -37,8 +37,8 @@ impl Sample {
 		where I: Into<Array1<f32>>,
 		      E: Into<Array1<f32>>
 	{
-		let input = UnbiasedSignalBuffer::from_raw(input.into())?;
-		let expected = UnbiasedSignalBuffer::from_raw(expected.into())?;
+		let input = UnbiasedSignalBuffer::from_raw(input.into())?; // TODO: add annotation to error
+		let expected = UnbiasedSignalBuffer::from_raw(expected.into())?; // TODO: add annotation to error
 		Ok(Sample{input, expected})
 	}
 }
@@ -294,27 +294,51 @@ mod tests {
 
 		#[test]
 		fn create() {
-			assert!(false);
+			let sample = Sample::new(
+				vec![1.0, 2.0, 3.0],
+				vec![10.0, 11.0]
+			);
+			let expected = Ok(Sample{
+				input: UnbiasedSignalBuffer::from_raw(
+					Array::from_vec(vec![1.0, 2.0, 3.0])).unwrap(),
+				expected: UnbiasedSignalBuffer::from_raw(
+					Array::from_vec(vec![10.0, 11.0])).unwrap()
+			});
+			assert_eq!(sample, expected);
 		}
 
 		#[test]
 		fn empty_input() {
-			assert!(false);
+			let sample = Sample::new(vec![], vec![42.0]);
+			let expected = Err(Error::zero_sized_signal_buffer());
+			assert_eq!(sample, expected);
 		}
 
 		#[test]
 		fn empty_expected() {
-			assert!(false);
+			let sample = Sample::new(vec![1337.0], vec![]);
+			let expected = Err(Error::zero_sized_signal_buffer());
+			assert_eq!(sample, expected);
 		}
 
 		#[test]
 		fn input() {
-			assert!(false);
+			let sample = Sample::new(
+				vec![1.0, 2.0, 3.0],
+				vec![10.0, 11.0]
+			).unwrap();
+			let expected_input = Array::from_vec(vec![1.0, 2.0, 3.0]);
+			assert!(sample.input().data().all_close(&expected_input, 0.0));
 		}
 
 		#[test]
 		fn expected() {
-			assert!(false);
+			let sample = Sample::new(
+				vec![1.0, 2.0, 3.0],
+				vec![10.0, 11.0]
+			).unwrap();
+			let expected_expected = Array::from_vec(vec![10.0, 11.0]);
+			assert!(sample.expected().data().all_close(&expected_expected, 0.0));
 		}
 	}
 
