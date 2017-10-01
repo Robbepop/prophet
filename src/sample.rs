@@ -27,6 +27,12 @@ pub struct Sample {
 }
 
 impl Sample {
+	/// Creates a new `Sample` suitable for supervised learning purposes
+	/// from the given input singal and expected result signal.
+	/// 
+	/// # Errors
+	/// 
+	/// When the given signals are invalid, e.g. empty.
 	pub fn new<I, E>(input: I, expected: E) -> Result<Sample>
 		where I: Into<Array1<f32>>,
 		      E: Into<Array1<f32>>
@@ -282,6 +288,117 @@ macro_rules! samples {
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	mod sample {
+		use super::*;
+
+		#[test]
+		fn create() {
+			assert!(false);
+		}
+
+		#[test]
+		fn empty_input() {
+			assert!(false);
+		}
+
+		#[test]
+		fn empty_expected() {
+			assert!(false);
+		}
+
+		#[test]
+		fn input() {
+			assert!(false);
+		}
+
+		#[test]
+		fn expected() {
+			assert!(false);
+		}
+	}
+
+	mod sample_collection {
+		use super::*;
+
+		#[test]
+		fn create_ok() {
+			assert!(false);
+		}
+
+		#[test]
+		fn create_empty() {
+			assert!(false);
+		}
+
+		#[test]
+		fn create_unmatching_input() {
+			assert!(false);
+		}
+
+		#[test]
+		fn create_unmatching_expected() {
+			assert!(false);
+		}
+
+		#[test]
+		fn create_unmatching_both() {
+			assert!(false);
+		}
+
+		#[test]
+		fn insert() {
+			assert!(false);
+		}
+
+		#[test]
+		fn len() {
+			assert!(false);
+		}
+
+		#[test]
+		fn is_empty() {
+			assert!(false);
+		}
+
+		#[test]
+		fn input_len() {
+			assert!(false);
+		}
+
+		#[test]
+		fn expected_len() {
+			assert!(false);
+		}
+	}
+
+	mod seq_scheduler {
+		use super::*;
+
+		#[test]
+		fn create() {
+			assert!(false);
+		}
+
+		#[test]
+		fn next_sample() {
+			assert!(false);
+		}
+	}
+
+	mod rand_scheduler {
+		use super::*;
+
+		#[test]
+		fn create() {
+			assert!(false);
+		}
+
+		#[test]
+		fn next_sample() {
+			assert!(false);
+		}
+	}
 
 	mod samples_macro {
 		use super::*;
