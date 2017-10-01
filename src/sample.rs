@@ -281,16 +281,65 @@ macro_rules! samples {
 mod tests {
 	use super::*;
 
-	#[test]
-	fn sample_and_vec_equal() {
-		let expansion = samples![
-			[1.0, 2.0] => [3.0],
-			[4.0, 5.0] => [5.0]
-		];
-		let expected = SampleCollection::from_iter(vec![
-			Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
-			Sample::new(vec![4.0, 5.0], vec![5.0]).unwrap(),
-		].into_iter());
-		assert_eq!(expansion, expected);
+	mod samples_macro {
+		use super::*;
+
+		#[test]
+		fn sample_and_vec_equal() {
+			let expansion = samples![
+				[1.0, 2.0] => [3.0],
+				[4.0, 5.0] => [5.0]
+			];
+			let expected = SampleCollection::from_iter(vec![
+				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
+				Sample::new(vec![4.0, 5.0], vec![5.0]).unwrap(),
+			].into_iter());
+			assert_eq!(expansion, expected);
+		}
+
+		#[test]
+		fn missing_right_brackets() {
+			let with_rbrackets = samples![
+				[1.0, 2.0] => [3.0],
+				[4.0, 5.0] => [5.0],
+				[6.0, 7.0] => [8.0]
+			];
+			let without_rbrackets = samples![
+				[1.0, 2.0] => 3.0,
+				[4.0, 5.0] => 5.0,
+				[6.0, 7.0] => 8.0
+			];
+			assert_eq!(with_rbrackets, without_rbrackets);
+		}
+
+		#[test]
+		fn missing_left_brackets() {
+			let with_lbrackets = samples![
+				[1.0] => [2.0, 3.0],
+				[4.0] => [5.0, 6.0],
+				[7.0] => [8.0, 9.0]
+			];
+			let without_lbrackets = samples![
+				1.0 => [2.0, 3.0],
+				4.0 => [5.0, 6.0],
+				7.0 => [8.0, 9.0]
+			];
+			assert_eq!(with_lbrackets, without_lbrackets);
+		}
+
+		#[test]
+		fn missing_both_brackets() {
+			let with_brackets = samples![
+				[1.0] => [2.0],
+				[3.0] => [4.0],
+				[5.0] => [6.0]
+			];
+			let without_brackets = samples![
+				1.0 => 2.0,
+				3.0 => 4.0,
+				5.0 => 6.0
+			];
+			assert_eq!(with_brackets, without_brackets);
+		}
 	}
 }
