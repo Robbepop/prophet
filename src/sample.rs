@@ -293,7 +293,7 @@ mod tests {
 		use super::*;
 
 		#[test]
-		fn create() {
+		fn create_ok() {
 			let sample = Sample::new(
 				vec![1.0, 2.0, 3.0],
 				vec![10.0, 11.0]
@@ -308,14 +308,14 @@ mod tests {
 		}
 
 		#[test]
-		fn empty_input() {
+		fn create_empty_input() {
 			let sample = Sample::new(vec![], vec![42.0]);
 			let expected = Err(Error::zero_sized_signal_buffer());
 			assert_eq!(sample, expected);
 		}
 
 		#[test]
-		fn empty_expected() {
+		fn create_empty_expected() {
 			let sample = Sample::new(vec![1337.0], vec![]);
 			let expected = Err(Error::zero_sized_signal_buffer());
 			assert_eq!(sample, expected);
@@ -422,7 +422,17 @@ mod tests {
 
 		#[test]
 		fn next_sample() {
-			assert!(false);
+			use sample::SampleScheduler;
+			let samples = samples![
+				[1.0, 2.0] => 3.0,
+				[42.0, 1337.0] => 0.0,
+				[10.0, 1.0] => 0.1
+			].unwrap();
+			let mut scheduler = RandomSampleScheduler::new(samples.clone());
+			assert!(samples.as_slice().contains(scheduler.next_sample()));
+			assert!(samples.as_slice().contains(scheduler.next_sample()));
+			assert!(samples.as_slice().contains(scheduler.next_sample()));
+			assert!(samples.as_slice().contains(scheduler.next_sample()));
 		}
 	}
 
