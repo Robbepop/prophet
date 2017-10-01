@@ -246,7 +246,7 @@ macro_rules! samples {
 				vec![$($i),+],
 				vec![$($e),+]
 			).unwrap()
-		),+].drain())
+		),+].into_iter())
 	};
 
 	[ $( [ $($i:expr),+ ] => $e:expr ),+ ] => {
@@ -255,7 +255,7 @@ macro_rules! samples {
 				vec![$($i),+],
 				vec![$e]
 			).unwrap()
-		),+].drain())
+		),+].into_iter())
 	};
 
 	[ $( $i:expr => [ $($e:expr),+ ] ),+ ] => {
@@ -264,7 +264,7 @@ macro_rules! samples {
 				vec![$i],
 				vec![$($e),+]
 			).unwrap()
-		),+].drain())
+		),+].into_iter())
 	};
 
 	[ $( $i:expr => $e:expr ),+ ] => {
@@ -273,6 +273,24 @@ macro_rules! samples {
 				vec![$i],
 				vec![$e]
 			).unwrap()
-		),+].drain())
+		),+].into_iter())
 	};
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn sample_and_vec_equal() {
+		let expansion = samples![
+			[1.0, 2.0] => [3.0],
+			[4.0, 5.0] => [5.0]
+		];
+		let expected = SampleCollection::from_iter(vec![
+			Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
+			Sample::new(vec![4.0, 5.0], vec![5.0]).unwrap(),
+		].into_iter());
+		assert_eq!(expansion, expected);
+	}
 }
