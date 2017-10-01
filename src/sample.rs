@@ -149,6 +149,7 @@ pub trait SampleScheduler {
 }
 
 /// A `SampleScheduler` that iterates over its finite set of samples in a sequential fashion.
+#[derive(Debug, Clone)]
 struct SequentialSampleScheduler{
 	samples: SampleCollection,
 	current: usize
@@ -172,6 +173,7 @@ impl SampleScheduler for SequentialSampleScheduler {
 }
 
 /// A `SampleScheduler` that iterates over its finite set of samples in a random fashion.
+#[derive(Debug, Clone)]
 struct RandomSampleScheduler{
 	samples: SampleCollection,
 	rng: XorShiftRng
