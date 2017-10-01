@@ -8,11 +8,18 @@ use layer::utils::{
 };
 use errors::{Error, Result};
 
+/// Represents a supervised sample for supervised learning purposes.
+/// 
+/// This requires an `expected` signal associated to ever `input` signal.
 pub(crate) trait SupervisedSample {
+	/// Returns the input signal of this sample.
 	fn input(&self) -> UnbiasedSignalView;
+
+	/// Returns the expected signal of this sample.
 	fn expected(&self) -> UnbiasedSignalView;
 }
 
+/// A `Sample` suitable for supervised learning.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Sample {
 	input: UnbiasedSignalBuffer,
@@ -42,6 +49,12 @@ impl SupervisedSample for Sample {
 	}
 }
 
+/// A `SampleCollection` is, as the name reads, a non-empty collection of samples.
+/// 
+/// Samples within a collection are uniform which means that their input length
+/// and expected length are all equal.
+/// 
+/// `SampleCollection`s are used by `SampleScheduler`s.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SampleCollection{
 	samples: Vec<Sample>
@@ -130,7 +143,10 @@ impl SampleCollection {
 }
 
 /// `SampleScheduler`s simply are non-exhaustive iterators over a set of `Sample`s.
-pub trait SampleScheduler<'a>: Iterator<Item = &'a Sample> {}
+pub trait SampleScheduler {
+	/// Returns the next sample for scheduling.
+	fn next_sample(&mut self) -> &Sample;
+}
 
 /// A `SampleScheduler` that iterates over its finite set of samples in a sequential fashion.
 struct SequentialSampleScheduler{
@@ -143,7 +159,9 @@ impl SequentialSampleScheduler {
 	pub fn new(samples: SampleCollection) -> SequentialSampleScheduler {
 		SequentialSampleScheduler{samples, current: 0}
 	}
+}
 
+impl SampleScheduler for SequentialSampleScheduler {
 	/// Returns a reference to the next sequentially scheduled `Sample`.
 	fn next_sample(&mut self) -> &Sample {
 		let next = &self.samples.as_slice()[self.current];
@@ -164,7 +182,9 @@ impl RandomSampleScheduler {
 	pub fn new(samples: SampleCollection) -> RandomSampleScheduler {
 		RandomSampleScheduler{samples, rng: rand::weak_rng()}
 	}
+}
 
+impl SampleScheduler for RandomSampleScheduler {
 	/// Returns a reference to the next randomly scheduled `Sample`.
 	fn next_sample(&mut self) -> &Sample {
 		use rand::Rng;
