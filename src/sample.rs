@@ -459,12 +459,32 @@ mod tests {
 
 		#[test]
 		fn insert_unmatching_input() {
-			assert!(false)
+			let mut samples = SampleCollection::from_iter(vec![
+				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()
+			].into_iter()).unwrap();
+			assert_eq!(
+				samples.insert(Sample::new(vec![4.0], vec![5.0]).unwrap()),
+				Err(Error::unmatching_sample_input_len(2, 1))
+			);
+			assert_eq!(
+				samples.insert(Sample::new(vec![4.0, 5.0, 6.0], vec![7.0]).unwrap()),
+				Err(Error::unmatching_sample_input_len(2, 3))
+			);
 		}
 
 		#[test]
 		fn insert_unmatching_expected() {
-			assert!(false)
+			let mut samples = SampleCollection::from_iter(vec![
+				Sample::new(vec![1.0], vec![2.0, 3.0]).unwrap()
+			].into_iter()).unwrap();
+			assert_eq!(
+				samples.insert(Sample::new(vec![4.0], vec![5.0]).unwrap()),
+				Err(Error::unmatching_sample_expected_len(2, 1))
+			);
+			assert_eq!(
+				samples.insert(Sample::new(vec![4.0], vec![5.0, 6.0, 7.0]).unwrap()),
+				Err(Error::unmatching_sample_expected_len(2, 3))
+			);
 		}
 
 		#[test]
