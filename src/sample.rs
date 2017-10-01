@@ -238,12 +238,12 @@ impl SampleScheduler for RandomSampleScheduler {
 /// # let t =  1.0;
 /// # let f = -1.0;
 /// # #[allow(unused_variables)]
-/// let samples = vec![
-/// 	Sample::new(vec![f, f], vec![f]),
-/// 	Sample::new(vec![t, f], vec![t]),
-/// 	Sample::new(vec![f, t], vec![t]),
-/// 	Sample::new(vec![t, t], vec![f]),
-/// ];
+/// let samples = SampleCollection::from_iter(vec![
+/// 	Sample::new(vec![f, f], vec![f]).unwrap(),
+/// 	Sample::new(vec![t, f], vec![t]).unwrap(),
+/// 	Sample::new(vec![f, t], vec![t]).unwrap(),
+/// 	Sample::new(vec![t, t], vec![f]).unwrap(),
+/// ].into_iter());
 /// # }
 /// ```
 #[macro_export]
