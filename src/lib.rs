@@ -26,7 +26,7 @@
 //! # fn main() {
 //! let (t, f)  = (1.0, -1.0);
 //! // static samples are easily generated with this macro!
-//! let train_samples = samples![
+//! let train_samples = samples_vec![
 //! 	[f, f] => f, // ⊥ ∧ ⊥ → ⊥
 //! 	[f, t] => t, // ⊥ ∧ ⊤ → ⊤
 //! 	[t, f] => t, // ⊤ ∧ ⊥ → ⊤
@@ -74,7 +74,7 @@
 //! 	.output(1, Tanh)             // and 1 neuron in the output layer
 //!
 //! 	// train it for the given samples
-//! 	.train(samples![
+//! 	.train(samples_vec![
 //! 		[f, f] => f, // ⊥ ∧ ⊥ → ⊥
 //! 		[f, t] => t, // ⊥ ∧ ⊤ → ⊤
 //! 		[t, f] => t, // ⊤ ∧ ⊥ → ⊤
@@ -126,7 +126,7 @@ mod utils;
 pub(crate) mod layer;
 
 mod nn;
-mod sample;
+pub mod sample;
 
 pub mod topology;
 pub mod topology_new;

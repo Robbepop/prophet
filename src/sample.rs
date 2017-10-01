@@ -223,6 +223,7 @@ impl SampleScheduler for RandomSampleScheduler {
 /// # #[macro_use]
 /// # extern crate prophet;
 /// # use prophet::prelude::*;
+/// # use prophet::sample::{Sample, SampleCollection};
 /// # fn main() {
 /// # let t =  1.0;
 /// # let f = -1.0;
@@ -241,6 +242,7 @@ impl SampleScheduler for RandomSampleScheduler {
 /// ```rust,no_run
 /// # extern crate prophet;
 /// # use prophet::prelude::*;
+/// # use prophet::sample::{Sample, SampleCollection};
 /// # fn main() {
 /// # let t =  1.0;
 /// # let f = -1.0;

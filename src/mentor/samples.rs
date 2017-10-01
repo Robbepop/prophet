@@ -94,7 +94,7 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 /// # let t =  1.0;
 /// # let f = -1.0;
 /// # #[allow(unused_variables)]
-/// let samples = samples![
+/// let samples = samples_vec![
 /// 	[f, f] => f,
 /// 	[t, f] => t,
 /// 	[f, t] => t,
@@ -121,7 +121,7 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 /// # }
 /// ```
 #[macro_export]
-macro_rules! samples {
+macro_rules! samples_vec {
 	[ $( [ $($i:expr),+ ] => [ $($e:expr),+ ] ),+ ] => {
 		vec![$(
 			Sample::new(
@@ -251,7 +251,7 @@ mod tests {
 
 	#[test]
 	fn sample_and_vec_equal() {
-		let s1: Vec<Sample> = samples![
+		let s1: Vec<Sample> = samples_vec![
 			[1.0, 2.0] => [3.0],
 			[4.0, 5.0] => [5.0]
 		];
@@ -264,12 +264,12 @@ mod tests {
 
 	#[test]
 	fn missing_right_brackets() {
-		let s1: Vec<Sample> = samples![
+		let s1: Vec<Sample> = samples_vec![
 			[1.0, 2.0] => [3.0],
 			[4.0, 5.0] => [5.0],
 			[6.0, 7.0] => [8.0]
 		];
-		let s2: Vec<Sample> = samples![
+		let s2: Vec<Sample> = samples_vec![
 			[1.0, 2.0] => 3.0,
 			[4.0, 5.0] => 5.0,
 			[6.0, 7.0] => 8.0
@@ -279,12 +279,12 @@ mod tests {
 
 	#[test]
 	fn missing_left_brackets() {
-		let s1: Vec<Sample> = samples![
+		let s1: Vec<Sample> = samples_vec![
 			[1.0] => [2.0, 3.0],
 			[4.0] => [5.0, 6.0],
 			[7.0] => [8.0, 9.0]
 		];
-		let s2: Vec<Sample> = samples![
+		let s2: Vec<Sample> = samples_vec![
 			1.0 => [2.0, 3.0],
 			4.0 => [5.0, 6.0],
 			7.0 => [8.0, 9.0]
@@ -294,12 +294,12 @@ mod tests {
 
 	#[test]
 	fn missing_both_brackets() {
-		let s1: Vec<Sample> = samples![
+		let s1: Vec<Sample> = samples_vec![
 			[1.0] => [2.0],
 			[3.0] => [4.0],
 			[5.0] => [6.0]
 		];
-		let s2: Vec<Sample> = samples![
+		let s2: Vec<Sample> = samples_vec![
 			1.0 => 2.0,
 			3.0 => 4.0,
 			5.0 => 6.0

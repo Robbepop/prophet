@@ -48,7 +48,7 @@ Define your XOR samples with ...
 
 ```rust
 let (t, f) = (1.0, -1.0); // In our samples 1.0 stands for true and -1.0 stands for false.
-let samples = samples![
+let samples = samples_vec![
 	[f, f] => f, // false XOR false <=> false
 	[t, f] => t, // true  XOR false <=> true
 	[f, t] => t, // false XOR true  <=> true

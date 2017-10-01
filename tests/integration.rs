@@ -68,7 +68,7 @@ fn train_xor() {
 	use Activation::Tanh;
 
 	let (t, f) = (1.0, -1.0);
-	let samples = samples![
+	let samples = samples_vec![
 		[f, f] => f,
 		[t, f] => t,
 		[f, t] => t,
@@ -93,7 +93,7 @@ fn train_xor() {
 // 	use Activation::Identity;
 
 // 	// samples to train the net with
-// 	let learn_samples = samples![
+// 	let learn_samples = samples_vec![
 // 		0.0 => 1.0,
 // 		0.2 => 1.0,
 // 		0.4 => 1.0,
@@ -103,7 +103,7 @@ fn train_xor() {
 // 	];
 
 // 	// samples to test the trained net with
-// 	let test_samples = samples![
+// 	let test_samples = samples_vec![
 // 		0.1 => 1.0,
 // 		0.3 => 1.0,
 // 		0.5 => 1.0,
@@ -127,7 +127,7 @@ fn train_and() {
 	use Activation::Tanh;
 
 	let (t, f) = (1.0, -1.0);
-	let samples = samples![
+	let samples = samples_vec![
 		[f, f] => f,
 		[f, t] => f,
 		[t, f] => f,
