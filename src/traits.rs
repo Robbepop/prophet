@@ -28,22 +28,18 @@ pub(crate) trait UpdateWeights {
 	fn update_weights(&mut self, rate: LearnRate, momentum: LearnMomentum);
 }
 
-use layer::utils::{UnbiasedSignalView};
+use sample::SupervisedSample;
 
-pub(crate) trait PredictWithTarget<'i, 'e, I, E>
-	where I: Into<UnbiasedSignalView<'i>>,
-	      E: Into<UnbiasedSignalView<'e>>,
-	      Self: Sized
+pub(crate) trait PredictSupervised<S>
+	where S: SupervisedSample
 {
-	fn predict_with_target<'nn>(&'nn mut self, _input: I, _expected: E) -> ReadyToOptimizePredict<'nn, Self>;
+	type Finalizer: OptimizeSupervised;
+
+	fn predict_supervised(&mut self, sample: &S) -> Self::Finalizer;
 }
 
-pub(crate) struct ReadyToOptimizePredict<'nn, NN: 'nn> {
-	nn: &'nn mut NN
-}
-
-pub(crate) trait OptimizePredict {
-	fn optimize_predict(&mut self, _lr: LearnRate, _lm: LearnMomentum) {
+pub(crate) trait OptimizeSupervised {
+	fn optimize_supervised(&mut self, _lr: LearnRate, _lm: LearnMomentum) {
 		unimplemented!()
 	}
 }
