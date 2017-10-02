@@ -13,7 +13,14 @@ pub struct FullyConnectedLayer {
 }
 
 impl FullyConnectedLayer {
-	pub(crate) fn with_weights(weights: WeightsMatrix) -> Result<Self> {
+	/// Creates a new `FullyConnectedLayer` with the given weights.
+	/// 
+	/// Note: The given weights imply the resulting layer's input and output signal lengths.
+	/// 
+	/// # Errors
+	/// 
+	/// If the implied input and output signals have a length of zero.
+	pub(crate) fn with_weights(weights: WeightsMatrix) -> Result<FullyConnectedLayer> {
 		let (inputs, outputs) = (weights.inputs(), weights.outputs());
 		Ok(FullyConnectedLayer{
 			weights,
@@ -23,18 +30,34 @@ impl FullyConnectedLayer {
 		})
 	}
 
-	pub fn random(inputs: usize, outputs: usize) -> Result<Self> {
+	/// Creates a new `FullyConnectedLayer` with default settings with the given
+	/// lengths for the input and output signals.
+	/// 
+	/// # Errors
+	/// 
+	/// If input or output lengths are zero.
+	pub fn random(inputs: usize, outputs: usize) -> Result<FullyConnectedLayer> {
 		Ok(FullyConnectedLayer::with_weights(
 			WeightsMatrix::random(inputs, outputs)?)?)
+	}
+
+	/// Creates a new `FullyConnectedLayer` from the given topology based abstract fully connected layer.
+	/// 
+	/// # Errors
+	/// 
+	/// If the given topology based abstract fully connected layer is invalid.
+	pub fn from_top_layer(top_layer: topology_v4::FullyConnectedLayer) -> Result<FullyConnectedLayer> {
+		use topology_v4::Layer;
+		FullyConnectedLayer::random(
+			top_layer.input_len().into_usize(), top_layer.input_len().into_usize()
+		)
 	}
 }
 
 impl From<topology_v4::FullyConnectedLayer> for FullyConnectedLayer {
 	fn from(top_layer: topology_v4::FullyConnectedLayer) -> FullyConnectedLayer {
-		use topology_v4::Layer;
-		FullyConnectedLayer::random(
-			top_layer.input_len().into_usize(), top_layer.input_len().into_usize()
-		).expect("Expected a well-formed abstracted topology FullyConnectedLayer.")
+		FullyConnectedLayer::from_top_layer(top_layer)
+			.expect("Expected a well-formed abstracted topology FullyConnectedLayer.")
 	}
 }
 

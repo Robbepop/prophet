@@ -39,14 +39,20 @@ impl ActivationLayer {
 			act
 		})
 	}
+
+	/// Creates a new `ActivationLayer` from the given topology based abstract activation layer.
+	pub fn from_top_layer(top_layer: topology_v4::ActivationLayer) -> Result<ActivationLayer> {
+		use topology_v4::Layer;
+		ActivationLayer::with_activation(
+			top_layer.input_len().into_usize(), top_layer.activation_fn()
+		)
+	}
 }
 
 impl From<topology_v4::ActivationLayer> for ActivationLayer {
 	fn from(top_layer: topology_v4::ActivationLayer) -> ActivationLayer {
-		use topology_v4::Layer;
-		ActivationLayer::with_activation(
-			top_layer.input_len().into_usize(), top_layer.activation_fn()
-		).expect("Expected a well-formed abstracted topology ActivationLayer.")
+		ActivationLayer::from_top_layer(top_layer)
+			.expect("Expected a well-formed abstracted topology ActivationLayer.")
 	}
 }
 
