@@ -2,6 +2,7 @@ use layer::utils::prelude::*;
 use layer::traits::prelude::*;
 use errors::{Result};
 use utils::{LearnRate, LearnMomentum};
+use topology_v4;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FullyConnectedLayer {
@@ -25,6 +26,15 @@ impl FullyConnectedLayer {
 	pub fn random(inputs: usize, outputs: usize) -> Result<Self> {
 		Ok(FullyConnectedLayer::with_weights(
 			WeightsMatrix::random(inputs, outputs)?)?)
+	}
+}
+
+impl From<topology_v4::FullyConnectedLayer> for FullyConnectedLayer {
+	fn from(top_layer: topology_v4::FullyConnectedLayer) -> FullyConnectedLayer {
+		use topology_v4::Layer;
+		FullyConnectedLayer::random(
+			top_layer.input_len().into_usize(), top_layer.input_len().into_usize()
+		).expect("Expected a well-formed abstracted topology FullyConnectedLayer.")
 	}
 }
 

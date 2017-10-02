@@ -2,6 +2,7 @@ use layer::{ActivationLayer, FullyConnectedLayer, ContainerLayer};
 use layer::utils::prelude::*;
 use layer::traits::prelude::*;
 use utils::{LearnRate, LearnMomentum};
+use topology_v4;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Layer {
@@ -26,6 +27,16 @@ impl From<FullyConnectedLayer> for Layer {
 impl From<ContainerLayer> for Layer {
 	fn from(c_layer: ContainerLayer) -> Self {
 		Layer::Container(c_layer)
+	}
+}
+
+impl From<topology_v4::AnyLayer> for Layer {
+	fn from(any_top_layer: topology_v4::AnyLayer) -> Layer {
+		use topology_v4::AnyLayer::*;
+		match any_top_layer {
+			Activation(layer) => ActivationLayer::from(layer).into(),
+			FullyConnected(layer) => FullyConnectedLayer::from(layer).into()
+		}
 	}
 }
 

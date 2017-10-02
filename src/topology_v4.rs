@@ -77,6 +77,11 @@ impl ActivationLayer {
 	{
 		ActivationLayer{size: size.into(), act}
 	}
+
+	/// Returns the activation function of this `ActivationLayer`.
+	pub(crate) fn activation_fn(&self) -> Activation {
+		self.act
+	}
 }
 
 impl Layer for ActivationLayer {

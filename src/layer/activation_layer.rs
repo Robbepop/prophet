@@ -3,6 +3,7 @@ use layer::traits::prelude::*;
 use utils::{LearnRate, LearnMomentum};
 use errors::{Result};
 use activation::Activation;
+use topology_v4;
 
 /// Activation layers simply apply their activation function onto incoming signals.
 #[derive(Debug, Clone, PartialEq)]
@@ -37,6 +38,15 @@ impl ActivationLayer {
 			error_signal: BiasedErrorSignalBuffer::zeros_with_bias(len)?,
 			act
 		})
+	}
+}
+
+impl From<topology_v4::ActivationLayer> for ActivationLayer {
+	fn from(top_layer: topology_v4::ActivationLayer) -> ActivationLayer {
+		use topology_v4::Layer;
+		ActivationLayer::with_activation(
+			top_layer.input_len().into_usize(), top_layer.activation_fn()
+		).expect("Expected a well-formed abstracted topology ActivationLayer.")
 	}
 }
 
