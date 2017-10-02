@@ -272,22 +272,22 @@ impl SampleScheduler for RandomSampleScheduler {
 /// # #[allow(unused_variables)]
 /// let samples_a = samples![
 /// 	[f] => [t],
-/// 	[t] => [f],
+/// 	[t] => [f]
 /// ];
 /// # #[allow(unused_variables)]
 /// let samples_b = samples![
 /// 	f => [t],
-/// 	t => [f],
+/// 	t => [f]
 /// ];
 /// # #[allow(unused_variables)]
 /// let samples_c = samples![
 /// 	[f] => t,
-/// 	[t] => f,
+/// 	[t] => f
 /// ];
 /// # #[allow(unused_variables)]
 /// let samples_d = samples![
 /// 	f => t,
-/// 	t => f,
+/// 	t => f
 /// ];
 /// # }
 /// ```
