@@ -207,7 +207,8 @@ pub struct InitializingTopology {
 	input_len: LayerSize
 }
 
-trait TopologyBuilder {
+/// Types that can build-up topologies for neural networks incrementally.
+pub trait TopologyBuilder {
 	/// The underlying topology builder type.
 	type Builder: TopologyBuilder;
 
