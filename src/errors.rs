@@ -52,7 +52,9 @@ pub enum ErrorKind {
 	/// Occures when doing some generic operation (e.g. assigning) with
 	/// two buffers of unequal sizes.
 	UnmatchingBufferSizes{
+		/// The signal length of the left-hand-side buffer.
 		lhs_size: usize,
+		/// The signal length of the right-hand-side buffer.
 		rhs_size: usize
 	},
 
@@ -61,13 +63,17 @@ pub enum ErrorKind {
 
 	/// Occures when trying to create a `SampleCollection` from a set of samples with unmatching input lengths.
 	UnmatchingSampleInputLength{
+		/// The required sample signal input length.
 		required_len: usize,
+		/// The actual and errorneous sample signal input length.
 		actual_len: usize
 	},
 
 	/// Occures when trying to create a `SampleCollection` from a set of samples with unmatching input lengths.
 	UnmatchingSampleExpectedLength{
+		/// The required sample signal expected length.
 		required_len: usize,
+		/// The actual and errorneous sample signal expected length.
 		actual_len: usize
 	}
 
