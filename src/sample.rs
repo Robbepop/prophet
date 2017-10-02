@@ -211,7 +211,7 @@ impl SampleScheduler for RandomSampleScheduler {
 
 /// Creates a new `SampleCollection`.
 /// 
-/// Given the following definitions
+/// Given the following definitions ...
 /// 
 /// ```rust,no_run
 /// # #[allow(unused_variables)]
@@ -219,7 +219,7 @@ impl SampleScheduler for RandomSampleScheduler {
 /// # #[allow(unused_variables)]
 /// let f = -1.0;
 /// ```
-/// ... this macro invokation ...
+/// ... this macro invocation ...
 /// 
 /// ```rust
 /// # #[macro_use]
@@ -231,10 +231,10 @@ impl SampleScheduler for RandomSampleScheduler {
 /// # let f = -1.0;
 /// # #[allow(unused_variables)]
 /// let samples = samples![
-/// 	[f, f] => f,
-/// 	[t, f] => t,
-/// 	[f, t] => t,
-/// 	[t, t] => f
+/// 	[f, f] => [f],
+/// 	[t, f] => [t],
+/// 	[f, t] => [t],
+/// 	[t, t] => [f]
 /// ];
 /// # }
 /// ```
@@ -255,6 +255,40 @@ impl SampleScheduler for RandomSampleScheduler {
 /// 	Sample::new(vec![f, t], vec![t]).unwrap(),
 /// 	Sample::new(vec![t, t], vec![f]).unwrap(),
 /// ].into_iter());
+/// # }
+/// ```
+/// 
+/// Note that for single elements all of the
+/// below macro invocations are equal:
+/// 
+/// ```rust
+/// # #[macro_use]
+/// # extern crate prophet;
+/// # use prophet::prelude::*;
+/// # use prophet::sample::{Sample, SampleCollection};
+/// # fn main() {
+/// # let t =  1.0;
+/// # let f = -1.0;
+/// # #[allow(unused_variables)]
+/// let samples_a = samples![
+/// 	[f] => [t],
+/// 	[t] => [f],
+/// ];
+/// # #[allow(unused_variables)]
+/// let samples_b = samples![
+/// 	f => [t],
+/// 	t => [f],
+/// ];
+/// # #[allow(unused_variables)]
+/// let samples_c = samples![
+/// 	[f] => t,
+/// 	[t] => f,
+/// ];
+/// # #[allow(unused_variables)]
+/// let samples_d = samples![
+/// 	f => t,
+/// 	t => f,
+/// ];
 /// # }
 /// ```
 #[macro_export]
@@ -293,6 +327,94 @@ macro_rules! samples {
 				vec![$e]
 			).unwrap()
 		),+].into_iter())
+	};
+}
+
+/// Creates a new `Sample` for supervised learning.
+/// 
+/// Given the following definitions ...
+/// 
+/// ```rust,no_run
+/// # #[allow(unused_variables)]
+/// let t =  1.0;
+/// # #[allow(unused_variables)]
+/// let f = -1.0;
+/// ```
+/// ... this macro invocation ...
+/// 
+/// ```rust
+/// # #[macro_use]
+/// # extern crate prophet;
+/// # use prophet::prelude::*;
+/// # use prophet::sample::{Sample};
+/// # fn main() {
+/// # let t =  1.0;
+/// # let f = -1.0;
+/// # #[allow(unused_variables)]
+/// let sample = sample!([f, f] => [t]);
+/// # }
+/// ```
+/// 
+/// ... will expand to ...
+/// 
+/// ```rust,no_run
+/// # extern crate prophet;
+/// # use prophet::prelude::*;
+/// # use prophet::sample::{Sample};
+/// # fn main() {
+/// # let t =  1.0;
+/// # let f = -1.0;
+/// # #[allow(unused_variables)]
+/// let sample = Sample::new(vec![f, f], vec![f]).unwrap();
+/// # }
+/// ```
+/// 
+/// For single elements these macro invocations are all equal:
+/// 
+/// ```rust
+/// # #[macro_use]
+/// # extern crate prophet;
+/// # use prophet::prelude::*;
+/// # use prophet::sample::{Sample};
+/// # fn main() {
+/// # let t =  1.0;
+/// # let f = -1.0;
+/// # #[allow(unused_variables)]
+/// let sample = sample!([f] => [t]);
+/// let sample = sample!([f] =>  t );
+/// let sample = sample!( f  => [t]);
+/// let sample = sample!( f  =>  t );
+/// # }
+/// ```
+///
+#[macro_export]
+macro_rules! sample {
+	( [ $($i:expr),+ ] => [ $($e:expr),+ ] ) => {
+		Sample::new(
+			vec![$($i),+],
+			vec![$($e),+]
+		).unwrap()
+	};
+
+	( $i:expr => [ $($e:expr),+ ] ) => {
+		Sample::new(
+			vec![$i],
+			vec![$($e),+]
+		).unwrap()
+	};
+
+	( [ $($i:expr),+ ] => $e:expr ) => {
+		Sample::new(
+			vec![$($i),+],
+			vec![$e]
+		).unwrap()
+	};
+
+	( $i:expr => $e:expr ) => {
+		Sample::new(
+			vec![$i],
+			vec![$e]
+		).unwrap()
 	};
 }
 
@@ -658,5 +780,38 @@ mod tests {
 			];
 			assert_eq!(with_brackets, without_brackets);
 		}
+	}
+
+	mod sample_macro {
+		use super::*;
+
+		#[test]
+		fn macro_eq() {
+			let expansion = sample!([1.0, 2.0] => [3.0]);
+			let expected  = Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap();
+			assert_eq!(expansion, expected);
+		}
+
+		#[test]
+		fn macro_without_right_brackets() {
+			let expansion = sample!([1.0, 2.0] => 3.0);
+			let expected  = Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap();
+			assert_eq!(expansion, expected);
+		}
+
+		#[test]
+		fn macro_without_left_brackets() {
+			let expansion = sample!(1.0 => [2.0, 3.0]);
+			let expected  = Sample::new(vec![1.0], vec![2.0, 3.0]).unwrap();
+			assert_eq!(expansion, expected);
+		}
+
+		#[test]
+		fn macro_without_brackets() {
+			let expansion = sample!(1.0 => 2.0);
+			let expected  = Sample::new(vec![1.0], vec![2.0]).unwrap();
+			assert_eq!(expansion, expected);
+		}
+
 	}
 }
