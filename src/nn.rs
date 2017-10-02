@@ -43,6 +43,13 @@ impl NeuralNet {
 	}
 }
 
+impl From<Topology> for NeuralNet {
+	fn from(top: Topology) -> NeuralNet {
+		NeuralNet::from_topology(top)
+			.expect("Expected a valid topology as input to construct a new NeuralNet.")
+	}
+}
+
 impl<'a, I> Predict<I> for NeuralNet
 	where I: Into<UnbiasedSignalView<'a>>
 {
