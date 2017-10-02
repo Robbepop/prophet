@@ -58,7 +58,7 @@ impl ContainerLayer {
 	}
 
 	/// Propagates the error signal from the last internal child layer to the first.
-	fn propagate_error_signal_internally(&mut self) {
+	pub(crate) fn propagate_error_signal_internally(&mut self) {
 		if let Some((last, predecessors)) = self.childs.split_last_mut() {
 			predecessors.iter_mut().rev().fold(last, |layer, prev_layer| {
 				layer.propagate_error_signal(prev_layer);

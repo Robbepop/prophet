@@ -34,11 +34,11 @@ pub(crate) trait PredictSupervised<S>
 {
 	type Finalizer: OptimizeSupervised;
 
-	fn predict_supervised(&mut self, sample: &S) -> Self::Finalizer;
+	fn predict_supervised(self, sample: &S) -> Self::Finalizer;
 }
 
 pub(crate) trait OptimizeSupervised {
-	fn optimize_supervised(&mut self, lr: LearnRate, lm: LearnMomentum);
+	fn optimize_supervised(self, lr: LearnRate, lm: LearnMomentum);
 }
 
 pub mod prelude {
@@ -48,6 +48,8 @@ pub mod prelude {
 	#[doc(no_inline)]
 	pub(crate) use super::{
 		UpdateGradients,
-		UpdateWeights
+		UpdateWeights,
+		PredictSupervised,
+		OptimizeSupervised
 	};
 }

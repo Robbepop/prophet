@@ -13,5 +13,7 @@ pub(crate) use self::layer::Layer;
 
 pub(crate) use self::traits::{
 	HasOutputSignal,
-	ProcessInputSignal
+	ProcessInputSignal,
+	CalculateOutputErrorSignal,
+	ApplyErrorSignalCorrection
 };
