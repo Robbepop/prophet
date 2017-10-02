@@ -35,20 +35,11 @@ pub(crate) trait PredictWithTarget<'i, 'e, I, E>
 	      E: Into<UnbiasedSignalView<'e>>,
 	      Self: Sized
 {
-	fn predict_with_target<'nn>(&'nn mut self, _input: I, _expected: E) -> ReadyToOptimizePredict<'nn, 'i, 'e, I, E, Self> {
-		unimplemented!()
-	}
+	fn predict_with_target<'nn>(&'nn mut self, _input: I, _expected: E) -> ReadyToOptimizePredict<'nn, Self>;
 }
 
-use std::marker::PhantomData;
-
-pub(crate) struct ReadyToOptimizePredict<'nn, 'i, 'e, I: 'i, E: 'e, NN: 'nn>
-	where NN: PredictWithTarget<'i, 'e, I, E>,
-	      I : Into<UnbiasedSignalView<'i>>,
-	      E : Into<UnbiasedSignalView<'e>>
-{
-	nn: &'nn mut NN,
-	marker: PhantomData<(&'i I, &'e E)>
+pub(crate) struct ReadyToOptimizePredict<'nn, NN: 'nn> {
+	nn: &'nn mut NN
 }
 
 pub(crate) trait OptimizePredict {
