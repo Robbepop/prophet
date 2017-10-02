@@ -7,12 +7,23 @@ use layer::{
 	ProcessInputSignal
 };
 use layer::{ContainerLayer};
+use layer;
 use utils::{LearnRate, LearnMomentum};
+use topology_v4;
+use topology_v4::{
+	Topology
+};
+use errors::{Result};
 
 #[derive(Debug, Clone, PartialEq)]
-struct NeuralNet {
+pub(crate) struct NeuralNet {
 	input: BiasedSignalBuffer,
 	layers: ContainerLayer
+}
+
+#[derive(Debug)]
+pub(crate) struct ReadyToOptimizePredict<'nn> {
+	nn: &'nn mut NeuralNet
 }
 
 impl<'a, I> Predict<I> for NeuralNet
@@ -27,22 +38,17 @@ impl<'a, I> Predict<I> for NeuralNet
 	}
 }
 
-impl<'a, T> UpdateGradients<T> for NeuralNet
-	where T: Into<UnbiasedSignalView<'a>>
-{
-	/// Implementation for inputs that do not respect a bias value.
-	fn update_gradients(&mut self, _target_values: T) {
-		unimplemented!()
-	}
-}
-
-impl UpdateWeights for NeuralNet
-{
-	fn update_weights(
-		&mut self, 
-		_rate: LearnRate,
-		_momentum: LearnMomentum
-	) {
-		unimplemented!()
+impl NeuralNet {
+	/// Creates a new neural network from the given topology.
+	pub fn from_topology(top: Topology) -> Result<Self> {
+		Ok(NeuralNet{
+			input: BiasedSignalBuffer::zeros_with_bias(
+				top.input_len().into_usize())?,
+			layers: ContainerLayer::from_vec(top
+				.into_iter()
+				.map(|layer| layer::Layer::from(layer))
+				.collect()
+			)?
+		})
 	}
 }
