@@ -1,3 +1,5 @@
+//! Defines samples, sample containers, sample schedulers and macros for supervised learning purposes.
+
 use ndarray::prelude::*;
 use rand::XorShiftRng;
 use rand;
