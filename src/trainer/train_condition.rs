@@ -41,9 +41,11 @@ pub trait TrainCondition: Debug + Clone {
 }
 
 /// Always evaluate to `true` for any given `TrainCondition`.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Always;
 
 /// Never evaluate to `true` for any given `TrainCondition`.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Never;
 
 /// Evaluates to `true` if its inner `TrainCondition`
@@ -86,7 +88,7 @@ pub struct Disjunction<L, R>
 
 /// Evaluates to `true` if the duration passed since the start of the training process of the
 /// given `TrainingState` exceeds its given duration.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct TimeElapsed(time::Duration);
 
 /// Evaluates to `true` if the given `TrainingState` exceeds the given amount of `epochs` of this condition.
@@ -94,7 +96,7 @@ pub struct TimeElapsed(time::Duration);
 /// By default an epoch is as large as the number of samples in the given sample set,
 /// however, this default value can be adjusted by the user during the setup process of
 /// a training instance.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct EpochsPassed(usize);
 
 /// Evaluates to `true` as soon as the recent mean squared error (RMSE) drops below the given `target` value
@@ -108,7 +110,7 @@ pub struct EpochsPassed(usize);
 ///       the following formula. `mse_(n)` stands for the mean squared error of the `n`th iteration.
 /// 
 /// - `rmse_(i+1) := (1.0 - m) * mse_(i+1) + m * rmse_i`
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct BelowRecentMSE{
 	/// The given `momentum` ranges from `(0, 1)` and regulates how strongly the RMSE depends on earlier iterations.
 	/// A `momentum` near `0` has near to no influence by earlier iterations while a `momentum` near `1`
