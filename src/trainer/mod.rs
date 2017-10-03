@@ -1,3 +1,3 @@
-pub mod halt_condition;
+pub mod train_condition;
 
-pub use self::halt_condition::HaltCondition;
+pub use self::train_condition::TrainCondition;
