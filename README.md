@@ -2,9 +2,9 @@
 PROPHET - Neural Network Library
 ================================
 
-|       Linux       |       Windows       |       Coverage      |          Docs         |     Crates.io         |       Licence      |
-|:-----------------:|:-------------------:|:-------------------:|:---------------------:|:---------------------:|:------------------:|
-| [![travis][1]][2] | [![appveyor][3]][4] | [![coverage][5]][6] | [![docs][11]][12 ]    | [![crates.io][9]][10] | [![licence][7]][8] |
+|       Linux       |       Windows       |       Coverage      |          Docs         |     Crates.io         |
+|:-----------------:|:-------------------:|:-------------------:|:---------------------:|:---------------------:|
+| [![travis][1]][2] | [![appveyor][3]][4] | [![coverage][5]][6] | [![docs][11]][12 ]    | [![crates.io][9]][10] |
 
 
 A simple neural net implementation written in Rust with a focus on cache-efficiency and sequential performance.
@@ -93,6 +93,15 @@ for sample in samples {
 - Parallel computation via GPGPU support using Vulkano or similar.
 - More flexible learning methods.
 
+## License
+
+Licensed under either of
+
+ * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+ * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+at your option.
+
 ## Release Notes (YYYY/MM/DD)
 
 ### 0.4.1 (2017/08/27)
@@ -118,6 +127,7 @@ for sample in samples {
 [5]: https://coveralls.io/repos/github/Robbepop/prophet/badge.svg?branch=master
 [6]: https://coveralls.io/github/Robbepop/prophet?branch=master
 [7]: https://img.shields.io/badge/license-MIT-blue.svg
+[13]: https://img.shields.io/badge/license-APACHE-orange.svg
 [8]: https://github.com/Robbepop/prophet/blob/master/LICENSE
 [9]: https://img.shields.io/crates/v/prophet.svg
 [10]: https://crates.io/crates/prophet
