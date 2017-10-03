@@ -40,6 +40,12 @@ pub trait TrainCondition: Debug + Clone {
 	fn evaluate(&mut self, stats: &TrainingState) -> bool;
 }
 
+/// Always evaluate to `true` for any given `TrainCondition`.
+pub struct Always;
+
+/// Never evaluate to `true` for any given `TrainCondition`.
+pub struct Never;
+
 /// Evaluates to `true` if its inner `TrainCondition`
 /// evaluates to `false` for the given `TrainingState`.
 #[derive(Debug, Clone, PartialEq)]
@@ -119,6 +125,16 @@ pub struct BelowRecentMSE{
 	target: f64,
 	/// This is the current recent mean squared error calculated so far in the training process.
 	rmse: f64
+}
+
+impl Always {
+	#[inline]
+	fn evaluate(&mut self, stats: &TrainingState) -> bool { true }
+}
+
+impl Never {
+	#[inline]
+	fn evaluate(&mut self, stats: &TrainingState) -> bool { false }
 }
 
 impl<C> Not<C>
