@@ -129,6 +129,19 @@ pub struct BelowRecentMSE{
 	rmse: f64
 }
 
+/// Evaluates to `true` once every given amount of time passed.
+/// 
+/// This is a special kind of training condition since its evaluation is not at all dependend on the
+/// training state. Also it is not static once it changes its evaluation in constrast to other conditions
+/// such as `EpochsPassed` or `TimeElapsed`.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct TimeInterval{
+	/// The duration between the interval at which this condition evalutes to `true` once.
+	time_step: time::Duration,
+	/// The latest point in time where this condition evaluated to `true`.
+	latest: time::Instant
+}
+
 impl Always {
 	#[inline]
 	fn evaluate(&mut self, stats: &TrainingState) -> bool { true }
@@ -222,6 +235,17 @@ impl BelowRecentMSE {
 	}
 }
 
+impl TimeInterval {
+	/// Creates a new `TimeInterval` `TrainCondition` with the given `time_step` duration
+	/// that evaluates to `true` every time the duration `time_step` has passed.
+	/// 
+	/// Note: This condition is especially useful for logging purposes where a user want to
+	///       log the training state once every given amount of time.
+	pub fn once_in(time_step: time::Duration) -> TimeInterval {
+		TimeInterval{time_step, latest: time::Instant::now()}
+	}
+}
+
 impl TrainCondition for TimeElapsed {
 	#[inline]
 	fn evaluate(&mut self, stats: &TrainingState) -> bool {
@@ -241,5 +265,18 @@ impl TrainCondition for BelowRecentMSE {
 	fn evaluate(&mut self, stats: &TrainingState) -> bool {
 		self.rmse = (1.0 - self.momentum) * stats.latest_mse() + self.momentum * self.rmse;
 		self.rmse <= self.target
+	}
+}
+
+impl TrainCondition for TimeInterval {
+	#[inline]
+	fn evaluate(&mut self, _stats: &TrainingState) -> bool {
+		if time::Instant::now().duration_since(self.latest) >= self.time_step {
+			self.latest = time::Instant::now();
+			true
+		}
+		else {
+			false
+		}
 	}
 }
