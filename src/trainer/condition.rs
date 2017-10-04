@@ -1,3 +1,9 @@
+//! Provides conditions that can be used by training utilities such as halting condition
+//! or conditions for constraining logging to query and evaluate a training state during
+//! training process.
+//! 
+//! Condition types can be easily extended by the user.
+
 use std::time;
 use std::fmt::Debug;
 

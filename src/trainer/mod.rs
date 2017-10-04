@@ -1,3 +1,3 @@
-pub mod train_condition;
+pub mod condition;
 
-pub use self::train_condition::TrainCondition;
+pub use self::condition::TrainCondition;
