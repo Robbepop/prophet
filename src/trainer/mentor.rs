@@ -140,4 +140,24 @@ impl MentorBuilder {
 			}
 		}
 	}
+
+	/// Sets the sample generator that is used throughout the training session.
+	/// 
+	/// # Errors
+	/// 
+	/// - If a sample generator was already set for this builder.
+	pub fn sample_gen<G>(mut self, sample_gen: G) -> Result<Self>
+		where G: SampleGen + 'static
+	{
+		match self.sample_gen {
+			None => {
+				self.sample_gen = Some(Box::new(sample_gen));
+				Ok(self)
+			}
+			Some(_) => {
+				// TODO: Do proper error handling here:
+				panic!("Already set a sample generator. Confused which one to use. Cannot set twice.");
+			}
+		}
+	}
 }
