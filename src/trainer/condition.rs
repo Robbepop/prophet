@@ -148,14 +148,14 @@ pub struct TimeInterval{
 	latest: time::Instant
 }
 
-impl Always {
+impl TrainCondition for Always {
 	#[inline]
-	fn evaluate(&mut self, stats: &TrainingState) -> bool { true }
+	fn evaluate(&mut self, _stats: &TrainingState) -> bool { true }
 }
 
-impl Never {
+impl TrainCondition for Never {
 	#[inline]
-	fn evaluate(&mut self, stats: &TrainingState) -> bool { false }
+	fn evaluate(&mut self, _stats: &TrainingState) -> bool { false }
 }
 
 impl<C> Not<C>
@@ -167,7 +167,7 @@ impl<C> Not<C>
 	}
 }
 
-impl<C> Not<C>
+impl<C> TrainCondition for Not<C>
 	where C: TrainCondition
 {
 	#[inline]
