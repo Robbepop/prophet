@@ -132,7 +132,6 @@ pub mod sample;
 pub mod topology;
 pub mod topology_v4;
 mod mentor;
-pub mod prelude;
 
 pub use activation::Activation;
 pub use neural_net::NeuralNet;
@@ -143,3 +142,31 @@ pub use mentor::samples::{Sample, SampleView};
 
 pub use traits::{Predict};
 pub use errors::{Result, ErrorKind};
+
+/// The prophet prelude publicly imports all propet modules the user
+/// needs in order to create, train and use neural networks.
+pub mod prelude {
+	#[doc(no_inline)]
+	pub use activation::Activation;
+
+	#[doc(no_inline)]
+	pub use neural_net::NeuralNet;
+
+	#[doc(no_inline)]
+	pub use traits::{Predict};
+
+	#[doc(no_inline)]
+	pub use topology::{Topology, TopologyBuilder, Layer};
+
+	#[doc(no_inline)]
+	pub use errors::{Result, ErrorKind};
+
+	#[doc(no_inline)]
+	pub use mentor::configs::{LogConfig, Scheduling, Criterion};
+
+	#[doc(no_inline)]
+	pub use mentor::training::{Mentor, MentorBuilder};
+
+	#[doc(no_inline)]
+	pub use mentor::samples::{Sample, SampleView};
+}
