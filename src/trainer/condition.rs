@@ -40,7 +40,7 @@ pub trait TrainingState {
 /// of the given `HaltingCondition` are met.
 /// 
 /// With this trait users can implement their own `TrainCondition`s.
-pub trait TrainCondition: Debug + Clone {
+pub trait TrainCondition: Debug {
 	/// Returns `true` if the halting condition requirements are met by
 	/// the given `TrainingStats` implementation `stats`.
 	fn evaluate(&mut self, stats: &TrainingState) -> bool;
