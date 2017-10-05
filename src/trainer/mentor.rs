@@ -22,6 +22,7 @@ pub struct Context {
 	time_started: time::Instant,
 	iteration: usize,
 	epochs_passed: usize,
+	epoch_len: usize,
 	latest_mse: f64,
 	lr: LearnRate,
 	lm: LearnMomentum
@@ -30,11 +31,15 @@ pub struct Context {
 impl Context {
 	/// Creates a new `Context` from the given `LearnRate` and `LearnMomentum`
 	/// and initializes the other values with their respective defaults.
-	pub fn new(lr: LearnRate, lm: LearnMomentum) -> Context {
+	pub fn new(
+		epoch_len: usize,
+		lr: LearnRate,
+		lm: LearnMomentum) -> Context {
 		Context{
 			time_started: time::Instant::now(),
 			iteration: 0,
 			epochs_passed: 0,
+			epoch_len, // TODO: Better way to handle a sane default value.
 			latest_mse: 1.0,
 			lr, lm
 		}
@@ -43,12 +48,15 @@ impl Context {
 	/// Increases the iteration counter by `1` (one).
 	#[inline]
 	pub fn next_iteration(&mut self) {
-		self.iteration += 1
+		self.iteration += 1;
+		if self.iteration % self.epoch_len == 0 {
+			self.next_epoch()
+		}
 	}
 
 	/// Increases the counter representing the epochs passed by `1` (one).
 	#[inline]
-	pub fn next_epoch(&mut self) {
+	fn next_epoch(&mut self) {
 		self.epochs_passed += 1
 	}
 
@@ -110,6 +118,7 @@ pub struct MentorBuilder {
 	stop_when: Option<Box<TrainCondition>>,
 	logger: Option<Box<DebuggableLog>>,
 	log_when: Option<Box<TrainCondition>>,
+	epoch_len: Option<usize>,
 	lr: Option<LearnRate>,
 	lm: Option<LearnMomentum>
 }
