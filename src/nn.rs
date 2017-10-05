@@ -15,7 +15,6 @@ use topology_v4::{
 	Topology
 };
 use errors::{Result};
-use sample::SupervisedSample;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NeuralNet {

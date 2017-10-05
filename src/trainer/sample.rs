@@ -15,7 +15,7 @@ use std::fmt::Debug;
 /// Represents a supervised sample for supervised learning purposes.
 /// 
 /// This requires an `expected` signal associated to ever `input` signal.
-pub(crate) trait SupervisedSample {
+pub trait SupervisedSample {
 	/// Returns the input signal of this sample.
 	fn input(&self) -> UnbiasedSignalView;
 
@@ -227,7 +227,7 @@ impl SampleGen for RandomSampleScheduler {
 /// # #[macro_use]
 /// # extern crate prophet;
 /// # use prophet::prelude::*;
-/// # use prophet::sample::{Sample, SampleCollection};
+/// # use prophet::trainer::{Sample, SampleCollection};
 /// # fn main() {
 /// # let t =  1.0;
 /// # let f = -1.0;
@@ -246,7 +246,7 @@ impl SampleGen for RandomSampleScheduler {
 /// ```rust,no_run
 /// # extern crate prophet;
 /// # use prophet::prelude::*;
-/// # use prophet::sample::{Sample, SampleCollection};
+/// # use prophet::trainer::{Sample, SampleCollection};
 /// # fn main() {
 /// # let t =  1.0;
 /// # let f = -1.0;
@@ -267,7 +267,7 @@ impl SampleGen for RandomSampleScheduler {
 /// # #[macro_use]
 /// # extern crate prophet;
 /// # use prophet::prelude::*;
-/// # use prophet::sample::{Sample, SampleCollection};
+/// # use prophet::trainer::{Sample, SampleCollection};
 /// # fn main() {
 /// # let t =  1.0;
 /// # let f = -1.0;
@@ -348,7 +348,7 @@ macro_rules! samples {
 /// # #[macro_use]
 /// # extern crate prophet;
 /// # use prophet::prelude::*;
-/// # use prophet::sample::{Sample};
+/// # use prophet::trainer::{Sample};
 /// # fn main() {
 /// # let t =  1.0;
 /// # let f = -1.0;
@@ -362,7 +362,7 @@ macro_rules! samples {
 /// ```rust,no_run
 /// # extern crate prophet;
 /// # use prophet::prelude::*;
-/// # use prophet::sample::{Sample};
+/// # use prophet::trainer::{Sample};
 /// # fn main() {
 /// # let t =  1.0;
 /// # let f = -1.0;
@@ -377,7 +377,7 @@ macro_rules! samples {
 /// # #[macro_use]
 /// # extern crate prophet;
 /// # use prophet::prelude::*;
-/// # use prophet::sample::{Sample};
+/// # use prophet::trainer::{Sample};
 /// # fn main() {
 /// # let t =  1.0;
 /// # let f = -1.0;
