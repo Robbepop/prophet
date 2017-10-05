@@ -14,6 +14,10 @@ impl LearnRate {
 		}
 		Ok(LearnRate(rate as f32))
 	}
+
+	/// Returns the `f32` representation of this `LearnRate`.
+	#[inline]
+	pub fn to_f32(self) -> f32 { self.0 }
 }
 
 impl From<f64> for LearnRate {
@@ -43,6 +47,10 @@ impl LearnMomentum {
 		}
 		Ok(LearnMomentum(momentum as f32))
 	}
+
+	/// Returns the `f32` representation of this `LearnMomentum`.
+	#[inline]
+	pub fn to_f32(self) -> f32 { self.0 }
 }
 
 impl From<f64> for LearnMomentum {
