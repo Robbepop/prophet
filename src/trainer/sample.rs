@@ -10,6 +10,8 @@ use layer::utils::{
 };
 use errors::{Error, Result};
 
+use std::fmt::Debug;
+
 /// Represents a supervised sample for supervised learning purposes.
 /// 
 /// This requires an `expected` signal associated to ever `input` signal.
@@ -158,7 +160,7 @@ impl SampleCollection {
 }
 
 /// `SampleGen`s simply are non-exhaustive iterators over a set of `Sample`s.
-pub trait SampleGen {
+pub trait SampleGen: Debug {
 	/// Returns the next sample for scheduling.
 	fn next_sample(&mut self) -> &Sample;
 }
