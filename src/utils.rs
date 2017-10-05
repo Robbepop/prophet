@@ -9,9 +9,9 @@ impl LearnRate {
 	/// 
 	/// # Errors
 	/// 
-	/// - If the given `f32` is not within the valid open interval of `(0,1)`.
+	/// - If the given `f32` is not within the valid open interval of `(0,1]`.
 	pub fn new(rate: f32) -> Result<LearnRate> {
-		if rate < 0.0 || 1.0 < rate {
+		if !(0.0 <= rate && rate <= 1.0) {
 			return Err(Error::invalid_learn_rate(rate as f64))
 		}
 		Ok(LearnRate(rate))
@@ -38,9 +38,9 @@ impl LearnMomentum {
 	/// 
 	/// # Errors
 	/// 
-	/// - If the given `f32` is not within the valid open interval of `(0,1)`.
+	/// - If the given `f32` is not within the valid open interval of `[0,1]`.
 	pub fn new(momentum: f32) -> Result<LearnMomentum> {
-		if momentum < 0.0 || 1.0 < momentum {
+		if !(0.0 <= momentum && momentum <= 1.0) {
 			return Err(Error::invalid_learn_momentum(momentum as f64))
 		}
 		Ok(LearnMomentum(momentum))
