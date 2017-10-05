@@ -262,7 +262,7 @@ impl TrainCondition for TimeElapsed {
 impl TrainCondition for EpochsPassed {
 	#[inline]
 	fn evaluate(&mut self, stats: &TrainingState) -> bool {
-		stats.epochs() >= self.0
+		stats.epochs_passed() >= self.0
 	}
 }
 
