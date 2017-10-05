@@ -142,34 +142,44 @@ impl Mentor {
 	/// 
 	/// - If some required property was not set in the builer.
 	fn from_builder(builder: MentorBuilder) -> Result<Mentor> {
-		Ok(Mentor{
-			nn: builder.nn,
-			sample_gen: match builder.sample_gen {
+		let sample_gen =
+			match builder.sample_gen {
 				Some(sample_gen) => sample_gen,
 				None => {
 					panic!("No sample gen specified during building process!")
 				}
-			},
-			stop_when: match builder.stop_when {
+			};
+		let stop_when = 
+			match builder.stop_when {
 				Some(stop_when) => stop_when,
 				None => {
 					panic!("No halting condition specified during building process!")
 				}
-			},
-			logger: match builder.logger {
+			};
+		let logger =
+			match builder.logger {
 				Some(logger) => Some(logger),
 				None => None
-			},
-			log_when: match builder.log_when {
+			};
+		let log_when =
+			match builder.log_when {
 				Some(log_when) => log_when,
 				None => {
 					Box::new(condition::Always)
 				}
-			},
-			ctx: Context::new(
-				builder.lr.unwrap_or(LearnRate::from(0.15)),
-				builder.lm.unwrap_or(LearnMomentum::from(0.0))
-			)
+			};
+		let ctx = Context::new(
+			builder.epoch_len.unwrap_or_else(|| sample_gen.len().unwrap_or(1)),
+			builder.lr.unwrap_or(LearnRate::from(0.15)),
+			builder.lm.unwrap_or(LearnMomentum::from(0.0))
+		);
+		Ok(Mentor{
+			nn: builder.nn,
+			sample_gen,
+			stop_when,
+			logger,
+			log_when,
+			ctx
 		})
 	}
 
@@ -190,6 +200,7 @@ impl MentorBuilder {
 			stop_when: None,
 			logger: None,
 			log_when: None,
+			epoch_len: None,
 			lr: None,
 			lm: None
 		}
@@ -242,6 +253,32 @@ impl MentorBuilder {
 			Some(old_lm) => {
 				// TODO: Do proper error handling here:
 				panic!("Already set learn momentum to {:?}. Cannot set twice!", old_lm.to_f32());
+			}
+		}
+	}
+
+	/// Sets the epoch length that is used for batched learning purposes throughout the training session.
+	/// 
+	/// Note: Batch learning isn't yet supported by this library. So this value is useless right now.
+	///       However, keep in mind to set the epoch length when this trainer cannot infer a default value.
+	///       This is the case when using a `SampleGen` that is not limited to a finite set of samples.
+	/// 
+	/// # Errors
+	/// 
+	/// - If the given epoch length is zero (`0`). Epoch length must be a positive number.
+	pub fn epoch_len(mut self, epoch_len: usize) -> Result<Self> {
+		if epoch_len == 0 {
+			// TODO: Do proper error handling here:
+			panic!("Cannot set epoch length to zero (`0`). Epoch length must be a positive number.")
+		}
+		match self.epoch_len {
+			None => {
+				self.epoch_len = Some(epoch_len);
+				Ok(self)
+			}
+			Some(old_epoch_len) => {
+				// TODO: Do proper error handling here:
+				panic!("Already set epoch length to {:?}. Cannot set it twice!", old_epoch_len);
 			}
 		}
 	}
