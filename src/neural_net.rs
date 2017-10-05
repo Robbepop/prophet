@@ -311,9 +311,9 @@ impl FullyConnectedLayer {
 					.foreach(|(prev_output, delta_weight)| {
 						*delta_weight =
 							// Individual input, magnified by the gradient and train rate
-							learn_rate.0 * prev_output * gradient
+							learn_rate.to_f32() * prev_output * gradient
 							// Also add momentum which is a fraction of the previous delta weight
-							+ learn_mom.0 * *delta_weight;
+							+ learn_mom.to_f32() * *delta_weight;
 					});
 			});
 

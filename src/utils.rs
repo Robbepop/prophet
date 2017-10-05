@@ -1,18 +1,20 @@
 use errors::{Result, Error};
 
-/// Learn rate.
+/// Learn rate used during supervised learning.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct LearnRate(pub f32);
+pub struct LearnRate(f32);
 
 impl LearnRate {
-	/// Returns learn rate from the given `f64` if valid.
+	/// Creates a new `LearnRate` from the given `f32`.
 	/// 
-	/// `rate` has to be in `(0,1)` to form a valid `LearnRate`
-	pub fn from_f64(rate: f64) -> Result<LearnRate> {
+	/// # Errors
+	/// 
+	/// - If the given `f32` is not within the valid open interval of `(0,1)`.
+	pub fn new(rate: f32) -> Result<LearnRate> {
 		if rate < 0.0 || 1.0 < rate {
-			return Err(Error::invalid_learn_rate(rate))
+			return Err(Error::invalid_learn_rate(rate as f64))
 		}
-		Ok(LearnRate(rate as f32))
+		Ok(LearnRate(rate))
 	}
 
 	/// Returns the `f32` representation of this `LearnRate`.
@@ -20,32 +22,28 @@ impl LearnRate {
 	pub fn to_f32(self) -> f32 { self.0 }
 }
 
-impl From<f64> for LearnRate {
-	fn from(rate: f64) -> LearnRate {
-		LearnRate::from_f64(rate)
+impl From<f32> for LearnRate {
+	fn from(rate: f32) -> LearnRate {
+		LearnRate::new(rate)
 			.expect("Expected valid user input (`f64`) for creating a new LearnRate.")
-	}
-}
-
-impl Default for LearnRate {
-	fn default() -> Self {
-		LearnRate(0.3)
 	}
 }
 
 /// Learn momentum.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct LearnMomentum(pub f32);
+pub struct LearnMomentum(f32);
 
 impl LearnMomentum {
-	/// Returns learn momentum from the given `f64` if valid.
+	/// Creates a new `LearnMomentum` from the given `f32`.
 	/// 
-	/// `momentum` has to be in `(0,1)` to form a valid `LearnMomentum`
-	pub fn from_f64(momentum: f64) -> Result<LearnMomentum> {
+	/// # Errors
+	/// 
+	/// - If the given `f32` is not within the valid open interval of `(0,1)`.
+	pub fn new(momentum: f32) -> Result<LearnMomentum> {
 		if momentum < 0.0 || 1.0 < momentum {
-			return Err(Error::invalid_learn_momentum(momentum))
+			return Err(Error::invalid_learn_momentum(momentum as f64))
 		}
-		Ok(LearnMomentum(momentum as f32))
+		Ok(LearnMomentum(momentum))
 	}
 
 	/// Returns the `f32` representation of this `LearnMomentum`.
@@ -53,15 +51,9 @@ impl LearnMomentum {
 	pub fn to_f32(self) -> f32 { self.0 }
 }
 
-impl From<f64> for LearnMomentum {
-	fn from(rate: f64) -> LearnMomentum {
-		LearnMomentum::from_f64(rate)
+impl From<f32> for LearnMomentum {
+	fn from(rate: f32) -> LearnMomentum {
+		LearnMomentum::new(rate)
 			.expect("Expected valid user input (`f64`) for creating a new LearnMomentum.")
-	}
-}
-
-impl Default for LearnMomentum {
-	fn default() -> Self {
-		LearnMomentum(0.5)
 	}
 }

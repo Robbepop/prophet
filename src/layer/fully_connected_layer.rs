@@ -110,7 +110,7 @@ impl ApplyErrorSignalCorrection for FullyConnectedLayer {
 		use itertools::*;
 		multizip((self.deltas.genrows_mut(), &self.error_signal.unbias())).foreach(|(mut s_drow, &s_e)| {
 			Zip::from(&mut s_drow.view_mut()).and(input_signal.unbias().data()).apply(|s_dw, &p_i| {
-				*s_dw = (1.0 - lm.0) * lr.0 * p_i * s_e + lm.0 * *s_dw;
+				*s_dw = (1.0 - lm.to_f32()) * lr.to_f32() * p_i * s_e + lm.to_f32() * *s_dw;
 			});
 		});
 		self.weights.apply_delta_weights(&self.deltas);

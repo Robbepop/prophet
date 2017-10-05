@@ -282,12 +282,12 @@ impl<LR, LM, CR, SC, LG> Mentor<LR, LM, CR, SC, LG>
 			},
 
 			learn_rate: match self.learn_rate {
-				LearnRateConfig::Adapt    => LearnRate::default(),
+				LearnRateConfig::Adapt    => LearnRate::from(0.3),
 				LearnRateConfig::Fixed(r) => r
 			},
 
 			learn_mom: match self.learn_mom {
-				LearnMomentumConfig::Adapt    => LearnMomentum::default(),
+				LearnMomentumConfig::Adapt    => LearnMomentum::from(0.5),
 				LearnMomentumConfig::Fixed(m) => m
 			},
 
