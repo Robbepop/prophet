@@ -30,7 +30,7 @@ pub trait TrainingState {
 	/// Returns the number of epochs so far.
 	/// 
 	/// Note: This is highly correlated with `iterations()`.
-	fn epochs(&self) -> usize;
+	fn epochs_passed(&self) -> usize;
 
 	/// Returns the latest mean-squared-error (MSE) of the training.
 	fn latest_mse(&self) -> f64;

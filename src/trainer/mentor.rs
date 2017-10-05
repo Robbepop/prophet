@@ -71,7 +71,7 @@ impl TrainingState for Context {
 	}
 
 	#[inline]
-	fn epochs(&self) -> usize {
+	fn epochs_passed(&self) -> usize {
 		self.epochs_passed
 	}
 
