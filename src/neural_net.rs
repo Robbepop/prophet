@@ -660,8 +660,8 @@ mod tests {
 				learn_rate        : LearnRate,
 				learn_momentum    : LearnMomentum
 			) {
-				let LearnRate(lr)     = learn_rate;
-				let LearnMomentum(lm) = learn_momentum;
+				let lr = learn_rate.to_f32();
+				let lm = learn_momentum.to_f32();
 				let mut expected_deltas = self_delta_weights.clone();
 				multizip((expected_deltas.genrows_mut(), &self_gradients)).foreach(|(mut s_dw_rows, s_g)| {
 					multizip((&mut s_dw_rows, &prev_outputs)).foreach(|(dw, p_o)| {
@@ -689,20 +689,20 @@ mod tests {
 				prev_outputs      : Array1<f32>,
 			) {
 				let learn_rates = [
-					LearnRate(0.0),
-					LearnRate(0.1),
-					LearnRate(0.3),
-					LearnRate(0.5),
-					LearnRate(0.75),
-					LearnRate(1.0)
+					LearnRate::from(0.0),
+					LearnRate::from(0.1),
+					LearnRate::from(0.3),
+					LearnRate::from(0.5),
+					LearnRate::from(0.75),
+					LearnRate::from(1.0)
 				];
 				let learn_momentums = [
-					LearnMomentum(0.0),
-					LearnMomentum(0.1),
-					LearnMomentum(0.25),
-					LearnMomentum(0.5),
-					LearnMomentum(0.75),
-					LearnMomentum(1.0)
+					LearnMomentum::from(0.0),
+					LearnMomentum::from(0.1),
+					LearnMomentum::from(0.25),
+					LearnMomentum::from(0.5),
+					LearnMomentum::from(0.75),
+					LearnMomentum::from(1.0)
 				];
 				use itertools::Itertools;
 				for (lr, lm) in learn_rates.iter().cartesian_product(&learn_momentums) {
@@ -727,8 +727,8 @@ mod tests {
 		#[test]
 		fn update_weights_old() {
 			use self::Activation::{Identity};
-			let lr = LearnRate(0.5);
-			let lm = LearnMomentum(1.0);
+			let lr = LearnRate::from(0.5);
+			let lm = LearnMomentum::from(1.0);
 			let outputs = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
 			let mut layer = FullyConnectedLayer{
 				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
