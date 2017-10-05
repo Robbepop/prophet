@@ -2,8 +2,10 @@
 
 use ndarray::*;
 
-use sample::SupervisedSample;
-use utils::{LearnRate, LearnMomentum};
+use utils::{
+	LearnRate,
+	LearnMomentum
+};
 
 /// Types that can predict data based on a one-dimensional input data range.
 pub trait Predict<I> {
@@ -29,18 +31,6 @@ pub(crate) trait UpdateWeights {
 	fn update_weights(&mut self, rate: LearnRate, momentum: LearnMomentum);
 }
 
-pub(crate) trait PredictSupervised<S>
-	where S: SupervisedSample
-{
-	type Finalizer: OptimizeSupervised;
-
-	fn predict_supervised(self, sample: &S) -> Self::Finalizer;
-}
-
-pub(crate) trait OptimizeSupervised {
-	fn optimize_supervised(self, lr: LearnRate, lm: LearnMomentum);
-}
-
 pub mod prelude {
 	#[doc(no_inline)]
 	pub use super::Predict;
@@ -48,8 +38,6 @@ pub mod prelude {
 	#[doc(no_inline)]
 	pub(crate) use super::{
 		UpdateGradients,
-		UpdateWeights,
-		PredictSupervised,
-		OptimizeSupervised
+		UpdateWeights
 	};
 }
