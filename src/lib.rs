@@ -127,7 +127,6 @@ pub(crate) mod layer;
 
 mod nn;
 pub mod trainer;
-pub mod sample;
 
 pub mod topology;
 pub mod topology_v4;
