@@ -66,7 +66,7 @@ impl SupervisedSample for Sample {
 /// 
 /// `SampleCollection`s are used by `SampleGen`s.
 #[derive(Debug, Clone, PartialEq)]
-pub struct SampleCollection{
+pub struct SampleCollection {
 	samples: Vec<Sample>
 }
 
