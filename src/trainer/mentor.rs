@@ -83,6 +83,15 @@ impl TrainingState for Context {
 
 trait DebuggableLog: Log + Debug {}
 
+/// A `Mentor` can be used to train a given neural network.
+/// 
+/// It manages the training process, guarantees certain result qualities
+/// and offers great flexibility for customizing the training process.
+/// 
+/// Note that users of this library do not depend on this structure
+/// in order to train neural networks. The `Mentor` and its API simply
+/// provides an easy-to-use interface for a training procedure based on
+/// the API of this library.
 #[derive(Debug)]
 pub struct Mentor {
 	nn: NeuralNet,
@@ -93,6 +102,7 @@ pub struct Mentor {
 	ctx: Context
 }
 
+/// Used to construct fully-fledged `Mentor`s using the well-known builder pattern.
 #[derive(Debug)]
 pub struct MentorBuilder {
 	nn: NeuralNet,
