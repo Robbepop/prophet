@@ -18,7 +18,7 @@ use errors::{Result};
 use sample::SupervisedSample;
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct NeuralNet {
+pub struct NeuralNet {
 	input: BiasedSignalBuffer,
 	layers: ContainerLayer
 }

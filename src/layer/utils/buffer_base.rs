@@ -6,7 +6,7 @@ use errors::{Error, Result};
 use std::marker::PhantomData;
 
 #[derive(Debug)]
-pub(crate) struct BufferBase<D, B>
+pub struct BufferBase<D, B>
 	where D: ndarray::Data<Elem = f32>,
 	      B: marker::Marker
 {
@@ -14,26 +14,26 @@ pub(crate) struct BufferBase<D, B>
 	marker: PhantomData<B>
 }
 
-pub(crate) type ViewRepr<'a> = ndarray::ViewRepr<&'a f32>;
-pub(crate) type ViewMutRepr<'a> = ndarray::ViewRepr<&'a mut f32>;
-pub(crate) type OwnedRepr = ndarray::OwnedRepr<f32>;
+pub type ViewRepr<'a> = ndarray::ViewRepr<&'a f32>;
+pub type ViewMutRepr<'a> = ndarray::ViewRepr<&'a mut f32>;
+pub type OwnedRepr = ndarray::OwnedRepr<f32>;
 
-pub(crate) type BufferView<'a, B> = BufferBase<ViewRepr<'a>, B>;
-pub(crate) type BufferViewMut<'a, B> = BufferBase<ViewMutRepr<'a>, B>;
-pub(crate) type Buffer<B> = BufferBase<OwnedRepr, B>;
+pub type BufferView<'a, B> = BufferBase<ViewRepr<'a>, B>;
+pub type BufferViewMut<'a, B> = BufferBase<ViewMutRepr<'a>, B>;
+pub type Buffer<B> = BufferBase<OwnedRepr, B>;
 
 mod marker {
 	use std::hash::Hash;
 
-	pub(crate) trait Marker: Copy + Clone + PartialEq + Hash {}
+	pub trait Marker: Copy + Clone + PartialEq + Hash {}
 
-	pub(crate) trait Biased: Marker {
+	pub trait Biased: Marker {
 		type Unbiased: Marker;
 		const DEFAULT_BIAS_VALUE: f32;
 	}
-	pub(crate) trait Unbiased: Marker {}
+	pub trait Unbiased: Marker {}
 
-	pub(crate) trait ErrorSignal: Marker {}
+	pub trait ErrorSignal: Marker {}
 
 	#[derive(Debug, Copy, Clone, PartialEq, Hash)]
 	pub struct BiasedSignal;
@@ -69,23 +69,23 @@ mod marker {
 	impl Marker for UnbiasedErrorSignal {}
 }
 
-pub(crate) type BiasedSignalView<'a> = BufferView<'a, marker::BiasedSignal>;
-pub(crate) type UnbiasedSignalView<'a> = BufferView<'a, marker::UnbiasedSignal>;
-pub(crate) type BiasedErrorSignalView<'a> = BufferView<'a, marker::BiasedErrorSignal>;
-pub(crate) type UnbiasedErrorSignalView<'a> = BufferView<'a, marker::UnbiasedErrorSignal>;
+pub type BiasedSignalView<'a> = BufferView<'a, marker::BiasedSignal>;
+pub type UnbiasedSignalView<'a> = BufferView<'a, marker::UnbiasedSignal>;
+pub type BiasedErrorSignalView<'a> = BufferView<'a, marker::BiasedErrorSignal>;
+pub type UnbiasedErrorSignalView<'a> = BufferView<'a, marker::UnbiasedErrorSignal>;
 
-pub(crate) type BiasedSignalViewMut<'a> = BufferViewMut<'a, marker::BiasedSignal>;
-pub(crate) type UnbiasedSignalViewMut<'a> = BufferViewMut<'a, marker::UnbiasedSignal>;
-pub(crate) type BiasedErrorSignalViewMut<'a> = BufferViewMut<'a, marker::BiasedErrorSignal>;
-pub(crate) type UnbiasedErrorSignalViewMut<'a> = BufferViewMut<'a, marker::UnbiasedErrorSignal>;
+pub type BiasedSignalViewMut<'a> = BufferViewMut<'a, marker::BiasedSignal>;
+pub type UnbiasedSignalViewMut<'a> = BufferViewMut<'a, marker::UnbiasedSignal>;
+pub type BiasedErrorSignalViewMut<'a> = BufferViewMut<'a, marker::BiasedErrorSignal>;
+pub type UnbiasedErrorSignalViewMut<'a> = BufferViewMut<'a, marker::UnbiasedErrorSignal>;
 
-pub(crate) type BiasedSignalBuffer = Buffer<marker::BiasedSignal>;
-pub(crate) type UnbiasedSignalBuffer = Buffer<marker::UnbiasedSignal>;
-pub(crate) type BiasedErrorSignalBuffer = Buffer<marker::BiasedErrorSignal>;
-pub(crate) type UnbiasedErrorSignalBuffer = Buffer<marker::UnbiasedErrorSignal>;
+pub type BiasedSignalBuffer = Buffer<marker::BiasedSignal>;
+pub type UnbiasedSignalBuffer = Buffer<marker::UnbiasedSignal>;
+pub type BiasedErrorSignalBuffer = Buffer<marker::BiasedErrorSignal>;
+pub type UnbiasedErrorSignalBuffer = Buffer<marker::UnbiasedErrorSignal>;
 
-pub(crate) type Iter<'a> = ndarray::iter::Iter<'a, f32, Ix1>;
-pub(crate) type IterMut<'a> = ndarray::iter::IterMut<'a, f32, Ix1>;
+pub type Iter<'a> = ndarray::iter::Iter<'a, f32, Ix1>;
+pub type IterMut<'a> = ndarray::iter::IterMut<'a, f32, Ix1>;
 
 impl<D, B> PartialEq for BufferBase<D, B>
 	where D: ndarray::Data<Elem = f32>,
