@@ -183,8 +183,31 @@ impl Mentor {
 		})
 	}
 
-	pub fn finish(self) -> Result<NeuralNet> {
-		unimplemented!() // TODO: Implement the training procedure.
+	/// Starts the training procedure for the given `Mentor` settings.
+	/// 
+	/// Note that this call may take a while depending on the requested quality of training result.
+	/// 
+	/// Returns the fully trained neural network when the training is finished.
+	pub fn finish(mut self) -> Result<NeuralNet> {
+		use trainer::{
+			PredictSupervised,
+			OptimizeSupervised
+		};
+		while !self.stop_when.evaluate(&self.ctx) {
+			let sample = self.sample_gen.next_sample();
+			self.nn.predict_supervised(sample)
+				.optimize_supervised(self.ctx.lr, self.ctx.lm);
+			if self.log_when.evaluate(&self.ctx) {
+				info!("Prophet Library :: Log of `prophet::trainer::Mentor`:\n\
+					   Context: {:?}\n\
+					   Neural Net: {:?}", self.ctx, self.nn)
+			}
+			// TODO: Fix bug/misdesign that the latest MSE (or general LOSS deviate)
+			//       is not communicated back to the trainer since it is not returned anywhere.
+			//       This requires a slight redesign of the trait API.
+			self.ctx.next_iteration();
+		}
+		Ok(self.nn)
 	}
 }
 
