@@ -8,7 +8,8 @@ use trainer::sample::SampleGen;
 use trainer::{
 	TrainCondition
 };
-use errors::{Error, Result};
+use errors::{Result};
+use trainer::condition;
 
 use log::Log;
 
@@ -24,6 +25,38 @@ pub struct Context {
 	latest_mse: f64,
 	lr: LearnRate,
 	lm: LearnMomentum
+}
+
+impl Context {
+	/// Creates a new `Context` from the given `LearnRate` and `LearnMomentum`
+	/// and initializes the other values with their respective defaults.
+	pub fn new(lr: LearnRate, lm: LearnMomentum) -> Context {
+		Context{
+			time_started: time::Instant::now(),
+			iteration: 0,
+			epochs_passed: 0,
+			latest_mse: 1.0,
+			lr, lm
+		}
+	}
+
+	/// Increases the iteration counter by `1` (one).
+	#[inline]
+	pub fn next_iteration(&mut self) {
+		self.iteration += 1
+	}
+
+	/// Increases the counter representing the epochs passed by `1` (one).
+	#[inline]
+	pub fn next_epoch(&mut self) {
+		self.epochs_passed += 1
+	}
+
+	/// Upates the latest mean squared error (MSE).
+	#[inline]
+	pub fn update_mse(&mut self, latest_mse: f64) {
+		self.latest_mse = latest_mse
+	}
 }
 
 impl TrainingState for Context {
@@ -78,6 +111,52 @@ impl Mentor {
 	{
 		MentorBuilder::new(nn.into())
 	}
+
+	/// Creates a new `Mentor` from the given `MentorBuilder`.
+	/// 
+	/// This also initializes values that were not provided by the user
+	/// to their defaults.
+	/// 
+	/// Note that this does not start the training process by itself.
+	/// 
+	/// # Errors
+	/// 
+	/// - If some required property was not set in the builer.
+	fn from_builder(builder: MentorBuilder) -> Result<Mentor> {
+		Ok(Mentor{
+			nn: builder.nn,
+			sample_gen: match builder.sample_gen {
+				Some(sample_gen) => sample_gen,
+				None => {
+					panic!("No sample gen specified during building process!")
+				}
+			},
+			stop_when: match builder.stop_when {
+				Some(stop_when) => stop_when,
+				None => {
+					panic!("No halting condition specified during building process!")
+				}
+			},
+			logger: match builder.logger {
+				Some(logger) => Some(logger),
+				None => None
+			},
+			log_when: match builder.log_when {
+				Some(log_when) => log_when,
+				None => {
+					Box::new(condition::Always)
+				}
+			},
+			ctx: Context::new(
+				builder.lr.unwrap_or(LearnRate::from(0.15)),
+				builder.lm.unwrap_or(LearnMomentum::from(0.0))
+			)
+		})
+	}
+
+	pub fn finish(self) -> Result<NeuralNet> {
+		unimplemented!() // TODO: Implement the training procedure.
+	}
 }
 
 impl MentorBuilder {
@@ -95,6 +174,13 @@ impl MentorBuilder {
 			lr: None,
 			lm: None
 		}
+	}
+
+	/// Finishes the building process and tries to create a full-fledged mentor
+	/// that is capable of training the given neural network using the settings
+	/// specified during the building phase.
+	pub fn start(self) -> Result<NeuralNet> {
+		Mentor::from_builder(self)?.finish()
 	}
 
 	/// Sets the learning rate that is used throughout the training session.
