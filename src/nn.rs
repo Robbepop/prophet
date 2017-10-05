@@ -1,6 +1,6 @@
 use ndarray::ArrayView1;
 
-use traits::prelude::*;
+use traits::{Predict};
 use layer::utils::prelude::*;
 use layer::{
 	HasOutputSignal,
@@ -15,6 +15,11 @@ use topology_v4::{
 	Topology
 };
 use errors::{Result};
+use trainer::{
+	SupervisedSample,
+	PredictSupervised,
+	OptimizeSupervised
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NeuralNet {
@@ -23,7 +28,7 @@ pub struct NeuralNet {
 }
 
 #[derive(Debug)]
-pub(crate) struct ReadyToOptimizeSupervised<'nn> {
+pub struct ReadyToOptimizeSupervised<'nn> {
 	nn: &'nn mut NeuralNet
 }
 
