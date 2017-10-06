@@ -12,7 +12,7 @@ impl LearnRate {
 	/// - If the given `f32` is not within the valid open interval of `(0,1]`.
 	pub fn new(rate: f32) -> Result<LearnRate> {
 		if !(0.0 <= rate && rate <= 1.0) {
-			return Err(Error::invalid_learn_rate(rate as f64))
+			return Err(Error::invalid_learn_rate(rate))
 		}
 		Ok(LearnRate(rate))
 	}
@@ -25,7 +25,7 @@ impl LearnRate {
 impl From<f32> for LearnRate {
 	fn from(rate: f32) -> LearnRate {
 		LearnRate::new(rate)
-			.expect("Expected valid user input (`f64`) for creating a new LearnRate.")
+			.expect("Expected valid user input (`f32`) for creating a new LearnRate.")
 	}
 }
 
@@ -41,7 +41,7 @@ impl LearnMomentum {
 	/// - If the given `f32` is not within the valid open interval of `[0,1]`.
 	pub fn new(momentum: f32) -> Result<LearnMomentum> {
 		if !(0.0 <= momentum && momentum <= 1.0) {
-			return Err(Error::invalid_learn_momentum(momentum as f64))
+			return Err(Error::invalid_learn_momentum(momentum))
 		}
 		Ok(LearnMomentum(momentum))
 	}
@@ -54,6 +54,6 @@ impl LearnMomentum {
 impl From<f32> for LearnMomentum {
 	fn from(rate: f32) -> LearnMomentum {
 		LearnMomentum::new(rate)
-			.expect("Expected valid user input (`f64`) for creating a new LearnMomentum.")
+			.expect("Expected valid user input (`f32`) for creating a new LearnMomentum.")
 	}
 }

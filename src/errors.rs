@@ -5,7 +5,7 @@ use std::error;
 use std::result;
 
 /// Kinds of errors that may occure while using this crate.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ErrorKind {
 	/// Occures when invalid sample input sizes are recognized.
 	UnmatchingInputSampleSize,
@@ -15,11 +15,11 @@ pub enum ErrorKind {
 
 	/// Occures when the learning rate is not within the valid
 	/// range of `(0,1)`.
-	InvalidLearnRate,
+	InvalidLearnRate(f32),
 
 	/// Occures when the learning momentum is not within the
 	/// valid range of `(0,1)`.
-	InvalidLearnMomentum,
+	InvalidLearnMomentum(f32),
 
 	/// Occures when the specified average net error
 	/// criterion is invalid.
@@ -80,7 +80,7 @@ pub enum ErrorKind {
 }
 
 /// The error class used in `Prophet`.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Error{
 	kind      : ErrorKind,
 	message   : String,
@@ -141,18 +141,18 @@ impl Error {
 	}
 
 	/// Creates a new `InvalidLearnRate` error with the given invalid learning rate.
-	pub(crate) fn invalid_learn_rate(lr: f64) -> Error {
+	pub(crate) fn invalid_learn_rate(lr: f32) -> Error {
 		Error{
-			kind: ErrorKind::InvalidLearnRate,
+			kind: ErrorKind::InvalidLearnRate(lr),
 			message: format!("Tried to create an invalid learning rate of {:?}. Valid learning rates must be between `0.0` and `1.0`.", lr),
 			annotation: None
 		}
 	}
 
 	/// Creates a new `InvalidLearnMomentum` error with the given invalid learning momentum.
-	pub(crate) fn invalid_learn_momentum(lm: f64) -> Error {
+	pub(crate) fn invalid_learn_momentum(lm: f32) -> Error {
 		Error{
-			kind: ErrorKind::InvalidLearnMomentum,
+			kind: ErrorKind::InvalidLearnMomentum(lm),
 			message: format!("Tried to create an invalid learning momentum of {:?}. Valid learning momentums must be between `0.0` and `1.0`.", lm),
 			annotation: None
 		}
