@@ -29,7 +29,7 @@ impl From<f32> for LearnRate {
 	}
 }
 
-/// Learn momentum.
+/// Learn momentum used during supervised learning.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct LearnMomentum(f32);
 
