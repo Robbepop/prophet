@@ -33,7 +33,7 @@ pub trait PredictSupervised<S>
 	fn predict_supervised(self, sample: &S) -> Self::Finalizer;
 }
 
-/// Trait trait has to be implemented for the `Finalizer` associated type of the
+/// Trait that has to be implemented for the `Finalizer` associated type of the
 /// `PredictSupervised` trait. Its mere purpose is to decouple training via supervised learning
 /// given sample data and learning from the train-procedure.
 /// 
@@ -41,6 +41,7 @@ pub trait PredictSupervised<S>
 /// for example the weights of their referenced neural network to optimize it towards the
 /// expected sample values of the foregun supervised prediction passes.
 pub trait OptimizeSupervised {
+	/// A type that can be used to query statistics about the learning process.
 	type Evaluator: EvaluateSupervised;
 
 	/// Optimizes the neural network respective to the foregun supervised predicition passes
@@ -50,8 +51,20 @@ pub trait OptimizeSupervised {
 	fn optimize_supervised(self, lr: LearnRate, lm: LearnMomentum) -> Self::Evaluator;
 }
 
+/// Types that act as query and statistics interface to supervise the learning process.
+/// 
+/// In particular this is currently used in supervised learning to make it possible to query the latest 
+/// mean-squared-error after every iteration of the learning process.
 pub trait EvaluateSupervised {
+	/// The statistics object encapsulating the stats to be queried.
+	/// 
+	/// # Example
+	/// 
+	/// For supervised learning this type is just a thin wrapper around a value representing the mean-squared-error.
+	/// 
+	/// Note that this can be the void-type to hide statistics from users.
 	type Stats;
 
+	/// Fetches the latest statistics of the learning procedure.
 	fn stats(self) -> Self::Stats;
 }
