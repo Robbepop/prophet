@@ -41,9 +41,17 @@ pub trait PredictSupervised<S>
 /// for example the weights of their referenced neural network to optimize it towards the
 /// expected sample values of the foregun supervised prediction passes.
 pub trait OptimizeSupervised {
+	type Evaluator: EvaluateSupervised;
+
 	/// Optimizes the neural network respective to the foregun supervised predicition passes
 	/// using the sample input signal and expected signal.
 	/// With this design it is possible to accumulate multiple prediction passes before carrying
 	/// out a single optimization pass: This is also called batch learning.
-	fn optimize_supervised(self, lr: LearnRate, lm: LearnMomentum);
+	fn optimize_supervised(self, lr: LearnRate, lm: LearnMomentum) -> Self::Evaluator;
+}
+
+pub trait EvaluateSupervised {
+	type Stats;
+
+	fn stats(self) -> Self::Stats;
 }
