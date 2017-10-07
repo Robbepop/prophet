@@ -11,7 +11,6 @@ use layer::utils::{
 use errors::{Error, Result};
 
 use std::fmt::Debug;
-use std::iter::FromIterator;
 
 /// Represents a supervised sample for supervised learning purposes.
 /// 
@@ -71,7 +70,7 @@ pub struct SampleCollection {
 	samples: Vec<Sample>
 }
 
-impl FromIterator<Sample> for Result<SampleCollection> {
+impl SampleCollection {
 	/// Creates a new `SampleCollection` from the given iterator of `Sample`s.
 	/// 
 	/// # Errors
@@ -86,7 +85,7 @@ impl FromIterator<Sample> for Result<SampleCollection> {
 	/// This won't fail for duplicate samples within the iterator, however,
 	/// a check for this scenario might be added in the future.
 	/// 
-	fn from_iter<I>(samples: I) -> Result<SampleCollection>
+	pub fn from_iter<I>(samples: I) -> Result<SampleCollection>
 		where I: IntoIterator<Item = Sample>
 	{
 		let samples: Vec<Sample> = samples.into_iter().collect();
@@ -108,9 +107,7 @@ impl FromIterator<Sample> for Result<SampleCollection> {
 		}
 		Ok(SampleCollection{samples})
 	}
-}
 
-impl SampleCollection {
 	/// Returns the sample length of the input signal.
 	/// 
 	/// This must be equal to the input signal length of the neural network.
