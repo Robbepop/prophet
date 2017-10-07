@@ -521,8 +521,7 @@ mod tests {
 
 		let top = Topology::input(2)
 			.fully_connect(2).activation(Tanh)
-			.fully_connect(1).activation(Tanh)
-			.done(); // TODO: Remove Topology<state::Building>, use Topology<state::Finished> instead.
+			.fully_connect(1).activation(Tanh);
 
 		println!(" - Creating neural net from topology ...");
 

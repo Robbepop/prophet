@@ -166,31 +166,11 @@ impl From<usize> for LayerSize {
 /// Builds up topologies and do some minor compile-time and 
 /// runtime checks to enforce validity of the topology as a shape for neural nets.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Topology<S = state::Finished>
-	where S: state::State
-{
-	layers: Vec<AnyLayer>,
-	marker: PhantomData<S>
+pub struct Topology {
+	layers: Vec<AnyLayer>
 }
 
-mod state {
-	pub trait State {}
-
-	#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-	pub struct Uninitialized;
-
-	#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-	pub struct Building;
-
-	#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-	pub struct Finished;
-
-	impl State for Uninitialized {}
-	impl State for Building {}
-	impl State for Finished {}
-}
-
-impl Topology<state::Uninitialized> {
+impl Topology {
 	/// Creates a new topology with an input layer of the given size.
 	/// 
 	/// # Panics
@@ -226,7 +206,7 @@ pub trait TopologyBuilder {
 }
 
 impl TopologyBuilder for InitializingTopology {
-	type Builder = Topology<state::Building>;
+	type Builder = Topology;
 
 	fn fully_connect<S>(self, size: S) -> Self::Builder
 		where S: Into<LayerSize>
@@ -235,8 +215,7 @@ impl TopologyBuilder for InitializingTopology {
 			layers: vec![
 				AnyLayer::FullyConnected(
 					FullyConnectedLayer::new(self.input_len, size.into()))
-			],
-			marker: PhantomData
+			]
 		}
 	}
 
@@ -245,14 +224,13 @@ impl TopologyBuilder for InitializingTopology {
 			layers: vec![
 				AnyLayer::Activation(
 					ActivationLayer::new(self.input_len, act))
-			],
-			marker: PhantomData
+			]
 		}
 	}
 }
 
-impl TopologyBuilder for Topology<state::Building> {
-	type Builder = Topology<state::Building>;
+impl TopologyBuilder for Topology {
+	type Builder = Topology;
 
 	fn fully_connect<S>(mut self, size: S) -> Self::Builder
 		where S: Into<LayerSize>
@@ -277,15 +255,7 @@ impl TopologyBuilder for Topology<state::Building> {
 	}
 }
 
-impl Topology<state::Building> {
-	/// Returns the fully constructed topology.
-	/// 
-	/// No further modifications to the topology are possible after this operation.
-	#[inline]
-	pub fn done(self) -> Topology<state::Finished> {
-		Topology{layers: self.layers, marker: PhantomData}
-	}
-
+impl Topology {
 	/// Returns the length of the last pushed layer.
 	/// 
 	/// Useful for layers like activation layers which adopt their size
@@ -298,7 +268,7 @@ impl Topology<state::Building> {
 	}
 }
 
-impl Topology<state::Finished> {
+impl Topology {
 	/// Returns the number of input neurons.
 	///
 	/// Used by mentors to validate their sample sizes.
@@ -320,7 +290,7 @@ impl Topology<state::Finished> {
 	}
 }
 
-impl IntoIterator for Topology<state::Finished> {
+impl IntoIterator for Topology {
 	type Item = AnyLayer;
 	type IntoIter = vec::IntoIter<AnyLayer>;
 
@@ -340,8 +310,7 @@ mod tests {
 			.fully_connect( 5).activation(ReLU)
 			.fully_connect(10).activation(ReLU)
 			.fully_connect(10).activation(ReLU)
-			.fully_connect( 5).activation(Tanh)
-			.done();
+			.fully_connect( 5).activation(Tanh);
 
 		assert_eq!(top.input_len() , LayerSize(2));
 		assert_eq!(top.output_len(), LayerSize(5));
