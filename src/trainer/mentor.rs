@@ -431,3 +431,67 @@ impl MentorBuilder {
 		}
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn xor() {
+		use Activation::Tanh;
+		use trainer::RandomSampleScheduler;
+		use trainer::condition;
+		use topology_v4::{
+			Topology,
+			TopologyBuilder
+		};
+		use std::time;
+
+		#[macro_use]
+		use trainer::sample;
+		use trainer::sample::{
+			Sample,
+			SampleCollection
+		};
+
+		println!("Starting unit-test for XOR-training.");
+		println!(" - Creating samples ...");
+
+		let (t, f) = (1.0, -1.0);
+		let samples = samples![
+			[f, f] => f,
+			[t, f] => t,
+			[f, t] => t,
+			[t, t] => f
+		];
+
+		println!(" - Sample creation finished.");
+		println!(" - Creating topology ...");
+
+		let top = Topology::input(2)
+			.fully_connect(2).activation(Tanh)
+			.fully_connect(1).activation(Tanh)
+			.done();
+
+		println!(" - Creating neural net from topology ...");
+
+		let net = NeuralNet::from_topology(top).unwrap();
+
+		println!(" - Starting setup of learning process ...");
+
+		let training = Mentor::train(net)
+			.sample_gen(RandomSampleScheduler::new(samples.clone())).unwrap()
+			.learn_rate(0.3).unwrap()
+			.learn_momentum(0.5).unwrap()
+			.log_when(condition::TimeInterval::once_in(time::Duration::from_secs(1))).unwrap()
+			.stop_when(condition::BelowRecentMSE::new(0.9, 0.05).unwrap()).unwrap();
+
+		println!(" - Start learning ...");
+	
+		training.start().unwrap();
+
+		println!(" - Finished learning.");
+
+		// validate_rounded(net, samples);
+	}
+}
