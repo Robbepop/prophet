@@ -2,6 +2,7 @@ pub mod condition;
 mod sample;
 mod mentor;
 mod traits;
+mod utils;
 
 pub use self::sample::{
 	SupervisedSample,
@@ -25,5 +26,10 @@ pub use self::mentor::{
 
 pub use self::traits::{
 	PredictSupervised,
-	OptimizeSupervised
+	OptimizeSupervised,
+	EvaluateSupervised
+};
+
+pub use self::utils::{
+	MeanSquaredError
 };
