@@ -8,6 +8,7 @@ use std::time;
 use std::fmt::Debug;
 
 use errors::{Result};
+use trainer::MeanSquaredError;
 
 /// Provides an interface for training stats during the training process
 /// that can be used and queried by halting conditions to check whether their
@@ -33,7 +34,7 @@ pub trait TrainingState {
 	fn epochs_passed(&self) -> usize;
 
 	/// Returns the latest mean-squared-error (MSE) of the training.
-	fn latest_mse(&self) -> f64;
+	fn latest_mse(&self) -> MeanSquaredError;
 }
 
 /// This is used to query a `TrainingState` and check whether the requirements
@@ -121,7 +122,7 @@ pub struct BelowRecentMSE{
 	/// The given `momentum` ranges from `(0, 1)` and regulates how strongly the RMSE depends on earlier iterations.
 	/// A `momentum` near `0` has near to no influence by earlier iterations while a `momentum` near `1`
 	/// is influenced heavily by earlier iterations.
-	momentum: f64,
+	momentum: f32,
 	/// This represents the target recent mean squared error.
 	/// The training process will stop once the training reaches this target value.
 	/// 
@@ -130,9 +131,9 @@ pub struct BelowRecentMSE{
 	/// The lower this value is, the better are the results of the resulting neural net once
 	/// the training has finished. However, trying to reach a very low `taget` value can be very time
 	/// consuming and sometimes even impossible.
-	target: f64,
+	target: f32,
 	/// This is the current recent mean squared error calculated so far in the training process.
-	rmse: f64
+	rmse: f32
 }
 
 /// Evaluates to `true` once every given amount of time passed.
@@ -230,7 +231,7 @@ impl BelowRecentMSE {
 	/// 
 	/// - If `momentum` is not within the range `(0, 1)`.
 	/// - If `target` is not strictly positive.
-	pub fn new(momentum: f64, target: f64) -> Result<BelowRecentMSE> {
+	pub fn new(momentum: f32, target: f32) -> Result<BelowRecentMSE> {
 		if !(0.0 < momentum && momentum < 1.0) {
 			// Error! Momentum invalid.
 		}
@@ -269,7 +270,7 @@ impl TrainCondition for EpochsPassed {
 impl TrainCondition for BelowRecentMSE {
 	#[inline]
 	fn evaluate(&mut self, stats: &TrainingState) -> bool {
-		self.rmse = (1.0 - self.momentum) * stats.latest_mse() + self.momentum * self.rmse;
+		self.rmse = (1.0 - self.momentum) * stats.latest_mse().to_f32() + self.momentum * self.rmse;
 		self.rmse <= self.target
 	}
 }

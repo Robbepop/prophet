@@ -10,6 +10,7 @@ use trainer::{
 };
 use errors::{Result};
 use trainer::condition;
+use trainer::MeanSquaredError;
 
 use std::time;
 
@@ -20,8 +21,9 @@ pub struct Context {
 	iteration: usize,
 	epochs_passed: usize,
 	epoch_len: usize,
-	latest_mse: f64,
+	latest_mse: MeanSquaredError,
 	batch_len: usize,
+	batch_bit: usize,
 	lr: LearnRate,
 	lm: LearnMomentum
 }
@@ -39,15 +41,25 @@ impl Context {
 			iteration: 0,
 			epochs_passed: 0,
 			epoch_len,
-			latest_mse: 1.0,
+			latest_mse: MeanSquaredError::new(1.0).unwrap(),
 			batch_len,
+			batch_bit: 0,
 			lr, lm
 		}
 	}
 
+	/// Adjusts stats to the next step.
+	/// 
+	/// This adjusts iteration count, current epoch, as well as the current batch.
+	#[inline]
+	pub fn next(&mut self) {
+		self.next_iteration();
+		self.next_batch();
+	}
+
 	/// Increases the iteration counter by `1` (one).
 	#[inline]
-	pub fn next_iteration(&mut self) {
+	fn next_iteration(&mut self) {
 		self.iteration += 1;
 		if self.iteration % self.epoch_len == 0 {
 			self.next_epoch()
@@ -60,10 +72,26 @@ impl Context {
 		self.epochs_passed += 1
 	}
 
+	/// Increases the batch bit by `1` (one) also resets to zero `0` whenever the batch len is reached..
+	#[inline]
+	fn next_batch(&mut self) {
+		self.batch_bit += 1;
+		self.batch_bit %= self.batch_len;
+	}
+
 	/// Upates the latest mean squared error (MSE).
 	#[inline]
-	pub fn update_mse(&mut self, latest_mse: f64) {
+	pub fn update_mse(&mut self, latest_mse: MeanSquaredError) {
 		self.latest_mse = latest_mse
+	}
+
+	/// Returns `true` if the latest batch was finished and the neural net is ready to 
+	/// optimize itself according to the latest accumulated supervised predicitions.
+	/// 
+	/// Note that this always returns `true` for non-batched learning.
+	#[inline]
+	pub fn batch_finished(&self) -> bool {
+		self.batch_bit == 0
 	}
 }
 
@@ -84,7 +112,7 @@ impl TrainingState for Context {
 	}
 
 	#[inline]
-	fn latest_mse(&self) -> f64 {
+	fn latest_mse(&self) -> MeanSquaredError {
 		self.latest_mse
 	}
 }
@@ -162,7 +190,7 @@ impl Mentor {
 			};
 		let ctx = Context::new(
 			builder.epoch_len.unwrap_or_else(|| sample_gen.len().unwrap_or(1)),
-			1,
+			builder.batch_len.unwrap_or(1),
 			builder.lr.unwrap_or(LearnRate::from(0.15)),
 			builder.lm.unwrap_or(LearnMomentum::from(0.0))
 		);
@@ -183,12 +211,26 @@ impl Mentor {
 	pub fn finish(mut self) -> Result<NeuralNet> {
 		use trainer::{
 			PredictSupervised,
-			OptimizeSupervised
+			OptimizeSupervised,
+			EvaluateSupervised
 		};
 		while !self.stop_when.evaluate(&self.ctx) {
+			self.ctx.next();
+
 			let sample = self.sample_gen.next_sample();
-			self.nn.predict_supervised(sample)
-				.optimize_supervised(self.ctx.lr, self.ctx.lm);
+			let latest_mse = if self.ctx.batch_finished() {
+				self.nn.predict_supervised(sample)
+				       .optimize_supervised(self.ctx.lr, self.ctx.lm)
+				       .stats()
+			}
+			else {
+				self.nn.predict_supervised(sample)
+				       .stats()
+			};
+			self.ctx.update_mse(latest_mse);
+
+			// self.nn.predict_supervised(sample)
+			// 	.optimize_supervised(self.ctx.lr, self.ctx.lm);
 			if self.log_when.evaluate(&self.ctx) {
 				info!(
 					"\n\
@@ -207,7 +249,6 @@ impl Mentor {
 			// TODO: Fix bug/misdesign that the latest MSE (or general LOSS deviate)
 			//       is not communicated back to the trainer since it is not returned anywhere.
 			//       This requires a slight redesign of the trait API.
-			self.ctx.next_iteration();
 		}
 		Ok(self.nn)
 	}

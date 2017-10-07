@@ -6,6 +6,14 @@ use errors::{Result};
 pub struct MeanSquaredError(f32);
 
 impl MeanSquaredError {
+	pub fn new(mse: f32) -> Result<MeanSquaredError> {
+		if mse.is_sign_negative() {
+			// TODO: Handle errors properly.
+			panic!("Error: Cannot create a negative MeanSquaredError.")
+		}
+		Ok(MeanSquaredError(mse))
+	}
+
 	pub fn from_arrays<'a, 'e, A, E>(actual: A, expected: E) -> Result<MeanSquaredError>
 		where A: AsArray<'a, f32>,
 		      E: AsArray<'e, f32>
