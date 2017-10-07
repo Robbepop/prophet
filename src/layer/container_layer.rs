@@ -1,4 +1,4 @@
-use layer::layer::Layer;
+use layer::any_layer::AnyLayer;
 use layer::utils::prelude::*;
 use layer::traits::prelude::*;
 use errors::{Result};
@@ -10,7 +10,7 @@ use utils::{LearnRate, LearnMomentum};
 /// With this layer kind it is possible to stack layer hierachies and modularize layer topologies.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ContainerLayer {
-	childs: Vec<Layer>
+	childs: Vec<AnyLayer>
 }
 
 impl ContainerLayer {
@@ -20,7 +20,7 @@ impl ContainerLayer {
 	/// 
 	/// This fails if the given vector is empty or when the input and output sizes of the
 	/// given layers within the vector do not match.
-	pub fn from_vec(layers: Vec<Layer>) -> Result<ContainerLayer> {
+	pub fn from_vec(layers: Vec<AnyLayer>) -> Result<ContainerLayer> {
 		if layers.is_empty() {
 			panic!("ContainerLayer requires to contain at least one child layer."); // TODO: Rewrite as error.
 		}
@@ -35,25 +35,25 @@ impl ContainerLayer {
 
 	/// Returns a reference to the input child layer.
 	#[inline]
-	fn input_layer(&self) -> &Layer {
+	fn input_layer(&self) -> &AnyLayer {
 		self.childs.first().unwrap()
 	}
 
 	/// Returns a mutable reference to the input child layer.
 	#[inline]
-	fn input_layer_mut(&mut self) -> &mut Layer {
+	fn input_layer_mut(&mut self) -> &mut AnyLayer {
 		self.childs.first_mut().unwrap()
 	}
 
 	/// Returns a reference to the output child layer.
 	#[inline]
-	fn output_layer(&self) -> &Layer {
+	fn output_layer(&self) -> &AnyLayer {
 		self.childs.last().unwrap()
 	}
 
 	/// Returns a mutable reference to the output child layer.
 	#[inline]
-	fn output_layer_mut(&mut self) -> &mut Layer {
+	fn output_layer_mut(&mut self) -> &mut AnyLayer {
 		self.childs.last_mut().unwrap()
 	}
 

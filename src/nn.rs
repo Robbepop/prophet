@@ -48,7 +48,7 @@ impl NeuralNet {
 				top.input_len().into_usize())?,
 			layers: ContainerLayer::from_vec(top
 				.into_iter()
-				.map(|layer| layer::Layer::from(layer))
+				.map(layer::AnyLayer::from)
 				.collect()
 			)?
 		})

@@ -5,33 +5,33 @@ use utils::{LearnRate, LearnMomentum};
 use topology_v4;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Layer {
+pub enum AnyLayer {
 	Activation(ActivationLayer),
 	FullyConnected(FullyConnectedLayer),
 	Container(ContainerLayer)
 }
-use self::Layer::{Activation, FullyConnected, Container};
+use self::AnyLayer::{Activation, FullyConnected, Container};
 
-impl From<ActivationLayer> for Layer {
+impl From<ActivationLayer> for AnyLayer {
 	fn from(act_layer: ActivationLayer) -> Self {
-		Layer::Activation(act_layer)
+		AnyLayer::Activation(act_layer)
 	}
 }
 
-impl From<FullyConnectedLayer> for Layer {
+impl From<FullyConnectedLayer> for AnyLayer {
 	fn from(fc_layer: FullyConnectedLayer) -> Self {
-		Layer::FullyConnected(fc_layer)
+		AnyLayer::FullyConnected(fc_layer)
 	}
 }
 
-impl From<ContainerLayer> for Layer {
+impl From<ContainerLayer> for AnyLayer {
 	fn from(c_layer: ContainerLayer) -> Self {
-		Layer::Container(c_layer)
+		AnyLayer::Container(c_layer)
 	}
 }
 
-impl From<topology_v4::AnyLayer> for Layer {
-	fn from(any_top_layer: topology_v4::AnyLayer) -> Layer {
+impl From<topology_v4::AnyLayer> for AnyLayer {
+	fn from(any_top_layer: topology_v4::AnyLayer) -> AnyLayer {
 		use topology_v4::AnyLayer::*;
 		match any_top_layer {
 			Activation(layer) => ActivationLayer::from(layer).into(),
@@ -40,7 +40,7 @@ impl From<topology_v4::AnyLayer> for Layer {
 	}
 }
 
-impl ProcessInputSignal for Layer {
+impl ProcessInputSignal for AnyLayer {
 	fn process_input_signal(&mut self, input_signal: BiasedSignalView) {
 		match *self {
 			Activation(ref mut layer) => layer.process_input_signal(input_signal),
@@ -50,7 +50,7 @@ impl ProcessInputSignal for Layer {
 	}
 }
 
-impl CalculateOutputErrorSignal for Layer {
+impl CalculateOutputErrorSignal for AnyLayer {
 	fn calculate_output_error_signal(&mut self, target_signals: UnbiasedSignalView) {
 		match *self {
 			Activation(ref mut layer) => layer.calculate_output_error_signal(target_signals),
@@ -60,7 +60,7 @@ impl CalculateOutputErrorSignal for Layer {
 	}
 }
 
-impl PropagateErrorSignal for Layer {
+impl PropagateErrorSignal for AnyLayer {
 	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
 		where P: HasErrorSignal
 	{
@@ -72,7 +72,7 @@ impl PropagateErrorSignal for Layer {
 	}
 }
 
-impl ApplyErrorSignalCorrection for Layer {
+impl ApplyErrorSignalCorrection for AnyLayer {
 	fn apply_error_signal_correction(&mut self, signal: BiasedSignalView, lr: LearnRate, lm: LearnMomentum) {
 		match *self {
 			Activation(ref mut layer) => layer.apply_error_signal_correction(signal, lr, lm),
@@ -82,7 +82,7 @@ impl ApplyErrorSignalCorrection for Layer {
 	}
 }
 
-impl HasOutputSignal for Layer {
+impl HasOutputSignal for AnyLayer {
 	fn output_signal(&self) -> BiasedSignalView {
 		match *self {
 			Activation(ref layer) => layer.output_signal(),
@@ -100,7 +100,7 @@ impl HasOutputSignal for Layer {
 	}
 }
 
-impl HasErrorSignal for Layer {
+impl HasErrorSignal for AnyLayer {
 	fn error_signal(&self) -> BiasedErrorSignalView {
 		match *self {
 			Activation(ref layer) => layer.error_signal(),
@@ -118,7 +118,7 @@ impl HasErrorSignal for Layer {
 	}
 }
 
-impl SizedLayer for Layer {
+impl SizedLayer for AnyLayer {
 	fn inputs(&self) -> usize {
 		match *self {
 			Activation(ref layer) => layer.inputs(),
