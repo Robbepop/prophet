@@ -89,8 +89,6 @@ impl TrainingState for Context {
 	}
 }
 
-trait DebuggableLog: Log + Debug {}
-
 /// A `Mentor` can be used to train a given neural network.
 /// 
 /// It manages the training process, guarantees certain result qualities
@@ -104,7 +102,6 @@ trait DebuggableLog: Log + Debug {}
 pub struct Mentor {
 	nn: NeuralNet,
 	sample_gen: Box<SampleGen>,
-	logger: Option<Box<DebuggableLog>>,
 	log_when: Box<TrainCondition>,
 	stop_when: Box<TrainCondition>,
 	ctx: Context
@@ -116,7 +113,6 @@ pub struct MentorBuilder {
 	nn: NeuralNet,
 	sample_gen: Option<Box<SampleGen>>,
 	stop_when: Option<Box<TrainCondition>>,
-	logger: Option<Box<DebuggableLog>>,
 	log_when: Option<Box<TrainCondition>>,
 	epoch_len: Option<usize>,
 	lr: Option<LearnRate>,
@@ -156,11 +152,6 @@ impl Mentor {
 					panic!("No halting condition specified during building process!")
 				}
 			};
-		let logger =
-			match builder.logger {
-				Some(logger) => Some(logger),
-				None => None
-			};
 		let log_when =
 			match builder.log_when {
 				Some(log_when) => log_when,
@@ -177,7 +168,6 @@ impl Mentor {
 			nn: builder.nn,
 			sample_gen,
 			stop_when,
-			logger,
 			log_when,
 			ctx
 		})
@@ -221,7 +211,6 @@ impl MentorBuilder {
 		MentorBuilder{nn,
 			sample_gen: None,
 			stop_when: None,
-			logger: None,
 			log_when: None,
 			epoch_len: None,
 			lr: None,
@@ -322,6 +311,46 @@ impl MentorBuilder {
 			Some(_) => {
 				// TODO: Do proper error handling here:
 				panic!("Already set a sample generator. Confused which one to use. Cannot set twice.");
+			}
+		}
+	}
+
+	/// Sets the halting condition that is used to query when the training shall end.
+	/// 
+	/// # Errors
+	/// 
+	/// - If a halting condition was already set for this builder.
+	pub fn stop_when<C>(mut self, stop_when: C) -> Result<Self>
+		where C: TrainCondition + 'static
+	{
+		match self.stop_when {
+			None => {
+				self.stop_when = Some(Box::new(stop_when));
+				Ok(self)
+			}
+			Some(_) => {
+				// TODO: Do proper error handling here:
+				panic!("Already set a halting condition. Confused which one to use. Cannot set twice.");
+			}
+		}
+	}
+
+	/// Sets the logging condition that is used to query when the training state shall be logged.
+	/// 
+	/// # Errors
+	/// 
+	/// - If a logging condition was already set for this builder.
+	pub fn log_when<C>(mut self, log_when: C) -> Result<Self>
+		where C: TrainCondition + 'static
+	{
+		match self.log_when {
+			None => {
+				self.log_when = Some(Box::new(log_when));
+				Ok(self)
+			}
+			Some(_) => {
+				// TODO: Do proper error handling here:
+				panic!("Already set a logging condition. Confused which one to use. Cannot set twice.");
 			}
 		}
 	}
