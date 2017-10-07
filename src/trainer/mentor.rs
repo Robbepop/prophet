@@ -185,9 +185,19 @@ impl Mentor {
 			self.nn.predict_supervised(sample)
 				.optimize_supervised(self.ctx.lr, self.ctx.lm);
 			if self.log_when.evaluate(&self.ctx) {
-				info!("Prophet Library :: Log of `prophet::trainer::Mentor`:\n\
-					   Context: {:?}\n\
-					   Neural Net: {:?}", self.ctx, self.nn)
+				info!(
+					"\n\
+					 =======================================================\n\
+					 Prophet Library :: Log of `prophet::trainer::Mentor`:  \n\
+					  * Context                                             \n\
+					 {:?}\n\
+					 -------------------------------------------------------\n\
+					  * Neural Net                                          \n\
+					 {:?}\n\
+					 =======================================================\n\
+					",
+					self.ctx, self.nn
+				)
 			}
 			// TODO: Fix bug/misdesign that the latest MSE (or general LOSS deviate)
 			//       is not communicated back to the trainer since it is not returned anywhere.
