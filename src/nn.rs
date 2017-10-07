@@ -18,7 +18,9 @@ use errors::{Result};
 use trainer::{
 	SupervisedSample,
 	PredictSupervised,
-	OptimizeSupervised
+	OptimizeSupervised,
+	EvaluateSupervised,
+	MeanSquaredError
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -30,6 +32,11 @@ pub struct NeuralNet {
 #[derive(Debug)]
 pub struct ReadyToOptimizeSupervised<'nn> {
 	nn: &'nn mut NeuralNet
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct MSEEvaluator {
+	mse: MeanSquaredError
 }
 
 impl NeuralNet {
@@ -81,7 +88,19 @@ impl<'nn, S> PredictSupervised<S> for &'nn mut NeuralNet
 }
 
 impl<'nn> OptimizeSupervised for ReadyToOptimizeSupervised<'nn> {
-	fn optimize_supervised(self, lr: LearnRate, lm: LearnMomentum) {
+	type Evaluator = MSEEvaluator;
+
+	#[inline]
+	fn optimize_supervised(self, lr: LearnRate, lm: LearnMomentum) -> Self::Evaluator {
 		self.nn.layers.apply_error_signal_correction(self.nn.input.view(), lr, lm)
+	}
+}
+
+impl EvaluateSupervised for MSEEvaluator {
+	type Stats = MeanSquaredError;
+
+	#[inline]
+	fn stats(self) -> Self::Stats {
+		self.0
 	}
 }
