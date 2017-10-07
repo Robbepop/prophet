@@ -21,6 +21,7 @@ pub use self::condition::{
 
 pub use self::mentor::{
 	Mentor,
+	InitializingMentor,
 	MentorBuilder,
 	Context
 };

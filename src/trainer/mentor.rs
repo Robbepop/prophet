@@ -137,7 +137,7 @@ pub struct Mentor {
 
 /// Used to construct fully-fledged `Mentor`s using the well-known builder pattern.
 #[derive(Debug)]
-pub struct MentorBuilder {
+pub struct InitializingMentor {
 	nn: NeuralNet,
 	sample_gen: Option<Box<SampleGen>>,
 	stop_when: Option<Box<TrainCondition>>,
@@ -150,13 +150,13 @@ pub struct MentorBuilder {
 
 impl Mentor {
 	/// Initiates a training session for the given neural network or topology.
-	pub fn train<NN>(nn: NN) -> MentorBuilder
+	pub fn train<NN>(nn: NN) -> InitializingMentor
 		where NN: Into<NeuralNet>
 	{
-		MentorBuilder::new(nn.into())
+		InitializingMentor::new(nn.into())
 	}
 
-	/// Creates a new `Mentor` from the given `MentorBuilder`.
+	/// Creates a new `Mentor` from the given `InitializingMentor`.
 	/// 
 	/// This also initializes values that were not provided by the user
 	/// to their defaults.
@@ -166,7 +166,7 @@ impl Mentor {
 	/// # Errors
 	/// 
 	/// - If some required property was not set in the builer.
-	fn from_builder(builder: MentorBuilder) -> Result<Mentor> {
+	fn from_builder(builder: InitializingMentor) -> Result<Mentor> {
 		let sample_gen =
 			match builder.sample_gen {
 				Some(sample_gen) => sample_gen,
@@ -261,49 +261,107 @@ impl Mentor {
 /// with method chaining to no longer require using `.unwrap()` or similar
 /// unwrapping functionality after each configuring step during the build
 /// process.
-trait MentorBuilderOrError {
+pub trait MentorBuilderOrError {
 	/// Returns a `MentorBuilder` wrapped as a `Result<MentorBuilder>`.
-	fn builder_or_error(self) -> Result<MentorBuilder>;
+	fn builder_or_error(self) -> Result<InitializingMentor>;
 }
 
-impl MentorBuilderOrError for MentorBuilder {
+impl MentorBuilderOrError for InitializingMentor {
 	#[inline]
-	fn builder_or_error(self) -> Result<MentorBuilder> {
+	fn builder_or_error(self) -> Result<InitializingMentor> {
 		Ok(self)
 	}
 }
 
-impl MentorBuilderOrError for Result<MentorBuilder> {
+impl MentorBuilderOrError for Result<InitializingMentor> {
 	#[inline]
-	fn builder_or_error(self) -> Result<MentorBuilder> {
+	fn builder_or_error(self) -> Result<InitializingMentor> {
 		self
 	}
 }
 
-trait MentorBuilderI: Sized {
+/// Types that build fully-fledged `Mentor`s via the well-known builder-pattern.
+/// 
+/// The main purpose of this trait is to allow for greater flexibility in the building
+/// process so that users may leave away some manual error handling to improve usability
+/// of the mentor building process.
+pub trait MentorBuilder: Sized {
+	/// Finishes the building process and tries to create a full-fledged mentor
+	/// that is capable of training the given neural network using the settings
+	/// specified during the building phase.
 	fn start(self) -> Result<NeuralNet>;
-	fn learn_rate<LR>(self, lr: LR) -> Result<MentorBuilder>
+
+	/// Sets the learning rate that is used throughout the training session.
+	/// 
+	/// Note: It isn't yet possible to adjust the learning rate after this phase.
+	/// 
+	/// # Errors
+	/// 
+	/// - If the learning rate was already set for this builder.
+	fn learn_rate<LR>(self, lr: LR) -> Result<InitializingMentor>
 		where LR: Into<LearnRate>;
-	fn learn_momentum<LM>(self, lm: LM) -> Result<MentorBuilder>
+
+	/// Sets the learn momentum that is used throughout the training session.
+	/// 
+	/// Note: It isn't yet possible to adjust the learn momentum after this phase.
+	/// 
+	/// # Errors
+	/// 
+	/// - If the learn momentum was already set for this builder.
+	fn learn_momentum<LM>(self, lm: LM) -> Result<InitializingMentor>
 		where LM: Into<LearnMomentum>;
-	fn epoch_len(self, epoch_len: usize) -> Result<MentorBuilder>;
-	fn batch_len(self, batch_len: usize) -> Result<MentorBuilder>;
-	fn sample_gen<G>(self, sample_gen: G) -> Result<MentorBuilder>
+
+	/// Sets the epoch length that is used statistics purposes throughout the training session.
+	/// 
+	/// Defaults to the length of the sample set if it is finite; else defaults to one (`1`).
+	/// 
+	/// # Errors
+	/// 
+	/// - If the given epoch length is zero (`0`). Epoch length must be a positive number.
+	fn epoch_len(self, epoch_len: usize) -> Result<InitializingMentor>;
+
+	/// Sets the batch length that is used for batched learning purposes throughout the training session.
+	/// 
+	/// Defaults to one (`1`) if no user-provided batch size is provided.
+	/// 
+	/// # Errors
+	/// 
+	/// - If the given epoch length is zero (`0`). Epoch length must be a positive number.
+	fn batch_len(self, batch_len: usize) -> Result<InitializingMentor>;
+
+	/// Sets the sample generator that is used throughout the training session.
+	/// 
+	/// # Errors
+	/// 
+	/// - If a sample generator was already set for this builder.
+	fn sample_gen<G>(self, sample_gen: G) -> Result<InitializingMentor>
 		where G: SampleGen + 'static;
-	fn stop_when<C>(self, stop_when: C) -> Result<MentorBuilder>
+
+	/// Sets the halting condition that is used to query when the training shall end.
+	/// 
+	/// # Errors
+	/// 
+	/// - If a halting condition was already set for this builder.
+	fn stop_when<C>(self, stop_when: C) -> Result<InitializingMentor>
 		where C: TrainCondition + 'static;
-	fn log_when<C>(self, log_when: C) -> Result<MentorBuilder>
+
+	/// Sets the logging condition that is used to query when the training state shall be logged.
+	/// 
+	/// # Errors
+	/// 
+	/// - If a logging condition was already set for this builder.
+	fn log_when<C>(self, log_when: C) -> Result<InitializingMentor>
 		where C: TrainCondition + 'static;
 }
 
-impl MentorBuilder {
-	/// Create a new `MentorBuilder` for the given `NeuralNet`.
+impl InitializingMentor {
+	/// Create a new `InitializingMentor` for the given `NeuralNet`.
 	/// 
 	/// This initiates the configuration and settings phase of a training session
 	/// via automated mentoring. The entire process is formed according to the
 	/// well-known builder pattern that guides you through the creation process.
 	pub fn new(nn: NeuralNet) -> Self {
-		MentorBuilder{nn,
+		InitializingMentor{nn,
 			sample_gen: None,
 			stop_when: None,
 			log_when: None,
@@ -315,22 +373,12 @@ impl MentorBuilder {
 	}
 }
 
-impl<MB> MentorBuilderI for MB where MB: MentorBuilderOrError {
-	/// Finishes the building process and tries to create a full-fledged mentor
-	/// that is capable of training the given neural network using the settings
-	/// specified during the building phase.
+impl<MB> MentorBuilder for MB where MB: MentorBuilderOrError {
 	fn start(self) -> Result<NeuralNet> {
 		Mentor::from_builder(self.builder_or_error()?)?.finish()
 	}
 
-	/// Sets the learning rate that is used throughout the training session.
-	/// 
-	/// Note: It isn't yet possible to adjust the learning rate after this phase.
-	/// 
-	/// # Errors
-	/// 
-	/// - If the learning rate was already set for this builder.
-	fn learn_rate<LR>(self, lr: LR) -> Result<MentorBuilder>
+	fn learn_rate<LR>(self, lr: LR) -> Result<InitializingMentor>
 		where LR: Into<LearnRate>
 	{
 		let mut this = self.builder_or_error()?;
@@ -346,14 +394,7 @@ impl<MB> MentorBuilderI for MB where MB: MentorBuilderOrError {
 		}
 	}
 
-	/// Sets the learn momentum that is used throughout the training session.
-	/// 
-	/// Note: It isn't yet possible to adjust the learn momentum after this phase.
-	/// 
-	/// # Errors
-	/// 
-	/// - If the learn momentum was already set for this builder.
-	fn learn_momentum<LM>(self, lm: LM) -> Result<MentorBuilder>
+	fn learn_momentum<LM>(self, lm: LM) -> Result<InitializingMentor>
 		where LM: Into<LearnMomentum>
 	{
 		let mut this = self.builder_or_error()?;
@@ -369,14 +410,7 @@ impl<MB> MentorBuilderI for MB where MB: MentorBuilderOrError {
 		}
 	}
 
-	/// Sets the epoch length that is used statistics purposes throughout the training session.
-	/// 
-	/// Defaults to the length of the sample set if it is finite; else defaults to one (`1`).
-	/// 
-	/// # Errors
-	/// 
-	/// - If the given epoch length is zero (`0`). Epoch length must be a positive number.
-	fn epoch_len(self, epoch_len: usize) -> Result<MentorBuilder> {
+	fn epoch_len(self, epoch_len: usize) -> Result<InitializingMentor> {
 		if epoch_len == 0 {
 			// TODO: Do proper error handling here:
 			panic!("Cannot set epoch length to zero (`0`). Epoch length must be a positive number.")
@@ -394,14 +428,7 @@ impl<MB> MentorBuilderI for MB where MB: MentorBuilderOrError {
 		}
 	}
 
-	/// Sets the batch length that is used for batched learning purposes throughout the training session.
-	/// 
-	/// Defaults to one (`1`) if no user-provided batch size is provided.
-	/// 
-	/// # Errors
-	/// 
-	/// - If the given epoch length is zero (`0`). Epoch length must be a positive number.
-	fn batch_len(self, batch_len: usize) -> Result<MentorBuilder> {
+	fn batch_len(self, batch_len: usize) -> Result<InitializingMentor> {
 		if batch_len == 0 {
 			// TODO: Do proper error handling here:
 			panic!("Cannot set batch length to zero (`0`). Batch length must be a positive number.")
@@ -419,12 +446,7 @@ impl<MB> MentorBuilderI for MB where MB: MentorBuilderOrError {
 		}
 	}
 
-	/// Sets the sample generator that is used throughout the training session.
-	/// 
-	/// # Errors
-	/// 
-	/// - If a sample generator was already set for this builder.
-	fn sample_gen<G>(self, sample_gen: G) -> Result<MentorBuilder>
+	fn sample_gen<G>(self, sample_gen: G) -> Result<InitializingMentor>
 		where G: SampleGen + 'static
 	{
 		let mut this = self.builder_or_error()?;
@@ -440,12 +462,7 @@ impl<MB> MentorBuilderI for MB where MB: MentorBuilderOrError {
 		}
 	}
 
-	/// Sets the halting condition that is used to query when the training shall end.
-	/// 
-	/// # Errors
-	/// 
-	/// - If a halting condition was already set for this builder.
-	fn stop_when<C>(self, stop_when: C) -> Result<MentorBuilder>
+	fn stop_when<C>(self, stop_when: C) -> Result<InitializingMentor>
 		where C: TrainCondition + 'static
 	{
 		let mut this = self.builder_or_error()?;
@@ -461,12 +478,7 @@ impl<MB> MentorBuilderI for MB where MB: MentorBuilderOrError {
 		}
 	}
 
-	/// Sets the logging condition that is used to query when the training state shall be logged.
-	/// 
-	/// # Errors
-	/// 
-	/// - If a logging condition was already set for this builder.
-	fn log_when<C>(self, log_when: C) -> Result<MentorBuilder>
+	fn log_when<C>(self, log_when: C) -> Result<InitializingMentor>
 		where C: TrainCondition + 'static
 	{
 		let mut this = self.builder_or_error()?;
