@@ -500,6 +500,7 @@ mod tests {
 	use super::*;
 
 	#[test]
+	#[ignore]
 	fn xor() {
 		use Activation::Tanh;
 		use trainer::RandomSampleScheduler;
@@ -542,7 +543,7 @@ mod tests {
 		println!(" - Starting setup of learning process ...");
 
 		let training = Mentor::train(net)
-			.sample_gen(RandomSampleScheduler::new(samples.clone()))
+			.sample_gen(RandomSampleScheduler::new(samples))
 			.learn_rate(0.3)
 			.learn_momentum(0.5)
 			.log_when(condition::TimeInterval::once_in(time::Duration::from_secs(1)))
