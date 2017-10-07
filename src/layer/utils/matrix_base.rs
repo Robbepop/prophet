@@ -69,6 +69,9 @@ impl<E> MatrixBase<E> {
 		self.data.cols() - 1
 	}
 
+	#[cfg(test)] // Only for testing purpose since never used.
+	             // Remove this restriction when you are sure to need this method again.
+	             // Date: 7th October 2017
 	#[inline]
 	pub fn biased_inputs(&self) -> usize {
 		self.data.cols()
@@ -84,10 +87,11 @@ impl<E> MatrixBase<E> {
 		self.data.view()
 	}
 
-	#[inline]
-	pub fn view_mut(&mut self) -> ArrayViewMut2<f32> {
-		self.data.view_mut()
-	}
+	// Commented-out since never used. (Date: 7th October 2017)
+	// #[inline]
+	// pub fn view_mut(&mut self) -> ArrayViewMut2<f32> {
+	// 	self.data.view_mut()
+	// }
 
 	#[inline]
 	pub fn genrows(&self) -> Lanes<f32, Ix1> {

@@ -6,20 +6,20 @@ pub(crate) use self::buffer_base::{
 	BiasedSignalView,
 	UnbiasedSignalView,
 	BiasedErrorSignalView,
-	UnbiasedErrorSignalView,
+	// UnbiasedErrorSignalView,
 
 	BiasedSignalViewMut,
-	UnbiasedSignalViewMut,
+	// UnbiasedSignalViewMut,
 	BiasedErrorSignalViewMut,
-	UnbiasedErrorSignalViewMut,
+	// UnbiasedErrorSignalViewMut,
 
 	BiasedSignalBuffer,
 	UnbiasedSignalBuffer,
 	BiasedErrorSignalBuffer,
-	UnbiasedErrorSignalBuffer,
+	// UnbiasedErrorSignalBuffer,
 
-	Iter,
-	IterMut
+	// Iter,
+	// IterMut
 };
 
 pub mod prelude {
@@ -31,19 +31,19 @@ pub mod prelude {
 		BiasedSignalView,
 		UnbiasedSignalView,
 		BiasedErrorSignalView,
-		UnbiasedErrorSignalView,
+		// UnbiasedErrorSignalView,
 
 		BiasedSignalViewMut,
-		UnbiasedSignalViewMut,
+		// UnbiasedSignalViewMut,
 		BiasedErrorSignalViewMut,
-		UnbiasedErrorSignalViewMut,
+		// UnbiasedErrorSignalViewMut,
 
 		BiasedSignalBuffer,
-		UnbiasedSignalBuffer,
+		// UnbiasedSignalBuffer,
 		BiasedErrorSignalBuffer,
-		UnbiasedErrorSignalBuffer,
+		// UnbiasedErrorSignalBuffer,
 
-		Iter,
-		IterMut
+		// Iter,
+		// IterMut
 	};
 }

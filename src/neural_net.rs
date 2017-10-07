@@ -153,13 +153,6 @@ impl FullyConnectedLayer {
 		self.outputs.view()
 	}
 
-	/// Returns this layer's output as read-only view.
-	#[inline]
-	#[cfg(test)]
-	fn gradients_view(&self) -> ArrayView1<f32> {
-		self.gradients.view()
-	}
-
 	/// Takes input slice and performs a feed forward procedure
 	/// using the given activation function.
 	/// Output of this operation will be stored within this layer
@@ -542,8 +535,6 @@ mod tests {
 				next_gradients: Array1<f32>,
 				expected_gradients: Array1<f32>
 			) {
-				use self::Activation::{Identity};
-
 				let self_n_outputs = self_outputs.dim();
 				let self_n_inputs  = 1;
 				let self_shape     = (self_n_outputs, self_n_inputs);
@@ -625,7 +616,7 @@ mod tests {
 				expected_weights  : Array2<f32>,
 				expected_deltas   : Array2<f32>
 			) {
-				let (self_n_outputs, self_n_inputs) = self_weights.dim();
+				let (self_n_outputs, _self_n_inputs) = self_weights.dim();
 				let self_outputs = Array1::from_iter(iter::repeat(0.0)
 					.take(self_n_outputs).chain(iter::once(1.0)));
 				let mut self_layer = FullyConnectedLayer{

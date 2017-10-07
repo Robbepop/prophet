@@ -72,17 +72,17 @@ mod marker {
 pub type BiasedSignalView<'a> = BufferView<'a, marker::BiasedSignal>;
 pub type UnbiasedSignalView<'a> = BufferView<'a, marker::UnbiasedSignal>;
 pub type BiasedErrorSignalView<'a> = BufferView<'a, marker::BiasedErrorSignal>;
-pub type UnbiasedErrorSignalView<'a> = BufferView<'a, marker::UnbiasedErrorSignal>;
+// pub type UnbiasedErrorSignalView<'a> = BufferView<'a, marker::UnbiasedErrorSignal>;
 
 pub type BiasedSignalViewMut<'a> = BufferViewMut<'a, marker::BiasedSignal>;
-pub type UnbiasedSignalViewMut<'a> = BufferViewMut<'a, marker::UnbiasedSignal>;
+// pub type UnbiasedSignalViewMut<'a> = BufferViewMut<'a, marker::UnbiasedSignal>;
 pub type BiasedErrorSignalViewMut<'a> = BufferViewMut<'a, marker::BiasedErrorSignal>;
-pub type UnbiasedErrorSignalViewMut<'a> = BufferViewMut<'a, marker::UnbiasedErrorSignal>;
+// pub type UnbiasedErrorSignalViewMut<'a> = BufferViewMut<'a, marker::UnbiasedErrorSignal>;
 
 pub type BiasedSignalBuffer = Buffer<marker::BiasedSignal>;
 pub type UnbiasedSignalBuffer = Buffer<marker::UnbiasedSignal>;
 pub type BiasedErrorSignalBuffer = Buffer<marker::BiasedErrorSignal>;
-pub type UnbiasedErrorSignalBuffer = Buffer<marker::UnbiasedErrorSignal>;
+// pub type UnbiasedErrorSignalBuffer = Buffer<marker::UnbiasedErrorSignal>;
 
 pub type Iter<'a> = ndarray::iter::Iter<'a, f32, Ix1>;
 pub type IterMut<'a> = ndarray::iter::IterMut<'a, f32, Ix1>;

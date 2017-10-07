@@ -194,15 +194,6 @@ impl Error {
 		}
 	}
 
-	/// Creates a new `ZeroSizedOutputBuffer` error.
-	pub(crate) fn zero_sized_gradient_buffer() -> Error {
-		Error{
-			kind: ErrorKind::ZeroSizedGradientBuffer,
-			message: format!("Tried to create an GradientBuffer representing zero values."),
-			annotation: None
-		}
-	}
-
 	/// Creates a new `ZeroInputsWeightsMatrix` error.
 	pub(crate) fn zero_inputs_weights_matrix() -> Error {
 		Error{
@@ -221,30 +212,7 @@ impl Error {
 		}
 	}
 
-	pub(crate) fn non_matching_assign_signals(assigned: usize, available: usize) -> Error {
-		Error{
-			kind: ErrorKind::NonMatchingNumberOfSignals,
-			message: format!(
-				"Tired to assign {:?} signal values to a SignalBuffer of length {:?} (not respecting the bias signal).",
-					assigned,
-					available
-			),
-			annotation: None
-		}
-	}
-
-	pub(crate) fn non_matching_number_of_signals(source: usize, required: usize) -> Error {
-		Error{
-			kind: ErrorKind::NonMatchingNumberOfSignals,
-			message: format!(
-				"Tired to create a SignalBuffer with length {:?} from a source of input values with length {:?}",
-					required,
-					source
-			),
-			annotation: None
-		}
-	}
-
+	/// Creates a new `UnmatchingBufferSizes` error.
 	pub(crate) fn unmatching_buffer_sizes(lhs_size: usize, rhs_size: usize) -> Error {
 		Error{
 			kind: ErrorKind::UnmatchingBufferSizes{lhs_size, rhs_size},

@@ -629,7 +629,7 @@ mod tests {
 
 		#[test]
 		fn len() {
-			let mut samples = SampleCollection::from_iter(vec![
+			let samples = SampleCollection::from_iter(vec![
 				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()
 			].into_iter()).unwrap();
 			assert_eq!(samples.len(), 1);
@@ -637,7 +637,7 @@ mod tests {
 
 		#[test]
 		fn is_empty() {
-			let mut samples = SampleCollection::from_iter(vec![
+			let samples = SampleCollection::from_iter(vec![
 				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()
 			].into_iter()).unwrap();
 			assert_eq!(samples.is_empty(), false);
@@ -646,10 +646,10 @@ mod tests {
 		#[test]
 		#[should_panic]
 		fn is_empty_fail() {
-			/// Due to non-constructor construction invariants are broken.
-			/// Thus `is_empty` may fail spuriously.
-			/// Note that this kind of code is not possible outside of this module.
-			let mut samples = SampleCollection{
+			// Due to non-constructor construction invariants are broken.
+			// Thus `is_empty` may fail spuriously.
+			// Note that this kind of code is not possible outside of this module.
+			let samples = SampleCollection{
 				samples: vec![]
 			};
 			assert_eq!(samples.is_empty(), true);

@@ -1,7 +1,6 @@
 //! Provides operations, data structures and error definitions for Disciple objects
 //! which form the basis for topologies of neural networks.
 
-use std::marker::PhantomData;
 use std::vec;
 
 use activation::Activation;

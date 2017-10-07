@@ -511,8 +511,6 @@ mod tests {
 		};
 		use std::time;
 
-		#[macro_use]
-		use trainer::sample;
 		use trainer::sample::{
 			Sample,
 			SampleCollection
