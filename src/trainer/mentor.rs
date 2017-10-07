@@ -203,6 +203,25 @@ impl Mentor {
 		})
 	}
 
+	fn log_statistics(&mut self) {
+		use log::LogLevel;
+		if log_enabled!(LogLevel::Info) && self.log_when.evaluate(&self.ctx) {
+			info!(
+				"\n\
+				 =======================================================\n\
+				 Prophet Library :: Log of `prophet::trainer::Mentor`:  \n\
+				  * Context                                             \n\
+				 {:?}\n\
+				 -------------------------------------------------------\n\
+				  * Neural Net                                          \n\
+				 {:?}\n\
+				 =======================================================\n\
+				",
+				self.ctx, self.nn
+			)
+		}
+	}
+
 	/// Starts the training procedure for the given `Mentor` settings.
 	/// 
 	/// Note that this call may take a while depending on the requested quality of training result.
@@ -216,39 +235,20 @@ impl Mentor {
 		};
 		while !self.stop_when.evaluate(&self.ctx) {
 			self.ctx.next();
-
-			let sample = self.sample_gen.next_sample();
-			let latest_mse = if self.ctx.batch_finished() {
-				self.nn.predict_supervised(sample)
-				       .optimize_supervised(self.ctx.lr, self.ctx.lm)
-				       .stats()
+			{
+				let sample = self.sample_gen.next_sample();
+				let latest_mse = if self.ctx.batch_finished() {
+					self.nn.predict_supervised(sample)
+					       .optimize_supervised(self.ctx.lr, self.ctx.lm)
+					       .stats()
+				}
+				else {
+					self.nn.predict_supervised(sample)
+					       .stats()
+				};
+				self.ctx.update_mse(latest_mse);
 			}
-			else {
-				self.nn.predict_supervised(sample)
-				       .stats()
-			};
-			self.ctx.update_mse(latest_mse);
-
-			// self.nn.predict_supervised(sample)
-			// 	.optimize_supervised(self.ctx.lr, self.ctx.lm);
-			if self.log_when.evaluate(&self.ctx) {
-				info!(
-					"\n\
-					 =======================================================\n\
-					 Prophet Library :: Log of `prophet::trainer::Mentor`:  \n\
-					  * Context                                             \n\
-					 {:?}\n\
-					 -------------------------------------------------------\n\
-					  * Neural Net                                          \n\
-					 {:?}\n\
-					 =======================================================\n\
-					",
-					self.ctx, self.nn
-				)
-			}
-			// TODO: Fix bug/misdesign that the latest MSE (or general LOSS deviate)
-			//       is not communicated back to the trainer since it is not returned anywhere.
-			//       This requires a slight redesign of the trait API.
+			self.log_statistics();
 		}
 		Ok(self.nn)
 	}
