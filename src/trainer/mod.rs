@@ -1,4 +1,5 @@
 pub mod condition;
+#[macro_use]
 mod sample;
 mod mentor;
 mod traits;
