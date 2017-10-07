@@ -354,8 +354,10 @@ impl<'b, A> Predict<A> for NeuralNet
 	fn predict(&mut self, input: A) -> ArrayView1<f32> {
 		let input = input.into();
 
+		use std::f32;
+
 		debug_assert_eq!(input.len() + 1, self.input.len());
-		debug_assert_eq!(self.input[self.input.len() - 1], 1.0);
+		debug_assert!((self.input[self.input.len() - 1] - 1.0).abs() < f32::EPSILON);
 
 		// Copy the user provided inputs into a buffer that is
 		// extended to additionally store the bias values (which is always `1.0`).
@@ -363,7 +365,7 @@ impl<'b, A> Predict<A> for NeuralNet
 		self.input.slice_mut(s![..-1]).assign(&input);
 
 		debug_assert_eq!(input.len() + 1, self.input.len());
-		debug_assert_eq!(self.input[self.input.len() - 1], 1.0);
+		debug_assert!((self.input[self.input.len() - 1] - 1.0).abs() < f32::EPSILON);
 
 		// Compute the feed forward from first to last layer.
 		if let Some((first, tail)) = self.layers.split_first_mut() {
