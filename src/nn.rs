@@ -31,7 +31,8 @@ pub struct NeuralNet {
 
 #[derive(Debug)]
 pub struct ReadyToOptimizeSupervised<'nn> {
-	nn: &'nn mut NeuralNet
+	nn: &'nn mut NeuralNet,
+	mse: MeanSquaredError
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -83,7 +84,11 @@ impl<'nn, S> PredictSupervised<S> for &'nn mut NeuralNet
 		self.layers.process_input_signal(self.input.view());
 		self.layers.calculate_output_error_signal(sample.expected());
 		self.layers.propagate_error_signal_internally();
-		ReadyToOptimizeSupervised{nn: self}
+		let mse = MeanSquaredError::from_arrays(
+			self.layers.output_signal().into_unbiased().into_data(),
+			sample.expected().into_data(),
+		).unwrap();
+		ReadyToOptimizeSupervised{nn: self, mse}
 	}
 }
 
@@ -92,7 +97,17 @@ impl<'nn> OptimizeSupervised for ReadyToOptimizeSupervised<'nn> {
 
 	#[inline]
 	fn optimize_supervised(self, lr: LearnRate, lm: LearnMomentum) -> Self::Evaluator {
-		self.nn.layers.apply_error_signal_correction(self.nn.input.view(), lr, lm)
+		self.nn.layers.apply_error_signal_correction(self.nn.input.view(), lr, lm);
+		MSEEvaluator{mse: self.mse}
+	}
+}
+
+impl<'nn> EvaluateSupervised for ReadyToOptimizeSupervised<'nn> {
+	type Stats = MeanSquaredError;
+
+	#[inline]
+	fn stats(self) -> Self::Stats {
+		self.mse
 	}
 }
 
@@ -101,6 +116,6 @@ impl EvaluateSupervised for MSEEvaluator {
 
 	#[inline]
 	fn stats(self) -> Self::Stats {
-		self.0
+		self.mse
 	}
 }
