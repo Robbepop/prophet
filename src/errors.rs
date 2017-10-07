@@ -189,7 +189,7 @@ impl Error {
 	pub(crate) fn zero_sized_signal_buffer() -> Error {
 		Error{
 			kind: ErrorKind::ZeroSizedSignalBuffer,
-			message: format!("Tried to create an OutputBuffer representing zero non-bias values."),
+			message: "Tried to create an OutputBuffer representing zero non-bias values.".to_owned(),
 			annotation: None
 		}
 	}
@@ -198,7 +198,7 @@ impl Error {
 	pub(crate) fn zero_inputs_weights_matrix() -> Error {
 		Error{
 			kind: ErrorKind::ZeroInputsWeightsMatrix,
-			message: format!("Tried to create a WeightsMatrix for zero inputs. Must be at least one!"),
+			message: "Tried to create a WeightsMatrix for zero inputs. Must be at least one!".to_owned(),
 			annotation: None
 		}
 	}
@@ -207,7 +207,7 @@ impl Error {
 	pub(crate) fn zero_outputs_weights_matrix() -> Error {
 		Error{
 			kind: ErrorKind::ZeroOutputsWeightsMatrix,
-			message: format!("Tried to create a WeightsMatrix for zero outputs. Must be at least one!"),
+			message: "Tried to create a WeightsMatrix for zero outputs. Must be at least one!".to_owned(),
 			annotation: None
 		}
 	}
@@ -229,7 +229,7 @@ impl Error {
 	pub(crate) fn empty_sample_collection() -> Error {
 		Error{
 			kind: ErrorKind::EmptySampleCollection,
-			message: format!("Tried to create a SampleCollection from an empty set of samples!"),
+			message: "Tried to create a SampleCollection from an empty set of samples!".to_owned(),
 			annotation: None
 		}
 	}
@@ -238,7 +238,7 @@ impl Error {
 	pub(crate) fn unmatching_sample_input_len(required_len: usize, actual_len: usize) -> Error {
 		Error{
 			kind: ErrorKind::UnmatchingSampleInputLength{required_len, actual_len},
-			message: format!("Tried to create a SampleCollection from an set of samples with unmatching input lengths!"),
+			message: "Tried to create a SampleCollection from an set of samples with unmatching input lengths!".to_owned(),
 			annotation: None
 		}
 	}
@@ -247,7 +247,7 @@ impl Error {
 	pub(crate) fn unmatching_sample_expected_len(required_len: usize, actual_len: usize) -> Error {
 		Error{
 			kind: ErrorKind::UnmatchingSampleExpectedLength{required_len, actual_len},
-			message: format!("Tried to create a SampleCollection from an set of samples with unmatching expected lengths!"),
+			message: "Tried to create a SampleCollection from an set of samples with unmatching expected lengths!".to_owned(),
 			annotation: None
 		}
 	}
