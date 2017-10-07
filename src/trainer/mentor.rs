@@ -254,6 +254,48 @@ impl Mentor {
 	}
 }
 
+/// Types that implement this trait can build up `Mentor`s.
+/// 
+/// This trait's main purpose is to allow for `MentorBuilder` and
+/// `Result<MentorBuilder>` to be unified in the streamlined process of building
+/// with method chaining to no longer require using `.unwrap()` or similar
+/// unwrapping functionality after each configuring step during the build
+/// process.
+trait MentorBuilderOrError {
+	/// Returns a `MentorBuilder` wrapped as a `Result<MentorBuilder>`.
+	fn builder_or_error(self) -> Result<MentorBuilder>;
+}
+
+impl MentorBuilderOrError for MentorBuilder {
+	#[inline]
+	fn builder_or_error(self) -> Result<MentorBuilder> {
+		Ok(self)
+	}
+}
+
+impl MentorBuilderOrError for Result<MentorBuilder> {
+	#[inline]
+	fn builder_or_error(self) -> Result<MentorBuilder> {
+		self
+	}
+}
+
+trait MentorBuilderI: Sized {
+	fn start(self) -> Result<NeuralNet>;
+	fn learn_rate<LR>(self, lr: LR) -> Result<MentorBuilder>
+		where LR: Into<LearnRate>;
+	fn learn_momentum<LM>(self, lm: LM) -> Result<MentorBuilder>
+		where LM: Into<LearnMomentum>;
+	fn epoch_len(self, epoch_len: usize) -> Result<MentorBuilder>;
+	fn batch_len(self, batch_len: usize) -> Result<MentorBuilder>;
+	fn sample_gen<G>(self, sample_gen: G) -> Result<MentorBuilder>
+		where G: SampleGen + 'static;
+	fn stop_when<C>(self, stop_when: C) -> Result<MentorBuilder>
+		where C: TrainCondition + 'static;
+	fn log_when<C>(self, log_when: C) -> Result<MentorBuilder>
+		where C: TrainCondition + 'static;
+}
+
 impl MentorBuilder {
 	/// Create a new `MentorBuilder` for the given `NeuralNet`.
 	/// 
@@ -271,12 +313,14 @@ impl MentorBuilder {
 			lm: None
 		}
 	}
+}
 
+impl<MB> MentorBuilderI for MB where MB: MentorBuilderOrError {
 	/// Finishes the building process and tries to create a full-fledged mentor
 	/// that is capable of training the given neural network using the settings
 	/// specified during the building phase.
-	pub fn start(self) -> Result<NeuralNet> {
-		Mentor::from_builder(self)?.finish()
+	fn start(self) -> Result<NeuralNet> {
+		Mentor::from_builder(self.builder_or_error()?)?.finish()
 	}
 
 	/// Sets the learning rate that is used throughout the training session.
@@ -286,13 +330,14 @@ impl MentorBuilder {
 	/// # Errors
 	/// 
 	/// - If the learning rate was already set for this builder.
-	pub fn learn_rate<LR>(mut self, lr: LR) -> Result<Self>
+	fn learn_rate<LR>(self, lr: LR) -> Result<MentorBuilder>
 		where LR: Into<LearnRate>
 	{
-		match self.lr {
+		let mut this = self.builder_or_error()?;
+		match this.lr {
 			None => {
-				self.lr = Some(lr.into());
-				Ok(self)
+				this.lr = Some(lr.into());
+				Ok(this)
 			}
 			Some(old_lr) => {
 				// TODO: Do proper error handling here:
@@ -308,13 +353,14 @@ impl MentorBuilder {
 	/// # Errors
 	/// 
 	/// - If the learn momentum was already set for this builder.
-	pub fn learn_momentum<LM>(mut self, lm: LM) -> Result<Self>
+	fn learn_momentum<LM>(self, lm: LM) -> Result<MentorBuilder>
 		where LM: Into<LearnMomentum>
 	{
-		match self.lm {
+		let mut this = self.builder_or_error()?;
+		match this.lm {
 			None => {
-				self.lm = Some(lm.into());
-				Ok(self)
+				this.lm = Some(lm.into());
+				Ok(this)
 			}
 			Some(old_lm) => {
 				// TODO: Do proper error handling here:
@@ -330,15 +376,16 @@ impl MentorBuilder {
 	/// # Errors
 	/// 
 	/// - If the given epoch length is zero (`0`). Epoch length must be a positive number.
-	pub fn epoch_len(mut self, epoch_len: usize) -> Result<Self> {
+	fn epoch_len(self, epoch_len: usize) -> Result<MentorBuilder> {
 		if epoch_len == 0 {
 			// TODO: Do proper error handling here:
 			panic!("Cannot set epoch length to zero (`0`). Epoch length must be a positive number.")
 		}
-		match self.epoch_len {
+		let mut this = self.builder_or_error()?;
+		match this.epoch_len {
 			None => {
-				self.epoch_len = Some(epoch_len);
-				Ok(self)
+				this.epoch_len = Some(epoch_len);
+				Ok(this)
 			}
 			Some(old_epoch_len) => {
 				// TODO: Do proper error handling here:
@@ -354,15 +401,16 @@ impl MentorBuilder {
 	/// # Errors
 	/// 
 	/// - If the given epoch length is zero (`0`). Epoch length must be a positive number.
-	pub fn batch_len(mut self, batch_len: usize) -> Result<Self> {
+	fn batch_len(self, batch_len: usize) -> Result<MentorBuilder> {
 		if batch_len == 0 {
 			// TODO: Do proper error handling here:
 			panic!("Cannot set batch length to zero (`0`). Batch length must be a positive number.")
 		}
-		match self.batch_len {
+		let mut this = self.builder_or_error()?;
+		match this.batch_len {
 			None => {
-				self.batch_len = Some(batch_len);
-				Ok(self)
+				this.batch_len = Some(batch_len);
+				Ok(this)
 			}
 			Some(old_batch_len) => {
 				// TODO: Do proper error handling here:
@@ -376,13 +424,14 @@ impl MentorBuilder {
 	/// # Errors
 	/// 
 	/// - If a sample generator was already set for this builder.
-	pub fn sample_gen<G>(mut self, sample_gen: G) -> Result<Self>
+	fn sample_gen<G>(self, sample_gen: G) -> Result<MentorBuilder>
 		where G: SampleGen + 'static
 	{
-		match self.sample_gen {
+		let mut this = self.builder_or_error()?;
+		match this.sample_gen {
 			None => {
-				self.sample_gen = Some(Box::new(sample_gen));
-				Ok(self)
+				this.sample_gen = Some(Box::new(sample_gen));
+				Ok(this)
 			}
 			Some(_) => {
 				// TODO: Do proper error handling here:
@@ -396,13 +445,14 @@ impl MentorBuilder {
 	/// # Errors
 	/// 
 	/// - If a halting condition was already set for this builder.
-	pub fn stop_when<C>(mut self, stop_when: C) -> Result<Self>
+	fn stop_when<C>(self, stop_when: C) -> Result<MentorBuilder>
 		where C: TrainCondition + 'static
 	{
-		match self.stop_when {
+		let mut this = self.builder_or_error()?;
+		match this.stop_when {
 			None => {
-				self.stop_when = Some(Box::new(stop_when));
-				Ok(self)
+				this.stop_when = Some(Box::new(stop_when));
+				Ok(this)
 			}
 			Some(_) => {
 				// TODO: Do proper error handling here:
@@ -416,13 +466,14 @@ impl MentorBuilder {
 	/// # Errors
 	/// 
 	/// - If a logging condition was already set for this builder.
-	pub fn log_when<C>(mut self, log_when: C) -> Result<Self>
+	fn log_when<C>(self, log_when: C) -> Result<MentorBuilder>
 		where C: TrainCondition + 'static
 	{
-		match self.log_when {
+		let mut this = self.builder_or_error()?;
+		match this.log_when {
 			None => {
-				self.log_when = Some(Box::new(log_when));
-				Ok(self)
+				this.log_when = Some(Box::new(log_when));
+				Ok(this)
 			}
 			Some(_) => {
 				// TODO: Do proper error handling here:
@@ -471,7 +522,7 @@ mod tests {
 		let top = Topology::input(2)
 			.fully_connect(2).activation(Tanh)
 			.fully_connect(1).activation(Tanh)
-			.done();
+			.done(); // TODO: Remove Topology<state::Building>, use Topology<state::Finished> instead.
 
 		println!(" - Creating neural net from topology ...");
 
@@ -480,11 +531,11 @@ mod tests {
 		println!(" - Starting setup of learning process ...");
 
 		let training = Mentor::train(net)
-			.sample_gen(RandomSampleScheduler::new(samples.clone())).unwrap()
-			.learn_rate(0.3).unwrap()
-			.learn_momentum(0.5).unwrap()
-			.log_when(condition::TimeInterval::once_in(time::Duration::from_secs(1))).unwrap()
-			.stop_when(condition::BelowRecentMSE::new(0.9, 0.05).unwrap()).unwrap();
+			.sample_gen(RandomSampleScheduler::new(samples.clone()))
+			.learn_rate(0.3)
+			.learn_momentum(0.5)
+			.log_when(condition::TimeInterval::once_in(time::Duration::from_secs(1)))
+			.stop_when(condition::BelowRecentMSE::new(0.9, 0.05).unwrap());
 
 		println!(" - Start learning ...");
 	
