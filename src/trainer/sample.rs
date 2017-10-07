@@ -268,7 +268,7 @@ impl SampleGen for RandomSampleScheduler {
 /// 	Sample::new(vec![t, f], vec![t]).unwrap(),
 /// 	Sample::new(vec![f, t], vec![t]).unwrap(),
 /// 	Sample::new(vec![t, t], vec![f]).unwrap(),
-/// ].into_iter());
+/// ].into_iter()).unwrap();
 /// # }
 /// ```
 /// 
@@ -313,7 +313,7 @@ macro_rules! samples {
 				vec![$($i),+],
 				vec![$($e),+]
 			).unwrap()
-		),+].into_iter())
+		),+].into_iter()).unwrap()
 	};
 
 	[ $( [ $($i:expr),+ ] => $e:expr ),+ ] => {
@@ -322,7 +322,7 @@ macro_rules! samples {
 				vec![$($i),+],
 				vec![$e]
 			).unwrap()
-		),+].into_iter())
+		),+].into_iter()).unwrap()
 	};
 
 	[ $( $i:expr => [ $($e:expr),+ ] ),+ ] => {
@@ -331,7 +331,7 @@ macro_rules! samples {
 				vec![$i],
 				vec![$($e),+]
 			).unwrap()
-		),+].into_iter())
+		),+].into_iter()).unwrap()
 	};
 
 	[ $( $i:expr => $e:expr ),+ ] => {
@@ -340,7 +340,7 @@ macro_rules! samples {
 				vec![$i],
 				vec![$e]
 			).unwrap()
-		),+].into_iter())
+		),+].into_iter()).unwrap()
 	};
 }
 
@@ -703,7 +703,7 @@ mod tests {
 				[1.0, 2.0] => 3.0,
 				[42.0, 1337.0] => 0.0,
 				[10.0, 1.0] => 0.1
-			].unwrap();
+			];
 			let mut scheduler = SequentialSampleScheduler::new(samples.clone());
 			assert_eq!(*scheduler.next_sample(), samples.as_slice()[0]);
 			assert_eq!(*scheduler.next_sample(), samples.as_slice()[1]);
@@ -723,7 +723,7 @@ mod tests {
 				[1.0, 2.0] => 3.0,
 				[42.0, 1337.0] => 0.0,
 				[10.0, 1.0] => 0.1
-			].unwrap();
+			];
 			let mut scheduler = RandomSampleScheduler::new(samples.clone());
 			assert!(samples.as_slice().contains(scheduler.next_sample()));
 			assert!(samples.as_slice().contains(scheduler.next_sample()));
@@ -740,7 +740,7 @@ mod tests {
 			let expansion = samples![
 				[1.0, 2.0] => [3.0],
 				[4.0, 5.0] => [5.0]
-			].unwrap();
+			];
 			let expected = SampleCollection::from_iter(vec![
 				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
 				Sample::new(vec![4.0, 5.0], vec![5.0]).unwrap(),
