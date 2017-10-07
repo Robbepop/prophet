@@ -189,7 +189,7 @@ impl Mentor {
 				}
 			};
 		let ctx = Context::new(
-			builder.epoch_len.unwrap_or_else(|| sample_gen.len().unwrap_or(1)),
+			builder.epoch_len.unwrap_or_else(|| sample_gen.finite_len().unwrap_or(1)),
 			builder.batch_len.unwrap_or(1),
 			builder.lr.unwrap_or_else(|| LearnRate::from(0.15)),
 			builder.lm.unwrap_or_else(|| LearnMomentum::from(0.0))
