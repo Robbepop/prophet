@@ -46,12 +46,12 @@ cargo bench --features benches
 Define your XOR samples with ...
 
 ```rust
-let (t, f) = (1.0, -1.0); // In our samples 1.0 stands for true and -1.0 stands for false.
+let (t, f) = (1.0, -1.0); // 1.0 stands for true (⊤) and -1.0 stands for false (⊥).
 let samples = samples![
-    [f, f] => f, // false XOR false ⇔ false
-    [t, f] => t, // true  XOR false ⇔ true
-    [f, t] => t, // false XOR true  ⇔ true
-    [t, t] => f  // true  XOR true  ⇔ false
+    [f, f] => f, // ⊥ ⊕ ⊥ ⇒ ⊥
+    [t, f] => t, // ⊤ ⊕ ⊥ ⇒ ⊤
+    [f, t] => t, // ⊥ ⊕ ⊤ ⇒ ⊤
+    [t, t] => f  // ⊤ ⊕ ⊤ ⇒ ⊥
 ];
 ```
 
