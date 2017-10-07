@@ -21,6 +21,7 @@ pub struct Context {
 	epochs_passed: usize,
 	epoch_len: usize,
 	latest_mse: f64,
+	batch_len: usize,
 	lr: LearnRate,
 	lm: LearnMomentum
 }
@@ -30,14 +31,16 @@ impl Context {
 	/// and initializes the other values with their respective defaults.
 	pub fn new(
 		epoch_len: usize,
+		batch_len: usize,
 		lr: LearnRate,
 		lm: LearnMomentum) -> Context {
 		Context{
 			time_started: time::Instant::now(),
 			iteration: 0,
 			epochs_passed: 0,
-			epoch_len, // TODO: Better way to handle a sane default value.
+			epoch_len,
 			latest_mse: 1.0,
+			batch_len,
 			lr, lm
 		}
 	}
@@ -112,6 +115,7 @@ pub struct MentorBuilder {
 	stop_when: Option<Box<TrainCondition>>,
 	log_when: Option<Box<TrainCondition>>,
 	epoch_len: Option<usize>,
+	batch_len: Option<usize>,
 	lr: Option<LearnRate>,
 	lm: Option<LearnMomentum>
 }
@@ -158,6 +162,7 @@ impl Mentor {
 			};
 		let ctx = Context::new(
 			builder.epoch_len.unwrap_or_else(|| sample_gen.len().unwrap_or(1)),
+			1,
 			builder.lr.unwrap_or(LearnRate::from(0.15)),
 			builder.lm.unwrap_or(LearnMomentum::from(0.0))
 		);
@@ -220,6 +225,7 @@ impl MentorBuilder {
 			stop_when: None,
 			log_when: None,
 			epoch_len: None,
+			batch_len: None,
 			lr: None,
 			lm: None
 		}
@@ -276,11 +282,9 @@ impl MentorBuilder {
 		}
 	}
 
-	/// Sets the epoch length that is used for batched learning purposes throughout the training session.
+	/// Sets the epoch length that is used statistics purposes throughout the training session.
 	/// 
-	/// Note: Batch learning isn't yet supported by this library. So this value is useless right now.
-	///       However, keep in mind to set the epoch length when this trainer cannot infer a default value.
-	///       This is the case when using a `SampleGen` that is not limited to a finite set of samples.
+	/// Defaults to the length of the sample set if it is finite; else defaults to one (`1`).
 	/// 
 	/// # Errors
 	/// 
@@ -298,6 +302,30 @@ impl MentorBuilder {
 			Some(old_epoch_len) => {
 				// TODO: Do proper error handling here:
 				panic!("Already set epoch length to {:?}. Cannot set it twice!", old_epoch_len);
+			}
+		}
+	}
+
+	/// Sets the batch length that is used for batched learning purposes throughout the training session.
+	/// 
+	/// Defaults to one (`1`) if no user-provided batch size is provided.
+	/// 
+	/// # Errors
+	/// 
+	/// - If the given epoch length is zero (`0`). Epoch length must be a positive number.
+	pub fn batch_len(mut self, batch_len: usize) -> Result<Self> {
+		if batch_len == 0 {
+			// TODO: Do proper error handling here:
+			panic!("Cannot set batch length to zero (`0`). Batch length must be a positive number.")
+		}
+		match self.batch_len {
+			None => {
+				self.batch_len = Some(batch_len);
+				Ok(self)
+			}
+			Some(old_batch_len) => {
+				// TODO: Do proper error handling here:
+				panic!("Already set batch length to {:?}. Cannot set it twice!", old_batch_len);
 			}
 		}
 	}
