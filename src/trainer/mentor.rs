@@ -11,10 +11,7 @@ use trainer::{
 use errors::{Result};
 use trainer::condition;
 
-use log::Log;
-
 use std::time;
-use std::fmt::Debug;
 
 /// The actual state describing the current context during a training process.
 #[derive(Debug, Copy, Clone, PartialEq)]
