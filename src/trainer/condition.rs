@@ -229,10 +229,10 @@ impl BelowRecentMSE {
 	/// 
 	/// # Errors
 	/// 
-	/// - If `momentum` is not within the range `(0, 1)`.
+	/// - If `momentum` is not within the range `[0, 1)`.
 	/// - If `target` is not strictly positive.
 	pub fn new(momentum: f32, target: f32) -> Result<BelowRecentMSE> {
-		if !(0.0 < momentum && momentum < 1.0) {
+		if !(0.0 <= momentum && momentum < 1.0) {
 			return Err(Error::invalid_below_recent_mse_momentum(momentum))
 		}
 		if !(0.0 < target) {
@@ -519,6 +519,105 @@ mod tests {
 			cond.latest -= half_dur;
 			assert_eq!(cond.evaluate(&dummy_state()), true);
 			assert_eq!(cond.evaluate(&dummy_state()), false);
+		}
+	}
+
+	mod below_recent_mse {
+		use super::*;
+
+		#[test]
+		fn construct_invalid_target() {
+			assert_eq!(
+				BelowRecentMSE::new(0.5, 0.0),
+				Err(Error::invalid_below_recent_mse_target(0.0))
+			);
+			assert_eq!(
+				BelowRecentMSE::new(0.5, -1.0),
+				Err(Error::invalid_below_recent_mse_target(-1.0))
+			);
+		}
+
+		#[test]
+		fn construct_invalid_momentum() {
+			let eps = 1e-4;
+
+			assert_eq!(
+				BelowRecentMSE::new(-1.0, 0.5),
+				Err(Error::invalid_below_recent_mse_momentum(-1.0))
+			);
+			assert_eq!(
+				BelowRecentMSE::new(0.0-eps, 0.5),
+				Err(Error::invalid_below_recent_mse_momentum(0.0-eps))
+			);
+			assert_eq!(
+				BelowRecentMSE::new(1.0, 0.5),
+				Err(Error::invalid_below_recent_mse_momentum(1.0))
+			);
+			assert_eq!(
+				BelowRecentMSE::new(1.0+eps, 0.5),
+				Err(Error::invalid_below_recent_mse_momentum(1.0+eps))
+			);
+			assert_eq!(
+				BelowRecentMSE::new(7.7, 0.5),
+				Err(Error::invalid_below_recent_mse_momentum(7.7))
+			);
+		}
+
+		#[test]
+		fn construct_ok() {
+			let eps = 1e-4;
+
+			assert_eq!(
+				BelowRecentMSE::new(0.0, 0.0 + eps),
+				Ok(BelowRecentMSE{momentum: 0.0, target: 0.0 + eps, rmse: 1.0})
+			);
+			assert_eq!(
+				BelowRecentMSE::new(0.0, 1.0),
+				Ok(BelowRecentMSE{momentum: 0.0, target: 1.0, rmse: 1.0})
+			);
+			assert_eq!(
+				BelowRecentMSE::new(0.5, 0.5),
+				Ok(BelowRecentMSE{momentum: 0.5, target: 0.5, rmse: 1.0})
+			);
+			assert_eq!(
+				BelowRecentMSE::new(1.0-eps, 0.5),
+				Ok(BelowRecentMSE{momentum: 1.0-eps, target: 0.5, rmse: 1.0})
+			);
+		}
+
+		fn latest_mse_context<MSE: Into<MeanSquaredError>>(latest_mse: MSE) -> DummyContext {
+			let mut ctx = dummy_state();
+			ctx.latest_mse = latest_mse.into();
+			ctx
+		}
+
+		#[test]
+		fn eval_true() {
+			let mut cond = BelowRecentMSE::new(0.0, 0.5).unwrap();
+			assert_eq!(cond.evaluate(&latest_mse_context(0.05)), true);
+			assert_eq!(cond.evaluate(&latest_mse_context(0.49)), true);
+			assert_eq!(cond.evaluate(&latest_mse_context(0.50)), true);
+		}
+
+		#[test]
+		fn eval_false_to_true_high_momentum() {
+			let mut cond = BelowRecentMSE::new(0.5, 0.5).unwrap();
+			assert_eq!(cond.evaluate(&latest_mse_context(0.05)), false);
+			assert_eq!(cond.evaluate(&latest_mse_context(0.05)), true);
+		}
+
+		#[test]
+		fn eval_false() {
+			let mut cond = BelowRecentMSE::new(0.0, 0.5).unwrap();
+			assert_eq!(cond.evaluate(&latest_mse_context(0.51)), false);
+			assert_eq!(cond.evaluate(&latest_mse_context(1.00)), false);
+		}
+
+		#[test]
+		fn eval_true_to_false_high_momentum() {
+			let mut cond = BelowRecentMSE::new(0.5, 0.75).unwrap();
+			assert_eq!(cond.evaluate(&latest_mse_context(0.2)), true);
+			assert_eq!(cond.evaluate(&latest_mse_context(1.0)), false);
 		}
 	}
 }
