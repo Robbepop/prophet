@@ -488,4 +488,39 @@ mod tests {
 			assert_eq!(cond.evaluate(&ctx), true);
 		}
 	}
+
+	mod time_interval {
+		use super::*;
+
+		#[test]
+		fn eval_true() {
+			let mut cond = TimeInterval::new(time::Duration::from_secs(0));
+			assert_eq!(cond.evaluate(&dummy_state()), true);
+			assert_eq!(cond.evaluate(&dummy_state()), true);
+		}
+
+		#[test]
+		fn eval_false() {
+			let mut cond = TimeInterval::new(time::Duration::from_secs(42));
+			assert_eq!(cond.evaluate(&dummy_state()), false);
+			assert_eq!(cond.evaluate(&dummy_state()), false);
+		}
+
+		#[test]
+		fn interval() {
+			let dur_in_s = 1000;
+			let     dur  = time::Duration::from_secs(dur_in_s);
+			let half_dur = time::Duration::from_secs(dur_in_s / 2);
+			let mut cond = TimeInterval::new(dur);
+			assert_eq!(cond.evaluate(&dummy_state()), false);
+			cond.latest -= dur;
+			assert_eq!(cond.evaluate(&dummy_state()), true);
+			assert_eq!(cond.evaluate(&dummy_state()), false);
+			cond.latest -= half_dur;
+			assert_eq!(cond.evaluate(&dummy_state()), false);
+			cond.latest -= half_dur;
+			assert_eq!(cond.evaluate(&dummy_state()), true);
+			assert_eq!(cond.evaluate(&dummy_state()), false);
+		}
+	}
 }
