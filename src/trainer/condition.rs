@@ -163,7 +163,7 @@ impl<C> Not<C>
 	where C: TrainCondition
 {
 	/// Creates a new `TrainCondition` that represents a logical-not.
-	pub fn not(inner: C) -> Self {
+	pub fn new(inner: C) -> Self {
 		Not{inner: Box::new(inner)}
 	}
 }
@@ -182,7 +182,7 @@ impl<L, R> Conjunction<L, R>
 	      R: TrainCondition
 {
 	/// Creates a new `TrainCondition` that represents a logical-and.
-	pub fn all(lhs: L, rhs: R) -> Self {
+	pub fn new(lhs: L, rhs: R) -> Self {
 		Conjunction{
 			lhs: Box::new(lhs),
 			rhs: Box::new(rhs)
@@ -205,7 +205,7 @@ impl<L, R> Disjunction<L, R>
 	      R: TrainCondition
 {
 	/// Creates a new `TrainCondition` that represents a logical-or.
-	pub fn any(lhs: L, rhs: R) -> Self {
+	pub fn new(lhs: L, rhs: R) -> Self {
 		Disjunction{
 			lhs: Box::new(lhs),
 			rhs: Box::new(rhs)
@@ -233,10 +233,12 @@ impl BelowRecentMSE {
 	/// - If `target` is not strictly positive.
 	pub fn new(momentum: f32, target: f32) -> Result<BelowRecentMSE> {
 		if !(0.0 < momentum && momentum < 1.0) {
-			// Error! Momentum invalid.
+			// TODO: Handle errors properly.
+			panic!("Error: Invalid momentum given to condition::BelowRecentMSE.")
 		}
 		if !(0.0 < target) {
-			// Error! Target invalid.
+			// TODO: Handle errors properly.
+			panic!("Error: Invalid target given to condition::BelowRecentMSE.")
 		}
 		Ok(BelowRecentMSE{momentum, target, rmse: 1.0})
 	}
@@ -343,6 +345,76 @@ mod tests {
 		#[test]
 		fn simple_eval() {
 			assert_eq!(Never.evaluate(&dummy_state()), false)
+		}
+	}
+
+	mod not {
+		use super::*;
+
+		#[test]
+		fn not_true() {
+			assert_eq!(Not::new(Always).evaluate(&dummy_state()), false)
+		}
+
+		#[test]
+		fn not_false() {
+			assert_eq!(Not::new(Never).evaluate(&dummy_state()), true)
+		}
+
+		#[test]
+		fn involution() {
+			assert_eq!(
+				Not::new(Not::new(Always)).evaluate(&dummy_state()),
+				Always.evaluate(&dummy_state())
+			)
+		}
+	}
+
+	mod conjunction {
+		use super::*;
+
+		#[test]
+		fn true_and_true() {
+			assert_eq!(Conjunction::new(Always, Always).evaluate(&dummy_state()), true)
+		}
+
+		#[test]
+		fn true_and_false() {
+			assert_eq!(Conjunction::new(Always, Never).evaluate(&dummy_state()), false)
+		}
+
+		#[test]
+		fn false_and_true() {
+			assert_eq!(Conjunction::new(Never, Always).evaluate(&dummy_state()), false)
+		}
+
+		#[test]
+		fn false_and_false() {
+			assert_eq!(Conjunction::new(Never, Never).evaluate(&dummy_state()), false)
+		}
+	}
+
+	mod disjunction {
+		use super::*;
+
+		#[test]
+		fn true_or_true() {
+			assert_eq!(Disjunction::new(Always, Always).evaluate(&dummy_state()), true)
+		}
+
+		#[test]
+		fn true_or_false() {
+			assert_eq!(Disjunction::new(Always, Never).evaluate(&dummy_state()), true)
+		}
+
+		#[test]
+		fn false_or_true() {
+			assert_eq!(Disjunction::new(Never, Always).evaluate(&dummy_state()), true)
+		}
+
+		#[test]
+		fn false_or_false() {
+			assert_eq!(Disjunction::new(Never, Never).evaluate(&dummy_state()), false)
 		}
 	}
 }
