@@ -16,7 +16,7 @@ use std::time;
 
 /// The actual state describing the current context during a training process.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Context {
+struct Context {
 	time_started: time::Instant,
 	iteration: usize,
 	epochs_passed: usize,
