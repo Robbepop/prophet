@@ -287,3 +287,62 @@ impl TrainCondition for TimeInterval {
 		}
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[derive(Debug, Copy, Clone, PartialEq)]
+	struct DummyContext {
+		time_started: time::Instant,
+		iterations: usize,
+		epochs_passed: usize,
+		latest_mse: MeanSquaredError
+	}
+
+	impl TrainingState for DummyContext {
+		#[inline]
+		fn time_started(&self) -> time::Instant {
+			self.time_started
+		}
+
+		fn iterations(&self) -> usize {
+			self.iterations
+		}
+
+		fn epochs_passed(&self) -> usize {
+			self.epochs_passed
+		}
+
+		fn latest_mse(&self) -> MeanSquaredError {
+			self.latest_mse
+		}
+	}
+
+	fn dummy_state() -> DummyContext {
+		DummyContext{
+			time_started: time::Instant::now(),
+			iterations: 42,
+			epochs_passed: 1337,
+			latest_mse: MeanSquaredError::new(7.77).unwrap()
+		}
+	}
+
+	mod always {
+		use super::*;
+
+		#[test]
+		fn simple_eval() {
+			assert_eq!(Always.evaluate(&dummy_state()), true)
+		}
+	}
+
+	mod never {
+		use super::*;
+
+		#[test]
+		fn simple_eval() {
+			assert_eq!(Never.evaluate(&dummy_state()), false)
+		}
+	}
+}
