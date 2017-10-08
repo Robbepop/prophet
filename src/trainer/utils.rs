@@ -26,7 +26,7 @@ impl MeanSquaredError {
 	/// 
 	/// - If the given mse is negative.
 	pub fn new(mse: f32) -> Result<MeanSquaredError> {
-		if mse.is_sign_negative() {
+		if mse < 0.0 {
 			return Err(Error::mse_invalid_negative_value(mse))
 		}
 		Ok(MeanSquaredError(mse))
@@ -73,5 +73,104 @@ impl MeanSquaredError {
 	#[inline]
 	pub fn to_f32(self) -> f32 {
 		self.0
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	mod mean_squared_error {
+		use super::*;
+
+		#[test]
+		fn from_ok() {
+			assert_eq!(MeanSquaredError::from(0.0), MeanSquaredError(0.0));
+			assert_eq!(MeanSquaredError::from(-0.0), MeanSquaredError(-0.0));
+			assert_eq!(MeanSquaredError::from(1.0), MeanSquaredError(1.0));
+			assert_eq!(MeanSquaredError::from(1337.0), MeanSquaredError(1337.0));
+		}
+
+		#[test]
+		#[should_panic]
+		fn from_failure() {
+			MeanSquaredError::from(-1.0);
+		}
+
+		#[test]
+		fn new_ok() {
+			assert_eq!(MeanSquaredError::new(0.0), Ok(MeanSquaredError(0.0)));
+			assert_eq!(MeanSquaredError::new(-0.0), Ok(MeanSquaredError(-0.0)));
+			assert_eq!(MeanSquaredError::new(1.0), Ok(MeanSquaredError(1.0)));
+			assert_eq!(MeanSquaredError::new(1337.0), Ok(MeanSquaredError(1337.0)));
+		}
+
+		#[test]
+		fn new_failure() {
+			assert_eq!(MeanSquaredError::new(-1e-8), Err(Error::mse_invalid_negative_value(-1e-8)));
+			assert_eq!(MeanSquaredError::new(-1.0), Err(Error::mse_invalid_negative_value(-1.0)));
+			assert_eq!(MeanSquaredError::new(-42.0), Err(Error::mse_invalid_negative_value(-42.0)));
+		}
+
+		#[test]
+		fn from_arrays_empty_actual() {
+			let actual = vec![];
+			let expected = vec![1.0];
+			assert_eq!(
+				MeanSquaredError::from_arrays(&actual, &expected),
+				Err(Error::mse_invalid_empty_actual_buffer())
+			);
+		}
+
+		#[test]
+		fn from_arrays_empty_expected() {
+			let actual = vec![1.0];
+			let expected = vec![];
+			assert_eq!(
+				MeanSquaredError::from_arrays(&actual, &expected),
+				Err(Error::mse_invalid_empty_expected_buffer())
+			);
+		}
+
+		#[test]
+		fn from_arrays_unmatching_actual_expected() {
+			{
+				let actual = vec![1.0];
+				let expected = vec![2.0, 3.0];
+				assert_eq!(
+					MeanSquaredError::from_arrays(&actual, &expected),
+					Err(Error::mse_unmatching_actual_and_empty_buffers(1, 2))
+				);
+			}
+			{
+				let actual = vec![1.0, 2.0];
+				let expected = vec![3.0];
+				assert_eq!(
+					MeanSquaredError::from_arrays(&actual, &expected),
+					Err(Error::mse_unmatching_actual_and_empty_buffers(2, 1))
+				);
+			}
+		}
+
+		#[test]
+		fn from_arrays_ok() {
+			let a = (1.0, 2.0);
+			let e = (3.0, 5.0);
+			let actual = vec![a.0, a.1];
+			let expected = vec![e.0, e.1];
+			assert_eq!(
+				MeanSquaredError::from_arrays(&actual, &expected),
+				Ok(MeanSquaredError(0.5 * ((a.0 - e.0).powi(2) + (a.1 - e.1).powi(2))))
+			);
+		}
+
+		#[test]
+		fn to_f32() {
+			assert_eq!(MeanSquaredError(0.0).to_f32(), 0.0);
+			assert_eq!(MeanSquaredError(1e-8).to_f32(), 1e-8);
+			assert_eq!(MeanSquaredError(1.0).to_f32(), 1.0);
+			assert_eq!(MeanSquaredError(42.0).to_f32(), 42.0);
+		}
+
 	}
 }
