@@ -75,7 +75,13 @@ pub enum ErrorKind {
 		required_len: usize,
 		/// The actual and errorneous sample signal expected length.
 		actual_len: usize
-	}
+	},
+
+	/// Occures when trying to create a `BelowRecentMSE` condition with an invalid target value.
+	InvalidBelowRecentMSEConditionTarget(f32),
+
+	/// Occures when trying to create a `BelowRecentMSE` condition with an invalid momentum.
+	InvalidBelowRecentMSEConditionMomentum(f32)
 
 }
 
@@ -248,6 +254,24 @@ impl Error {
 		Error{
 			kind: ErrorKind::UnmatchingSampleExpectedLength{required_len, actual_len},
 			message: "Tried to create a SampleCollection from an set of samples with unmatching expected lengths!".to_owned(),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `InvalidBelowRecentMSEConditionTarget` error.
+	pub(crate) fn invalid_below_recent_mse_target(invalid_target: f32) -> Error {
+		Error{
+			kind: ErrorKind::InvalidBelowRecentMSEConditionTarget(invalid_target),
+			message: format!("Tried to create a BelowRecentMSE condition with an invalid target of {:?}!", invalid_target),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `InvalidBelowRecentMSEConditionMomentum` error.
+	pub(crate) fn invalid_below_recent_mse_momentum(invalid_momentum: f32) -> Error {
+		Error{
+			kind: ErrorKind::InvalidBelowRecentMSEConditionMomentum(invalid_momentum),
+			message: format!("Tried to create a BelowRecentMSE condition with an invalid momentum of {:?}!", invalid_momentum),
 			annotation: None
 		}
 	}

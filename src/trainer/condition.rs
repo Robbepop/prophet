@@ -7,7 +7,7 @@
 use std::time;
 use std::fmt::Debug;
 
-use errors::{Result};
+use errors::{Error, Result};
 use trainer::MeanSquaredError;
 
 /// Provides an interface for training stats during the training process
@@ -233,12 +233,10 @@ impl BelowRecentMSE {
 	/// - If `target` is not strictly positive.
 	pub fn new(momentum: f32, target: f32) -> Result<BelowRecentMSE> {
 		if !(0.0 < momentum && momentum < 1.0) {
-			// TODO: Handle errors properly.
-			panic!("Error: Invalid momentum given to condition::BelowRecentMSE.")
+			return Err(Error::invalid_below_recent_mse_momentum(momentum))
 		}
 		if !(0.0 < target) {
-			// TODO: Handle errors properly.
-			panic!("Error: Invalid target given to condition::BelowRecentMSE.")
+			return Err(Error::invalid_below_recent_mse_target(target))
 		}
 		Ok(BelowRecentMSE{momentum, target, rmse: 1.0})
 	}
