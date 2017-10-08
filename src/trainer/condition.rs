@@ -440,7 +440,7 @@ mod tests {
 		#[test]
 		fn before_and_after_elapsed() {
 			let     dur = time::Duration::from_secs(1000);
-			let mut ctx = dummy_state();
+			let mut ctx = time_elapsed_ctx();
 			let mut cond = TimeElapsed(dur);
 			assert_eq!(cond.evaluate(&ctx), false);
 			ctx.time_started -= dur;
@@ -448,4 +448,44 @@ mod tests {
 		}
 	}
 
+	mod epochs_passed {
+		use super::*;
+
+		fn epochs_passed_ctx(epochs_passed: usize) -> DummyContext {
+			let mut state = dummy_state();
+			state.epochs_passed = epochs_passed;
+			state
+		}
+
+		#[test]
+		fn eval_true() {
+			assert_eq!(EpochsPassed(0).evaluate(&epochs_passed_ctx(42)), true)
+		}
+
+		#[test]
+		fn eval_barely_true() {
+			assert_eq!(EpochsPassed(42).evaluate(&epochs_passed_ctx(42)), true)
+		}
+
+		#[test]
+		fn eval_false() {
+			assert_eq!(EpochsPassed(1337).evaluate(&epochs_passed_ctx(42)), false)
+		}
+
+		#[test]
+		fn eval_barely_false() {
+			assert_eq!(EpochsPassed(43).evaluate(&epochs_passed_ctx(42)), false)
+		}
+
+		#[test]
+		fn before_and_after_passed() {
+			let mut ctx    = epochs_passed_ctx(41);
+			let mut cond   = EpochsPassed(42);
+			assert_eq!(cond.evaluate(&ctx), false);
+			ctx.epochs_passed += 1;
+			assert_eq!(cond.evaluate(&ctx), true);
+			ctx.epochs_passed += 1;
+			assert_eq!(cond.evaluate(&ctx), true);
+		}
+	}
 }
