@@ -544,7 +544,7 @@ mod tests {
 			.sample_gen(RandomSampleScheduler::new(samples))
 			.learn_rate(0.3)
 			.learn_momentum(0.5)
-			.log_when(condition::TimeInterval::once_in(time::Duration::from_secs(1)))
+			.log_when(condition::TimeInterval::new(time::Duration::from_secs(1)))
 			.stop_when(condition::BelowRecentMSE::new(0.9, 0.05).unwrap());
 
 		println!(" - Start learning ...");

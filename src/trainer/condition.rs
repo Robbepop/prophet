@@ -250,7 +250,7 @@ impl TimeInterval {
 	/// 
 	/// Note: This condition is especially useful for logging purposes where a user want to
 	///       log the training state once every given amount of time.
-	pub fn once_in(time_step: time::Duration) -> TimeInterval {
+	pub fn new(time_step: time::Duration) -> TimeInterval {
 		TimeInterval{time_step, latest: time::Instant::now()}
 	}
 }
@@ -258,7 +258,7 @@ impl TimeInterval {
 impl TrainCondition for TimeElapsed {
 	#[inline]
 	fn evaluate(&mut self, stats: &TrainingState) -> bool {
-		stats.duration_elapsed() < self.0
+		stats.duration_elapsed() >= self.0
 	}
 }
 
@@ -417,4 +417,35 @@ mod tests {
 			assert_eq!(Disjunction::new(Never, Never).evaluate(&dummy_state()), false)
 		}
 	}
+
+	mod time_elapsed {
+		use super::*;
+
+		fn time_elapsed_ctx() -> DummyContext {
+			let mut state = dummy_state();
+			state.time_started = time::Instant::now();
+			state
+		}
+
+		#[test]
+		fn eval_true() {
+			assert_eq!(TimeElapsed(time::Duration::from_secs(0)).evaluate(&time_elapsed_ctx()), true)
+		}
+
+		#[test]
+		fn eval_false() {
+			assert_eq!(TimeElapsed(time::Duration::from_secs(1000)).evaluate(&time_elapsed_ctx()), false)
+		}
+
+		#[test]
+		fn before_and_after_elapsed() {
+			let     dur = time::Duration::from_secs(1000);
+			let mut ctx = dummy_state();
+			let mut cond = TimeElapsed(dur);
+			assert_eq!(cond.evaluate(&ctx), false);
+			ctx.time_started -= dur;
+			assert_eq!(cond.evaluate(&ctx), true);
+		}
+	}
+
 }
