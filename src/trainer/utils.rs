@@ -11,6 +11,12 @@ use errors::{Result};
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct MeanSquaredError(f32);
 
+impl From<f32> for MeanSquaredError {
+	fn from(mse: f32) -> MeanSquaredError {
+		MeanSquaredError::new(mse).unwrap()
+	}
+}
+
 impl MeanSquaredError {
 	/// Creates a new `MeanSquaredError` from the given `f32` value representing it.
 	/// 
