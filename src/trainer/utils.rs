@@ -1,6 +1,6 @@
 use ndarray::AsArray;
 
-use errors::{Result};
+use errors::{Error, Result};
 
 /// Represents a mean-squared-error value.
 /// 
@@ -27,8 +27,7 @@ impl MeanSquaredError {
 	/// - If the given mse is negative.
 	pub fn new(mse: f32) -> Result<MeanSquaredError> {
 		if mse.is_sign_negative() {
-			// TODO: Handle errors properly.
-			panic!("Error: Cannot create a negative MeanSquaredError.")
+			return Err(Error::mse_invalid_negative_value(mse))
 		}
 		Ok(MeanSquaredError(mse))
 	}
@@ -52,16 +51,13 @@ impl MeanSquaredError {
 		let actual = actual.into();
 		let expected = expected.into();
 		if actual.len() == 0 {
-			/// TODO: Handle errors properly.
-			panic!("Error: Array for actual data has zero (`0`) length. Required to be at least one.")
+			return Err(Error::mse_invalid_empty_actual_buffer())
 		}
 		if expected.len() == 0 {
-			/// TODO: Handle errors properly.
-			panic!("Error: Array for expected data has zero (`0`) length. Required to be at least one.")
+			return Err(Error::mse_invalid_empty_expected_buffer())
 		}
 		if actual.len() != expected.len() {
-			/// TODO: Handle errors properly.
-			panic!("Error: Arrays for actual data and expected data are of different sizes.")
+			return Err(Error::mse_unmatching_actual_and_empty_buffers(actual.len(), expected.len()))
 		}
 		use itertools;
 		Ok(

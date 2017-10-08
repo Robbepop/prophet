@@ -81,8 +81,24 @@ pub enum ErrorKind {
 	InvalidBelowRecentMSEConditionTarget(f32),
 
 	/// Occures when trying to create a `BelowRecentMSE` condition with an invalid momentum.
-	InvalidBelowRecentMSEConditionMomentum(f32)
+	InvalidBelowRecentMSEConditionMomentum(f32),
 
+	/// Occures when trying to instantiate a `MeanSquaredError` with a negative value.
+	MSEInvalidNegativeValue(f32),
+
+	/// Occures when trying to calculate a `MeanSquaredError` with an empty actual buffer.
+	MSEInvalidEmptyActualBuffer,
+
+	/// Occures when trying to calculate a `MeanSquaredError` with an empty expected buffer.
+	MSEInvalidEmptyExpectedBuffer,
+
+	/// Occures when trying to calculate a `MeanSquaredError` actual and expected buffers of unmatching sizes.
+	MSEUnmatchingActualAndExpectedBuffers{
+		/// The size of the buffer storing the actual values.
+		actual_len: usize,
+		/// The size of the buffer storing the expected values.
+		expected_len: usize
+	}
 }
 
 /// The error class used in `Prophet`.
@@ -272,6 +288,45 @@ impl Error {
 		Error{
 			kind: ErrorKind::InvalidBelowRecentMSEConditionMomentum(invalid_momentum),
 			message: format!("Tried to create a BelowRecentMSE condition with an invalid momentum of {:?}!", invalid_momentum),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `MSEInvalidNegativeValue` error.
+	pub(crate) fn mse_invalid_negative_value(value: f32) -> Error {
+		Error{
+			kind: ErrorKind::MSEInvalidNegativeValue(value),
+			message: format!("Tried to instantiate a MeanSquaredError with a negative value of {:?}!", value),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `MSEInvalidEmptyActualBuffer` error.
+	pub(crate) fn mse_invalid_empty_actual_buffer() -> Error {
+		Error{
+			kind: ErrorKind::MSEInvalidEmptyActualBuffer,
+			message: "Tried to calculate a MeanSquaredError with an empty actual buffer!".to_owned(),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `MSEInvalidEmptyExpectedBuffer` error.
+	pub(crate) fn mse_invalid_empty_expected_buffer() -> Error {
+		Error{
+			kind: ErrorKind::MSEInvalidEmptyExpectedBuffer,
+			message: "Tried to calculate a MeanSquaredError with an empty expected buffer!".to_owned(),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `MSEUnmatchingActualAndExpectedBuffers` error.
+	pub(crate) fn mse_unmatching_actual_and_empty_buffers(actual_len: usize, expected_len: usize) -> Error {
+		Error{
+			kind: ErrorKind::MSEUnmatchingActualAndExpectedBuffers{actual_len, expected_len},
+			message: format!(
+				"Tried to calculate a MeanSquaredError with unmatching buffer sizes of {:?} (actual) and {:?} (expected).",
+				actual_len, expected_len
+			),
 			annotation: None
 		}
 	}
