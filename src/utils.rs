@@ -57,3 +57,132 @@ impl From<f32> for LearnMomentum {
 			.expect("Expected valid user input (`f32`) for creating a new LearnMomentum.")
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	const EPSILON: f32 = 1e-6;
+
+	mod learn_rate {
+		use super::*;
+
+		#[test]
+		fn new_ok() {
+			assert_eq!(LearnRate::new(0.0), Ok(LearnRate(0.0)));
+			assert_eq!(LearnRate::new(EPSILON), Ok(LearnRate(EPSILON)));
+			assert_eq!(LearnRate::new(0.5), Ok(LearnRate(0.5)));
+			assert_eq!(LearnRate::new(1.0 - EPSILON), Ok(LearnRate(1.0 - EPSILON)));
+			assert_eq!(LearnRate::new(1.0), Ok(LearnRate(1.0)));
+		}
+
+		#[test]
+		fn new_fail() {
+			assert_eq!(LearnRate::new(-42.0), Err(Error::invalid_learn_rate(-42.0)));
+			assert_eq!(LearnRate::new(-EPSILON), Err(Error::invalid_learn_rate(-EPSILON)));
+			assert_eq!(LearnRate::new(1.0 + EPSILON), Err(Error::invalid_learn_rate(1.0 + EPSILON)));
+			assert_eq!(LearnRate::new(1337.0), Err(Error::invalid_learn_rate(1337.0)));
+		}
+
+		#[test]
+		fn from_ok() {
+			assert_eq!(LearnRate::from(0.0), LearnRate(0.0));
+			assert_eq!(LearnRate::from(EPSILON), LearnRate(EPSILON));
+			assert_eq!(LearnRate::from(0.5), LearnRate(0.5));
+			assert_eq!(LearnRate::from(1.0 - EPSILON), LearnRate(1.0 - EPSILON));
+			assert_eq!(LearnRate::from(1.0), LearnRate(1.0));
+		}
+
+		#[test]
+		#[should_panic]
+		fn from_fail_01() {
+			LearnRate::from(-42.0);
+		}
+
+		#[test]
+		#[should_panic]
+		fn from_fail_02() {
+			LearnRate::from(-EPSILON);
+		}
+
+		#[test]
+		#[should_panic]
+		fn from_fail_03() {
+			LearnRate::from(1.0 + EPSILON);
+		}
+
+		#[test]
+		#[should_panic]
+		fn from_fail_04() {
+			LearnRate::from(1337.0);
+		}
+
+		#[test]
+		fn to_f32() {
+			assert_eq!(LearnRate(0.0).to_f32(), 0.0);
+			assert_eq!(LearnRate(0.5).to_f32(), 0.5);
+			assert_eq!(LearnRate(1.0).to_f32(), 1.0);
+		}
+	}
+
+	mod learn_momentum {
+		use super::*;
+
+		#[test]
+		fn new_ok() {
+			assert_eq!(LearnMomentum::new(0.0), Ok(LearnMomentum(0.0)));
+			assert_eq!(LearnMomentum::new(EPSILON), Ok(LearnMomentum(EPSILON)));
+			assert_eq!(LearnMomentum::new(0.5), Ok(LearnMomentum(0.5)));
+			assert_eq!(LearnMomentum::new(1.0 - EPSILON), Ok(LearnMomentum(1.0 - EPSILON)));
+			assert_eq!(LearnMomentum::new(1.0), Ok(LearnMomentum(1.0)));
+		}
+
+		#[test]
+		fn new_fail() {
+			assert_eq!(LearnMomentum::new(-42.0), Err(Error::invalid_learn_momentum(-42.0)));
+			assert_eq!(LearnMomentum::new(-EPSILON), Err(Error::invalid_learn_momentum(-EPSILON)));
+			assert_eq!(LearnMomentum::new(1.0 + EPSILON), Err(Error::invalid_learn_momentum(1.0 + EPSILON)));
+			assert_eq!(LearnMomentum::new(1337.0), Err(Error::invalid_learn_momentum(1337.0)));
+		}
+
+		#[test]
+		fn from_ok() {
+			assert_eq!(LearnMomentum::from(0.0), LearnMomentum(0.0));
+			assert_eq!(LearnMomentum::from(EPSILON), LearnMomentum(EPSILON));
+			assert_eq!(LearnMomentum::from(0.5), LearnMomentum(0.5));
+			assert_eq!(LearnMomentum::from(1.0 - EPSILON), LearnMomentum(1.0 - EPSILON));
+			assert_eq!(LearnMomentum::from(1.0), LearnMomentum(1.0));
+		}
+
+		#[test]
+		#[should_panic]
+		fn from_fail_01() {
+			LearnMomentum::from(-42.0);
+		}
+
+		#[test]
+		#[should_panic]
+		fn from_fail_02() {
+			LearnMomentum::from(-EPSILON);
+		}
+
+		#[test]
+		#[should_panic]
+		fn from_fail_03() {
+			LearnMomentum::from(1.0 + EPSILON);
+		}
+
+		#[test]
+		#[should_panic]
+		fn from_fail_04() {
+			LearnMomentum::from(1337.0);
+		}
+
+		#[test]
+		fn to_f32() {
+			assert_eq!(LearnMomentum(0.0).to_f32(), 0.0);
+			assert_eq!(LearnMomentum(0.5).to_f32(), 0.5);
+			assert_eq!(LearnMomentum(1.0).to_f32(), 1.0);
+		}
+	}
+}
