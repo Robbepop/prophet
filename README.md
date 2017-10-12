@@ -2,7 +2,7 @@
 PROPHET - Neural Network Library
 ================================
 
-|       Linux       |       Windows       |       Codecov        |       Coverage       |        Docs        |       Crates.io       |
+|       Linux       |       Windows       |       Codecov        |      Coveralls       |        Docs        |       Crates.io       |
 |:-----------------:|:-------------------:|:--------------------:|:--------------------:|:------------------:|:---------------------:|
 | [![travis][1]][2] | [![appveyor][3]][4] | [![codecov][13]][14] | [![coveralls][5]][6] | [![docs][11]][12 ] | [![crates.io][9]][10] |
 
@@ -97,5 +97,5 @@ at your option.
 [10]: https://crates.io/crates/prophet
 [11]: https://docs.rs/prophet/badge.svg
 [12]: https://docs.rs/prophet
-[13]: https://codecov.io/gh/robbepop/prophet/branch/next/graph/badge.svg
-[14]: https://codecov.io/gh/Robbepop/prophet/branch/next
+[13]: https://codecov.io/gh/robbepop/prophet/branch/master/graph/badge.svg
+[14]: https://codecov.io/gh/Robbepop/prophet/branch/master
