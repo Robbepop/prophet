@@ -2,10 +2,9 @@
 PROPHET - Neural Network Library
 ================================
 
-|        Linux        |       Windows       |       Coverage       |          Docs         |     Crates.io      |       Licence      |
-|:-------------------:|:-------------------:|:--------------------:|:---------------------:|:------------------:|:------------------:|
-| [![travisCI][1]][2] | [![appveyor][3]][4] | [![coveralls][5]][6] | [![licence][11]][12 ] | [![chat][9]][10]   | [![licence][7]][8] |
-
+|       Linux       |       Windows       |       Codecov        |       Coverage       |        Docs        |       Crates.io       |
+|:-----------------:|:-------------------:|:--------------------:|:--------------------:|:------------------:|:---------------------:|
+| [![travis][1]][2] | [![appveyor][3]][4] | [![codecov][13]][14] | [![coveralls][5]][6] | [![docs][11]][12 ] | [![crates.io][9]][10] |
 
 A simple neural net implementation written in Rust with a focus on cache-efficiency and sequential performance.
 
@@ -47,6 +46,17 @@ cargo bench --features benches
 - GPGPU Support by Vulkano
 - Even more flexible learning methods
 
+## License
+
+Licensed under either of
+
+ * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+ * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+at your option.
+
+### Dual licence: [![badge][7]](LICENSE-MIT) [![badge][8]](LICENSE-APACHE)
+
 ## Release Notes (YYYY/MM/DD)
 
 ### 0.4.2 (2017/10/13)
@@ -81,8 +91,10 @@ cargo bench --features benches
 [5]: https://coveralls.io/repos/github/Robbepop/prophet/badge.svg?branch=master
 [6]: https://coveralls.io/github/Robbepop/prophet?branch=master
 [7]: https://img.shields.io/badge/license-MIT-blue.svg
-[8]: ./LICENCE
+[8]: https://img.shields.io/badge/license-APACHE-orange.svg
 [9]: https://img.shields.io/crates/v/prophet.svg
 [10]: https://crates.io/crates/prophet
 [11]: https://docs.rs/prophet/badge.svg
 [12]: https://docs.rs/prophet
+[13]: https://codecov.io/gh/robbepop/prophet/branch/next/graph/badge.svg
+[14]: https://codecov.io/gh/Robbepop/prophet/branch/next
