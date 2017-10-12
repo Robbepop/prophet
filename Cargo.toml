@@ -3,7 +3,7 @@
 name    = "prophet" # other names: Pulsar
 version = "0.4.2"
 authors = ["Robbepop"]
-license = "MIT"
+license = "MIT/APACHE"
 readme  = "README.md"
 
 keywords   = ["deep-learning", "neural-networks", "machine-learning", "classifier"]
