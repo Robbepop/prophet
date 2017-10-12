@@ -51,14 +51,14 @@ impl Logger {
 
 	pub fn try_log(&mut self, stats: Stats) {
 		use self::Logger::*;
-		match self {
-			&mut TimeSteps{ref mut last_log, interval} => {
+		match *self {
+			TimeSteps{ref mut last_log, interval} => {
 				if last_log.elapsed().expect("expected valid duration") >= interval {
 					Self::log(stats);
 					*last_log = SystemTime::now();
 				}
 			},
-			&mut Iterations(interval) => {
+			Iterations(interval) => {
 				if stats.iterations % interval == 0 {
 					Self::log(stats)
 				}

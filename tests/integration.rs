@@ -13,12 +13,12 @@ use std::time::Duration;
 
 fn validate_impl(mut net: NeuralNet, samples: Vec<Sample>, rounded: bool) {
 	use itertools::{Itertools, multizip};
-	for sample in samples.into_iter() {
+	for sample in samples {
 		let predicted = net.predict(sample.input.view());
 		multizip((predicted.iter(), sample.target.iter()))
 			.foreach(|(&predicted, &expected)| {
 				if rounded {
-					assert_eq!(predicted.round(), expected);
+					relative_eq!(predicted.round(), expected);
 				}
 				else {
 					relative_eq!(predicted, expected);

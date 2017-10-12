@@ -27,7 +27,7 @@ impl Criterion {
 	pub fn check_validity(&self) -> Result<()> {
 		use self::Criterion::*;
 		match *self {
-			TimeOut(_) => Ok(()),
+			TimeOut(_)    |
 			Iterations(_) => Ok(()),
 			LatestMSE(mse) => {
 				if mse > 0.0 && mse < 1.0 {
