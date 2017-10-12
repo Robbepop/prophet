@@ -49,6 +49,15 @@ cargo bench --features benches
 
 ## Release Notes (YYYY/MM/DD)
 
+### 0.4.2 (2017/10/13)
+
+- Improved performance of learning algorithms by up to 27%*. (*Tested on my local machine.)
+- Updated ndarray from 0.10.10 to 0.10.11 and itertools from 0.6.5 to 0.7.0.
+- Relaxed dependency version constraints for rand, num, log and ndarray.
+- Usability: Added a HOW TO USE section to the README.
+- Dev
+	- Added some unit tests for `NeuralNet` components for improved stability and maintainability.
+
 ### 0.4.1 (2017/08/27)
 
 - Fixed long-standing undeterministic [bug](https://github.com/Robbepop/prophet/issues/2).
