@@ -61,6 +61,7 @@ at your option.
 
 ### 0.4.2 (2017/10/13)
 
+- Relicensed the library under the dual license model where the user can choose between MIT or APACHE version 2.0.
 - Improved performance of learning algorithms by up to 27%*. (*Tested on my local machine.)
 - Updated ndarray from 0.10.10 to 0.10.11 and itertools from 0.6.5 to 0.7.0.
 - Relaxed dependency version constraints for rand, num, log and ndarray.
