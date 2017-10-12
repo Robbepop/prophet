@@ -222,7 +222,7 @@ impl FullyConnectedLayer {
 
 		let act = self.activation; // required because of non-lexical borrows
 		use std::iter;
-		multizip((self.gradients.iter_mut(), self.outputs.iter().chain(iter::once(&1.0))))
+		izip!(self.gradients.iter_mut(), self.outputs.iter().chain(iter::once(&1.0)))
 			.foreach(|(gradient, &output)| *gradient *= act.derived(output));
 	}
 
@@ -236,9 +236,9 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(prev.weights.rows(), prev.count_gradients() - 1);
 		debug_assert_eq!(prev.weights.cols(), self.count_gradients());
 
-		multizip((prev.weights.genrows(), prev.gradients.iter()))
+		izip!(prev.weights.genrows(), prev.gradients.iter())
 			.foreach(|(prev_weights_row, prev_gradient)| {
-				multizip((self.gradients.iter_mut(), prev_weights_row.iter()))
+				izip!(self.gradients.iter_mut(), prev_weights_row.iter())
 					.foreach(|(gradient, weight)| *gradient += weight * prev_gradient)
 			});
 
@@ -261,12 +261,11 @@ impl FullyConnectedLayer {
 		// ==================================================================== //
 		// OLD
 		// ==================================================================== //
-		multizip((self.weights.genrows_mut(),
-		          self.delta_weights.genrows_mut(),
-		          self.gradients.iter()))
+		izip!(self.weights.genrows_mut(),
+		      self.delta_weights.genrows_mut(),
+		      self.gradients.iter())
 			.foreach(|(mut weights_row, mut delta_weights_row, gradient)| {
-				multizip((prev_outputs.iter().chain(iter::once(&1.0)),
-				          delta_weights_row.iter_mut()))
+				izip!(prev_outputs.iter().chain(iter::once(&1.0)), delta_weights_row.iter_mut())
 					.foreach(|(prev_output, delta_weight)| {
 						*delta_weight =
 							// Individual input, magnified by the gradient and train rate
@@ -480,8 +479,11 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn equivalence() {
 		use self::Activation::{Identity, Tanh};
+
+		println!("1");
 
 		let mut merged = FullyConnectedLayer{
 			weights: Array::from_vec(vec![
@@ -494,6 +496,8 @@ mod tests {
 			activation: Tanh
 		};
 
+		println!("2");
+
 		let mut weights_part = FullyConnectedLayer{
 			weights: Array::from_vec(vec![
 					1.0, 2.0, 3.0,
@@ -504,6 +508,8 @@ mod tests {
 			gradients: Array::zeros(3),
 			activation: Identity
 		};
+
+		println!("3");
 
 		let mut activation_part = FullyConnectedLayer{
 			weights: Array::from_vec(vec![
@@ -517,11 +523,22 @@ mod tests {
 			activation: Tanh
 		};
 
+		println!("4");
+
 		let input = Array::from_vec(vec![10.0, 20.0]);
 
+		println!("5");
+
 		let result_merged = merged.feed_forward(input.view()).to_owned();
-		let result_split_temp = weights_part.feed_forward(input.view()).to_owned();
+		println!("6");
+		weights_part.feed_forward(input.view());
+		let result_split_temp = weights_part.output_view().to_owned();
+		// let result_split_temp = weights_part.feed_forward(input.view()).to_owned();
+		// let mut result_split_temp2 = Array::zeros(3);
+		// result_split_temp2.slice_mut(s![..-1]).assign(&result_split_temp);
+		println!("7");
 		let result_split = activation_part.feed_forward(result_split_temp.view()).to_owned();
+		println!("8");
 
 		println!("result_merged = {:?}", result_merged);
 		println!("result_split_temp = {:?}", result_split_temp);

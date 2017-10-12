@@ -94,6 +94,8 @@ extern crate num;
 #[macro_use]
 extern crate ndarray;
 extern crate ndarray_rand;
+
+#[macro_use]
 extern crate itertools;
 
 #[cfg(feature = "serde_support")]
