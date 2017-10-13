@@ -303,16 +303,107 @@ impl IntoIterator for Topology {
 mod tests {
 	use super::*;
 
-	#[test]
-	fn topology_1d() {
-		use self::Activation::{ReLU, Tanh};
-		let top = Topology::input(2)
-			.fully_connect( 5).activation(ReLU)
-			.fully_connect(10).activation(ReLU)
-			.fully_connect(10).activation(ReLU)
-			.fully_connect( 5).activation(Tanh);
+	mod fully_connected_layer {
+		use super::*;
 
-		assert_eq!(top.input_len() , LayerSize(2));
-		assert_eq!(top.output_len(), LayerSize(5));
+		#[test]
+		#[ignore]
+		fn new() {
+		}
+
+		#[test]
+		#[ignore]
+		fn input_len() {
+		}
+
+		#[test]
+		#[ignore]
+		fn output_len() {
+		}
+	}
+
+	mod activation_layer {
+		use super::*;
+
+		#[test]
+		#[ignore]
+		fn new() {
+		}
+
+		#[test]
+		#[ignore]
+		fn activation_fn() {
+		}
+
+		#[test]
+		#[ignore]
+		fn input_len() {
+		}
+
+		#[test]
+		#[ignore]
+		fn output_len() {
+		}
+	}
+
+	mod topology {
+		use super::*;
+
+		fn complex_dummy_topology() -> Topology {
+			use self::Activation::{ReLU, Tanh};
+			Topology::input(2)
+				.fully_connect( 5).activation(ReLU)
+				.fully_connect(10).activation(ReLU)
+				.fully_connect(10).activation(ReLU)
+				.fully_connect( 5).activation(Tanh)
+		}
+
+		#[test]
+		fn input_len() {
+			let top = complex_dummy_topology();
+			assert_eq!(top.input_len() , LayerSize(2));
+		}
+
+		#[test]
+		fn output_len() {
+			let top = complex_dummy_topology();
+			assert_eq!(top.output_len(), LayerSize(5));
+		}
+	}
+
+	mod layer_size {
+		use super::*;
+
+		#[test]
+		fn new_ok() {
+			assert_eq!(LayerSize::new(1), Ok(LayerSize(1)));
+			assert_eq!(LayerSize::new(42), Ok(LayerSize(42)));
+			assert_eq!(LayerSize::new(1337), Ok(LayerSize(1337)));
+		}
+
+		#[test]
+		fn new_fail() {
+			assert_eq!(LayerSize::new(0), Err(Error::zero_layer_size()));
+		}
+
+		#[test]
+		fn from_ok() {
+			assert_eq!(LayerSize::from(1), LayerSize(1));
+			assert_eq!(LayerSize::from(42), LayerSize(42));
+			assert_eq!(LayerSize::from(1337), LayerSize(1337));
+		}
+
+		#[test]
+		#[should_panic]
+		fn from_fail() {
+			LayerSize::from(0);
+		}
+
+		#[test]
+		fn to_usize() {
+			for i in 1..100 {
+				assert_eq!(LayerSize(i).to_usize(), i);
+			}
+		}
 	}
 }
