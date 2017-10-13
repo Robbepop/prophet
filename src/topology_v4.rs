@@ -6,6 +6,44 @@ use std::vec;
 use activation::Activation;
 use errors::{Result, Error};
 
+/// Represents the number of neurons within a layer of a topology.
+/// 
+/// Note: This does not respect bias neurons! They are implicitely
+///       added in later stages of neural network construction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct LayerSize(usize);
+
+impl LayerSize {
+	/// Creates a new `LayerSize` with the given number of neurons.
+	/// 
+	/// # Errors
+	/// 
+	/// - If the given size is equal to 0 (zero).
+	pub fn new(size: usize) -> Result<LayerSize> {
+		if size == 0 {
+			return Err(Error::zero_layer_size())
+		}
+		Ok(LayerSize(size))
+	}
+
+	/// Returns the represented number of neurons as `usize`.
+	pub fn to_usize(self) -> usize {
+		self.0
+	}
+}
+
+impl From<usize> for LayerSize {
+	/// Creates a new `LayerSize` with the given number of neurons.
+	/// 
+	/// # Panics
+	/// 
+	/// - If the given size is equal to 0 (zero).
+	fn from(size: usize) -> LayerSize {
+		LayerSize::new(size)
+			.expect("This implementation expects the user to provide valid input.")
+	}
+}
+
 /// This interface represents the bare minimum of what an abstracted layer has to offer.
 pub trait Layer {
 	/// Returns the length of the input signal of this `Layer`.
@@ -121,44 +159,6 @@ impl Layer for AnyLayer {
 			FullyConnected(layer) => layer.output_len(),
 			Activation(layer) => layer.output_len()
 		}
-	}
-}
-
-/// Represents the number of neurons within a layer of a topology.
-/// 
-/// Note: This does not respect bias neurons! They are implicitely
-///       added in later stages of neural network construction.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct LayerSize(usize);
-
-impl LayerSize {
-	/// Creates a new `LayerSize` with the given number of neurons.
-	/// 
-	/// # Errors
-	/// 
-	/// - If the given size is equal to 0 (zero).
-	pub fn from_usize(size: usize) -> Result<LayerSize> {
-		if size == 0 {
-			return Err(Error::zero_layer_size())
-		}
-		Ok(LayerSize(size))
-	}
-
-	/// Returns the represented number of neurons as `usize`.
-	pub fn into_usize(self) -> usize {
-		self.0
-	}
-}
-
-impl From<usize> for LayerSize {
-	/// Creates a new `LayerSize` with the given number of neurons.
-	/// 
-	/// # Panics
-	/// 
-	/// - If the given size is equal to 0 (zero).
-	fn from(size: usize) -> LayerSize {
-		LayerSize::from_usize(size)
-			.expect("This implementation expects the user to provide valid input.")
 	}
 }
 
@@ -293,6 +293,7 @@ impl IntoIterator for Topology {
 	type Item = AnyLayer;
 	type IntoIter = vec::IntoIter<AnyLayer>;
 
+	#[inline]
 	fn into_iter(self) -> Self::IntoIter {
 		self.layers.into_iter()
 	}

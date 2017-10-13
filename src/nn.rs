@@ -45,7 +45,7 @@ impl NeuralNet {
 	pub fn from_topology(top: Topology) -> Result<Self> {
 		Ok(NeuralNet{
 			input: BiasedSignalBuffer::zeros_with_bias(
-				top.input_len().into_usize())?,
+				top.input_len().to_usize())?,
 			layers: ContainerLayer::from_vec(top
 				.into_iter()
 				.map(layer::AnyLayer::from)

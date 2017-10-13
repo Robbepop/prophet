@@ -44,7 +44,7 @@ impl ActivationLayer {
 	pub fn from_top_layer(top_layer: topology_v4::ActivationLayer) -> Result<ActivationLayer> {
 		use topology_v4::Layer;
 		ActivationLayer::with_activation(
-			top_layer.input_len().into_usize(), top_layer.activation_fn()
+			top_layer.input_len().to_usize(), top_layer.activation_fn()
 		)
 	}
 }

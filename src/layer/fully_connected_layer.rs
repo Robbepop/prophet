@@ -49,7 +49,7 @@ impl FullyConnectedLayer {
 	pub fn from_top_layer(top_layer: topology_v4::FullyConnectedLayer) -> Result<FullyConnectedLayer> {
 		use topology_v4::Layer;
 		FullyConnectedLayer::random(
-			top_layer.input_len().into_usize(), top_layer.input_len().into_usize()
+			top_layer.input_len().to_usize(), top_layer.input_len().to_usize()
 		)
 	}
 }
