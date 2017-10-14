@@ -517,31 +517,172 @@ mod tests {
 
 	mod topology {
 		use super::*;
+		use activation::Activation::*;
+
+		fn simple_dummy_topology() -> Topology {
+			Topology::input(1).fully_connect( 1)
+		}
+
+		fn medium_dummy_topology() -> Topology {
+			Topology::input(2)
+				.fully_connect(3).activation(Tanh)
+				.fully_connect(1).activation(Tanh)
+		}
 
 		fn complex_dummy_topology() -> Topology {
-			use self::Activation::{ReLU, Tanh};
-			Topology::input(2)
-				.fully_connect( 5).activation(ReLU)
-				.fully_connect(10).activation(ReLU)
-				.fully_connect(10).activation(ReLU)
-				.fully_connect( 5).activation(Tanh)
+			Topology::input(10)
+				.fully_connect(42)
+				.fully_connect(1337)
+				.activation(Tanh)
+				.activation(ReLU)
+				.fully_connect(11).activation(Logistic)
+				.fully_connect(7).activation(Gaussian)
+		}
+
+		#[test]
+		fn input() {
+			for n in 1..10 {
+				assert_eq!(
+					Topology::input(LayerSize(n)),
+					InitializingTopology{input_len: LayerSize(n)}
+				);
+				assert_eq!(
+					Topology::input(LayerSize(n)),
+					Topology::input(n)
+				);
+			}
+		}
+
+		#[test]
+		fn fully_connect() {
+			fn check_top_with_cfg(top: Topology, size: usize) {
+				let initial_output_len = top.output_len();
+				assert_eq!(
+					top.fully_connect(size).into_iter().last().unwrap(),
+					AnyLayer::FullyConnected(FullyConnectedLayer{
+						inputs: initial_output_len,
+						outputs: LayerSize(size)
+					})
+				);
+			}
+			let test_sizes = &[1, 3, 7, 13, 42, 1337];
+			for &size in test_sizes {
+				check_top_with_cfg(simple_dummy_topology(), size);
+				check_top_with_cfg(medium_dummy_topology(), size);
+				check_top_with_cfg(complex_dummy_topology(), size);
+			}
+		}
+
+		#[test]
+		fn activation() {
+			fn check_top_with_cfg(top: Topology, act: Activation) {
+				let initial_output_len = top.output_len();
+				assert_eq!(
+					top.activation(act).into_iter().last().unwrap(),
+					AnyLayer::Activation(ActivationLayer{
+						size: initial_output_len,
+						act
+					})
+				);
+			}
+			for act in activation_fns() {
+				check_top_with_cfg(simple_dummy_topology(), act);
+				check_top_with_cfg(medium_dummy_topology(), act);
+				check_top_with_cfg(complex_dummy_topology(), act);
+			}
+		}
+
+		#[test]
+		fn check_simple() {
+			assert_eq!(
+				simple_dummy_topology(),
+				Topology{
+					layers: vec![
+						AnyLayer::from(FullyConnectedLayer::new(1, 1))
+					]
+				}
+			);
+		}
+
+		#[test]
+		fn check_medium() {
+			assert_eq!(
+				medium_dummy_topology(),
+				Topology{
+					layers: vec![
+						AnyLayer::from(FullyConnectedLayer::new(2, 3)),
+						AnyLayer::from(ActivationLayer::new(3, Tanh)),
+						AnyLayer::from(FullyConnectedLayer::new(3, 1)),
+						AnyLayer::from(ActivationLayer::new(1, Tanh))
+					]
+				}
+			);
+		}
+
+		#[test]
+		fn check_complex() {
+			assert_eq!(
+				complex_dummy_topology(),
+				Topology{
+					layers: vec![
+						AnyLayer::from(FullyConnectedLayer::new(10, 42)),
+						AnyLayer::from(FullyConnectedLayer::new(42, 1337)),
+						AnyLayer::from(ActivationLayer::new(1337, Tanh)),
+						AnyLayer::from(ActivationLayer::new(1337, ReLU)),
+						AnyLayer::from(FullyConnectedLayer::new(1337, 11)),
+						AnyLayer::from(ActivationLayer::new(11, Logistic)),
+						AnyLayer::from(FullyConnectedLayer::new(11, 7)),
+						AnyLayer::from(ActivationLayer::new(7, Gaussian))
+					]
+				}
+			);
 		}
 
 		#[test]
 		fn input_len() {
-			let top = complex_dummy_topology();
-			assert_eq!(top.input_len() , LayerSize(2));
+			assert_eq!(simple_dummy_topology().input_len() , LayerSize( 1));
+			assert_eq!(medium_dummy_topology().input_len() , LayerSize( 2));
+			assert_eq!(complex_dummy_topology().input_len(), LayerSize(10));
 		}
 
 		#[test]
 		fn output_len() {
-			let top = complex_dummy_topology();
-			assert_eq!(top.output_len(), LayerSize(5));
+			assert_eq!(simple_dummy_topology().output_len() , LayerSize(1));
+			assert_eq!(medium_dummy_topology().output_len() , LayerSize(1));
+			assert_eq!(complex_dummy_topology().output_len(), LayerSize(7));
 		}
 
 		#[test]
-		#[ignore]
-		fn into_iter() {
+		fn into_iter_simple() {
+			let mut iter = simple_dummy_topology().into_iter();
+			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(1, 1))));
+			assert_eq!(iter.next(), None);
+		}
+
+		#[test]
+		fn into_iter_medium() {
+			let mut iter = medium_dummy_topology().into_iter();
+			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(2, 3))));
+			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(3, Tanh))));
+			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(3, 1))));
+			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(1, Tanh))));
+			assert_eq!(iter.next(), None);
+		}
+
+		#[test]
+		fn into_iter_complex() {
+			let mut iter = complex_dummy_topology().into_iter();
+
+			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(10, 42))));
+			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(42, 1337))));
+			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(1337, Tanh))));
+			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(1337, ReLU))));
+			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(1337, 11))));
+			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(11, Logistic))));
+			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(11, 7))));
+			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(7, Gaussian))));
+
+			assert_eq!(iter.next(), None);
 		}
 	}
 }
