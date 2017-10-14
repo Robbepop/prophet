@@ -389,25 +389,77 @@ mod tests {
 
 	mod activation_layer {
 		use super::*;
+		use activation::Activation::*;
+
+		fn activation_fns() -> Vec<Activation> {
+			vec![
+				Identity,
+				BinaryStep,
+				Logistic,
+				Tanh,
+				ArcTan,
+				SoftSign,
+				ReLU,
+				SoftPlus,
+				BentIdentity,
+				Sinusoid,
+				Gaussian
+			]
+		}
 
 		#[test]
-		#[ignore]
 		fn new() {
+			assert_eq!(
+				ActivationLayer::new(LayerSize(3), Tanh),
+				ActivationLayer{
+					size: LayerSize(3),
+					act: Tanh
+				}
+			);
+			assert_eq!(
+				ActivationLayer::new(42, ReLU),
+				ActivationLayer{
+					size: LayerSize(42),
+					act: ReLU
+				}
+			);
 		}
 
 		#[test]
-		#[ignore]
 		fn activation_fn() {
+			for act in activation_fns() {
+				for n in 1..10 {
+					assert_eq!(ActivationLayer::new(n, act).activation_fn(), act);
+				}
+			}
 		}
 
 		#[test]
-		#[ignore]
 		fn input_len() {
+			for act in activation_fns() {
+				for n in 1..10 {
+					assert_eq!(ActivationLayer::new(n, act).input_len(), LayerSize(n));
+				}
+			}
 		}
 
 		#[test]
-		#[ignore]
 		fn output_len() {
+			for act in activation_fns() {
+				for n in 1..10 {
+					assert_eq!(ActivationLayer::new(n, act).input_len(), LayerSize(n));
+				}
+			}
+		}
+
+		#[test]
+		fn input_len_eq_output_len() {
+			for act in activation_fns() {
+				for n in 1..10 {
+					let layer = ActivationLayer::new(n, act);
+					assert_eq!(layer.input_len(), layer.output_len());
+				}
+			}
 		}
 	}
 
