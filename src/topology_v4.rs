@@ -162,6 +162,18 @@ impl Layer for AnyLayer {
 	}
 }
 
+impl From<FullyConnectedLayer> for AnyLayer {
+	fn from(layer: FullyConnectedLayer) -> AnyLayer {
+		AnyLayer::FullyConnected(layer)
+	}
+}
+
+impl From<ActivationLayer> for AnyLayer {
+	fn from(layer: ActivationLayer) -> AnyLayer {
+		AnyLayer::Activation(layer)
+	}
+}
+
 /// Builds up topologies and do some minor compile-time and 
 /// runtime checks to enforce validity of the topology as a shape for neural nets.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -212,7 +224,7 @@ impl TopologyBuilder for InitializingTopology {
 	{
 		Topology{
 			layers: vec![
-				AnyLayer::FullyConnected(
+				AnyLayer::from(
 					FullyConnectedLayer::new(self.input_len, size.into()))
 			]
 		}
@@ -221,7 +233,7 @@ impl TopologyBuilder for InitializingTopology {
 	fn activation(self, act: Activation) -> Self::Builder {
 		Topology{
 			layers: vec![
-				AnyLayer::Activation(
+				AnyLayer::from(
 					ActivationLayer::new(self.input_len, act))
 			]
 		}
@@ -236,7 +248,7 @@ impl TopologyBuilder for Topology {
 	{
 		let last_len = self.last_len();
 		self.layers.push(
-			AnyLayer::FullyConnected(
+			AnyLayer::from(
 				FullyConnectedLayer::new(last_len, size.into())
 			)
 		);
@@ -246,7 +258,7 @@ impl TopologyBuilder for Topology {
 	fn activation(mut self, act: Activation) -> Self::Builder {
 		let last_len = self.last_len();
 		self.layers.push(
-			AnyLayer::Activation(
+			AnyLayer::from(
 				ActivationLayer::new(last_len, act)
 			)
 		);
@@ -303,22 +315,75 @@ impl IntoIterator for Topology {
 mod tests {
 	use super::*;
 
+	mod layer_size {
+		use super::*;
+
+		#[test]
+		fn new_ok() {
+			assert_eq!(LayerSize::new(1), Ok(LayerSize(1)));
+			assert_eq!(LayerSize::new(42), Ok(LayerSize(42)));
+			assert_eq!(LayerSize::new(1337), Ok(LayerSize(1337)));
+		}
+
+		#[test]
+		fn new_fail() {
+			assert_eq!(LayerSize::new(0), Err(Error::zero_layer_size()));
+		}
+
+		#[test]
+		fn from_ok() {
+			assert_eq!(LayerSize::from(1), LayerSize(1));
+			assert_eq!(LayerSize::from(42), LayerSize(42));
+			assert_eq!(LayerSize::from(1337), LayerSize(1337));
+		}
+
+		#[test]
+		#[should_panic]
+		fn from_fail() {
+			LayerSize::from(0);
+		}
+
+		#[test]
+		fn to_usize() {
+			for i in 1..100 {
+				assert_eq!(LayerSize(i).to_usize(), i);
+			}
+		}
+	}
+
 	mod fully_connected_layer {
 		use super::*;
 
 		#[test]
-		#[ignore]
 		fn new() {
+			assert_eq!(
+				FullyConnectedLayer::new(LayerSize(3), LayerSize(4)),
+				FullyConnectedLayer{
+					inputs: LayerSize(3),
+					outputs: LayerSize(4)
+				}
+			);
+			assert_eq!(
+				FullyConnectedLayer::new(3, 4),
+				FullyConnectedLayer{
+					inputs: LayerSize(3),
+					outputs: LayerSize(4)
+				}
+			);
 		}
 
 		#[test]
-		#[ignore]
 		fn input_len() {
+			assert_eq!(FullyConnectedLayer::new(1, 1).input_len(), LayerSize(1));
+			assert_eq!(FullyConnectedLayer::new(3, 4).input_len(), LayerSize(3));
+			assert_eq!(FullyConnectedLayer::new(42, 1337).input_len(), LayerSize(42));
 		}
 
 		#[test]
-		#[ignore]
 		fn output_len() {
+			assert_eq!(FullyConnectedLayer::new(1, 1).output_len(), LayerSize(1));
+			assert_eq!(FullyConnectedLayer::new(3, 4).output_len(), LayerSize(4));
+			assert_eq!(FullyConnectedLayer::new(42, 1337).output_len(), LayerSize(1337));
 		}
 	}
 
@@ -333,6 +398,30 @@ mod tests {
 		#[test]
 		#[ignore]
 		fn activation_fn() {
+		}
+
+		#[test]
+		#[ignore]
+		fn input_len() {
+		}
+
+		#[test]
+		#[ignore]
+		fn output_len() {
+		}
+	}
+
+	mod any_layer {
+		use super::*;
+
+		#[test]
+		#[ignore]
+		fn from_fully_connected_layer() {
+		}
+
+		#[test]
+		#[ignore]
+		fn from_activation_layer() {
 		}
 
 		#[test]
@@ -369,41 +458,10 @@ mod tests {
 			let top = complex_dummy_topology();
 			assert_eq!(top.output_len(), LayerSize(5));
 		}
-	}
-
-	mod layer_size {
-		use super::*;
 
 		#[test]
-		fn new_ok() {
-			assert_eq!(LayerSize::new(1), Ok(LayerSize(1)));
-			assert_eq!(LayerSize::new(42), Ok(LayerSize(42)));
-			assert_eq!(LayerSize::new(1337), Ok(LayerSize(1337)));
-		}
-
-		#[test]
-		fn new_fail() {
-			assert_eq!(LayerSize::new(0), Err(Error::zero_layer_size()));
-		}
-
-		#[test]
-		fn from_ok() {
-			assert_eq!(LayerSize::from(1), LayerSize(1));
-			assert_eq!(LayerSize::from(42), LayerSize(42));
-			assert_eq!(LayerSize::from(1337), LayerSize(1337));
-		}
-
-		#[test]
-		#[should_panic]
-		fn from_fail() {
-			LayerSize::from(0);
-		}
-
-		#[test]
-		fn to_usize() {
-			for i in 1..100 {
-				assert_eq!(LayerSize(i).to_usize(), i);
-			}
+		#[ignore]
+		fn into_iter() {
 		}
 	}
 }
