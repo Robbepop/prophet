@@ -315,6 +315,23 @@ impl IntoIterator for Topology {
 mod tests {
 	use super::*;
 
+	fn activation_fns() -> Vec<Activation> {
+		use activation::Activation::*;
+		vec![
+			Identity,
+			BinaryStep,
+			Logistic,
+			Tanh,
+			ArcTan,
+			SoftSign,
+			ReLU,
+			SoftPlus,
+			BentIdentity,
+			Sinusoid,
+			Gaussian
+		]
+	}
+
 	mod layer_size {
 		use super::*;
 
@@ -391,22 +408,6 @@ mod tests {
 		use super::*;
 		use activation::Activation::*;
 
-		fn activation_fns() -> Vec<Activation> {
-			vec![
-				Identity,
-				BinaryStep,
-				Logistic,
-				Tanh,
-				ArcTan,
-				SoftSign,
-				ReLU,
-				SoftPlus,
-				BentIdentity,
-				Sinusoid,
-				Gaussian
-			]
-		}
-
 		#[test]
 		fn new() {
 			assert_eq!(
@@ -465,25 +466,52 @@ mod tests {
 
 	mod any_layer {
 		use super::*;
+		use activation::Activation::*;
 
 		#[test]
-		#[ignore]
 		fn from_fully_connected_layer() {
+			assert_eq!(
+				AnyLayer::from(FullyConnectedLayer::new(3, 4)),
+				AnyLayer::FullyConnected(FullyConnectedLayer{
+					inputs: LayerSize(3),
+					outputs: LayerSize(4)
+				})
+			);
 		}
 
 		#[test]
-		#[ignore]
 		fn from_activation_layer() {
+			assert_eq!(
+				AnyLayer::from(ActivationLayer::new(3, Tanh)),
+				AnyLayer::Activation(ActivationLayer{
+					size: LayerSize(3),
+					act: Tanh
+				})
+			);
 		}
 
 		#[test]
-		#[ignore]
 		fn input_len() {
+			for i in 1..10 {
+				for o in 1..10 {
+					assert_eq!(AnyLayer::from(FullyConnectedLayer::new(i, o)).input_len(), LayerSize(i));
+				}
+				for act in activation_fns() {
+					assert_eq!(AnyLayer::from(ActivationLayer::new(i, act)).input_len(), LayerSize(i));
+				}
+			}
 		}
 
 		#[test]
-		#[ignore]
 		fn output_len() {
+			for i in 1..10 {
+				for o in 1..10 {
+					assert_eq!(AnyLayer::from(FullyConnectedLayer::new(i, o)).output_len(), LayerSize(o));
+				}
+				for act in activation_fns() {
+					assert_eq!(AnyLayer::from(ActivationLayer::new(i, act)).output_len(), LayerSize(i));
+				}
+			}
 		}
 	}
 
