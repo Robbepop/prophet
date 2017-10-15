@@ -5,6 +5,15 @@ use errors::{Error, Result};
 
 use std::marker::PhantomData;
 
+/// A generic 1-dimensional buffer that may represent owned or non-owned content
+/// as well as buffers with or without an additional bias neuron value in the context of neural networks.
+/// 
+/// This may be used as a base type to represent input signals, output signals or error signals.
+/// 
+/// Note: This basically is just a very thin convenience wrapper around `ndarray`'s 1-dimensional
+///       `Array` or `ArrayView`.
+/// 
+/// Note 2: It has yet to be proven if an abstraction for biased versus non-biased content is useful.
 #[derive(Debug)]
 pub struct BufferBase<D, B>
 	where D: ndarray::Data<Elem = f32>,
@@ -151,6 +160,11 @@ impl<B> Buffer<B>
 impl<B> Buffer<B>
 	where B: marker::Unbiased
 {
+	/// Creates a new unbiased buffer with the given length and all values set to zero (`0`).
+	/// 
+	/// # Errors
+	/// 
+	/// - Returns an error upon trying to create a zero-length buffer.
 	#[inline]
 	pub fn zeros(len: usize) -> Result<Buffer<B>> {
 		if len == 0 {
@@ -167,6 +181,7 @@ impl<D, B> BufferBase<D, B>
 	where D: ndarray::DataMut<Elem = f32>,
 	      B: marker::ErrorSignal
 {
+	/// Resets all values of this `ErrorSignalBuffer` to zero (`0`).
 	#[inline]
 	pub fn reset_to_zeros(&mut self) {
 		self.data.fill(0.0)
@@ -330,4 +345,155 @@ impl<'a, D, B> IntoIterator for &'a mut BufferBase<D, B>
 	fn into_iter(self) -> Self::IntoIter {
 		self.iter_mut()
 	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	mod base {
+		use super::*;
+
+		#[test]
+		#[ignore]
+		fn partial_eq() {
+		}
+
+		#[test]
+		#[ignore]
+		fn from_raw_ok() {
+		}
+
+		#[test]
+		#[ignore]
+		fn from_raw_fail() {
+		}
+
+		#[test]
+		#[ignore]
+		fn len() {
+		}
+
+		#[test]
+		#[ignore]
+		fn view() {
+		}
+
+		#[test]
+		#[ignore]
+		fn view_mut() {
+		}
+
+		#[test]
+		#[ignore]
+		fn iter() {
+		}
+
+		#[test]
+		#[ignore]
+		fn iter_mut() {
+		}
+
+		#[test]
+		#[ignore]
+		fn data() {
+		}
+
+		#[test]
+		#[ignore]
+		fn data_mut() {
+		}
+
+		#[test]
+		#[ignore]
+		fn into_data() {
+		}
+
+		#[test]
+		#[ignore]
+		fn into_data_mut() {
+		}
+
+		#[test]
+		#[ignore]
+		fn into_iter() {
+		}
+	}
+
+	mod buffer {
+		use super::*;
+
+		#[test]
+		#[ignore]
+		fn clone() {
+		}
+
+		mod biased {
+			use super::*;
+
+			#[test]
+			#[ignore]
+			fn zeros_with_bias_ok() {
+			}
+
+			#[test]
+			#[ignore]
+			fn zeros_with_bias_fail() {
+			}
+
+			#[test]
+			#[ignore]
+			fn unbias() {
+			}
+
+			#[test]
+			#[ignore]
+			fn unbias_mut() {
+			}
+
+			#[test]
+			#[ignore]
+			fn into_unbias() {
+			}
+
+			#[test]
+			#[ignore]
+			fn into_unbias_mut() {
+			}
+		}
+
+		mod unbiased {
+			use super::*;
+
+			#[test]
+			#[ignore]
+			fn zeros_ok() {
+			}
+
+			#[test]
+			#[ignore]
+			fn zeros_fail() {
+			}
+
+			#[test]
+			#[ignore]
+			fn assign_ok() {
+			}
+
+			#[test]
+			#[ignore]
+			fn assign_fail() {
+			}
+		}
+	}
+
+	mod error_signal {
+		use super::*;
+
+		#[test]
+		#[ignore]
+		fn reset_to_zeros() {
+		}
+	}
+
 }
