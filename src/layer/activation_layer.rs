@@ -58,7 +58,7 @@ impl From<topology_v4::ActivationLayer> for ActivationLayer {
 
 impl ProcessInputSignal for ActivationLayer {
 	fn process_input_signal(&mut self, input_signal: BiasedSignalView) {
-		if self.inputs() != input_signal.len() {
+		if self.inputs() != input_signal.dim() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
 		}
 		let act = self.act; // Required since borrow-checker doesn't allow
@@ -76,7 +76,7 @@ impl ProcessInputSignal for ActivationLayer {
 
 impl CalculateOutputErrorSignal for ActivationLayer {
 	fn calculate_output_error_signal(&mut self, target_signals: UnbiasedSignalView) {
-		if self.outputs() != target_signals.len() {
+		if self.outputs() != target_signals.dim() {
 			// Note: Target signals do not respect bias values.
 			//       We could model this in a way that `target_signals` are simply one element shorter.
 			//       Or they have also `1.0` as their last element which eliminates 
@@ -98,7 +98,7 @@ impl PropagateErrorSignal for ActivationLayer {
 	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
 		where P: HasErrorSignal
 	{
-		if self.inputs() != propagated.error_signal().len() {
+		if self.inputs() != propagated.error_signal().dim() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
 		}
 		use ndarray::Zip;
@@ -148,10 +148,10 @@ impl HasErrorSignal for ActivationLayer {
 
 impl SizedLayer for ActivationLayer {
 	fn inputs(&self) -> usize {
-		self.inputs.len()
+		self.inputs.dim()
 	}
 
 	fn outputs(&self) -> usize {
-		self.outputs.len()
+		self.outputs.dim()
 	}
 }

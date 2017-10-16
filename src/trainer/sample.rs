@@ -90,14 +90,14 @@ impl SampleCollection {
 	{
 		let samples: Vec<Sample> = samples.into_iter().collect();
 		if let Some((first, rest)) = samples.split_first() {
-			let input_len = first.input().len();
-			let expected_len = first.expected().len();
+			let input_len = first.input().dim();
+			let expected_len = first.expected().dim();
 			for sample in rest {
-				if sample.input().len() != input_len {
-					return Err(Error::unmatching_sample_input_len(input_len, sample.input().len()))
+				if sample.input().dim() != input_len {
+					return Err(Error::unmatching_sample_input_len(input_len, sample.input().dim()))
 				}
-				if sample.expected().len() != expected_len {
-					return Err(Error::unmatching_sample_expected_len(expected_len, sample.expected().len()))
+				if sample.expected().dim() != expected_len {
+					return Err(Error::unmatching_sample_expected_len(expected_len, sample.expected().dim()))
 				}
 			}
 			
@@ -113,7 +113,7 @@ impl SampleCollection {
 	/// This must be equal to the input signal length of the neural network.
 	#[inline]
 	pub fn input_len(&self) -> usize {
-		self.samples.first().unwrap().input().len()
+		self.samples.first().unwrap().input().dim()
 	}
 
 	/// Returns the sample length of the expected signal.
@@ -121,7 +121,7 @@ impl SampleCollection {
 	/// This must be equal to the output signal length of the neural network. 
 	#[inline]
 	pub fn expected_len(&self) -> usize {
-		self.samples.first().unwrap().expected().len()
+		self.samples.first().unwrap().expected().dim()
 	}
 
 	/// Returns the number of `Sample`s stored in this `SampleCollection`.
@@ -142,11 +142,11 @@ impl SampleCollection {
 	/// Inserts the given sample into this `SampleCollection`.
 	#[inline]
 	pub fn insert(&mut self, sample: Sample) -> Result<()> {
-		if sample.input().len() != self.input_len() {
-			return Err(Error::unmatching_sample_input_len(self.input_len(), sample.input().len()))
+		if sample.input().dim() != self.input_len() {
+			return Err(Error::unmatching_sample_input_len(self.input_len(), sample.input().dim()))
 		}
-		if sample.expected().len() != self.expected_len() {
-			return Err(Error::unmatching_sample_expected_len(self.expected_len(), sample.expected().len()))
+		if sample.expected().dim() != self.expected_len() {
+			return Err(Error::unmatching_sample_expected_len(self.expected_len(), sample.expected().dim()))
 		}
 		self.samples.push(sample);
 		Ok(())
@@ -502,11 +502,11 @@ mod tests {
 			assert!(samples.is_ok());
 			let samples = samples.unwrap();
 
-			assert_eq!(samples.as_slice()[0].input().len(), 2);
-			assert_eq!(samples.as_slice()[1].input().len(), 2);
+			assert_eq!(samples.as_slice()[0].input().dim(), 2);
+			assert_eq!(samples.as_slice()[1].input().dim(), 2);
 
-			assert_eq!(samples.as_slice()[0].expected().len(), 1);
-			assert_eq!(samples.as_slice()[1].expected().len(), 1);
+			assert_eq!(samples.as_slice()[0].expected().dim(), 1);
+			assert_eq!(samples.as_slice()[1].expected().dim(), 1);
 
 			assert_eq!(samples.as_slice()[0].input().data(), Array::from_vec(vec![1.0, 2.0]));
 			assert_eq!(samples.as_slice()[1].input().data(), Array::from_vec(vec![4.0, 5.0]));

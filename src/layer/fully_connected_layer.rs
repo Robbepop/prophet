@@ -63,7 +63,7 @@ impl From<topology_v4::FullyConnectedLayer> for FullyConnectedLayer {
 
 impl ProcessInputSignal for FullyConnectedLayer {
 	fn process_input_signal(&mut self, input_signal: BiasedSignalView) {
-		if self.output_signal().len() != input_signal.len() {
+		if self.output_signal().dim() != input_signal.dim() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
 		}
 		use ndarray::linalg::general_mat_vec_mul;
@@ -73,7 +73,7 @@ impl ProcessInputSignal for FullyConnectedLayer {
 
 impl CalculateOutputErrorSignal for FullyConnectedLayer {
 	fn calculate_output_error_signal(&mut self, target_signal: UnbiasedSignalView) {
-		if self.output_signal().len() != target_signal.len() {
+		if self.output_signal().dim() != target_signal.dim() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
 		}
 		use ndarray::Zip;
