@@ -125,22 +125,60 @@ impl<B> Clone for AnyBuffer<B>
 
 impl<D, B> BufferBase<D, B>
 	where D: Data,
-	      B: Marker
+	      B: Biased
 {
-	pub fn from_raw(data: ArrayBase<D, Ix1>) -> Result<BufferBase<D, B>> {
+	/// Creates a biased owned `AnyBuffer` from an owned `ndarray::Array` or
+	/// a biased non-owning `AnyView` or `AnyViewMut` from a non-owning `ndarray::ArrayView`
+	/// or `ndarray::ArrayViewMut` respectively.
+	/// 
+	/// Note: No `From<...>` is implemented as a fast-fallback to this method since it would create
+	///       an assymmetry with `from_raw` for an unbiased version of this method that has
+	///       no additional safety checks to check for a user-provided matching bias value during runtime.
+	/// 
+	/// # Errors
+	/// 
+	/// - If the given array has a dimension of zero (`0`) or one (`1`).
+	/// - If the value of the last element of the given array does not match the expected bias value.
+	pub fn from_raw_with_bias<A>(data: A) -> Result<BufferBase<D, B>>
+		where A: Into<ArrayBase<D, Ix1>>
+	{
+		let data = data.into();
 		if data.dim() == 0 {
-			return Err(Error::zero_sized_signal_buffer())
+			return Err(Error::attempt_to_create_zero_sized_buffer())
+		}
+		if data.dim() == 1 {
+			return Err(Error::too_few_values_provided_for_buffer_creation(2, data.dim()))
+		}
+		if data[data.dim() - 1] != B::DEFAULT_BIAS_VALUE {
+			return Err(Error::unmatching_user_provided_bias_value(B::DEFAULT_BIAS_VALUE, data[data.dim() - 1]))
 		}
 		Ok(BufferBase{data, marker: PhantomData})
 	}
 }
 
-impl<D, B> From<ArrayBase<D, Ix1>> for BufferBase<D, B>
+impl<D, B> BufferBase<D, B>
 	where D: Data,
-	      B: Marker
+	      B: Unbiased
 {
-	fn from(other: ArrayBase<D, Ix1>) -> BufferBase<D, B> {
-		BufferBase::<D, B>::from_raw(other).unwrap()
+	/// Creates an unbiased owned `AnyBuffer` from an owned `ndarray::Array` or 
+	/// an unbiased non-owning `AnyView` or `AnyViewMut` from a non-owning `ndarray::ArrayView`
+	/// or `ndarray::ArrayViewMut` respectively.
+	/// 
+	/// Note: No `From<...>` is implemented as a fast-fallback to this method since it would create
+	///       an assymmetry with `from_raw_with_bias` for a biased version of this method that has
+	///       safety checks to check for a user-provided matching bias value during runtime.
+	/// 
+	/// # Errors
+	/// 
+	/// - If the given `data` has a dimension (length) of zero (`0`).
+	pub fn from_raw<A>(data: A) -> Result<BufferBase<D, B>>
+		where A: Into<ArrayBase<D, Ix1>>
+	{
+		let data = data.into();
+		if data.dim() == 0 {
+			return Err(Error::attempt_to_create_zero_sized_buffer())
+		}
+		Ok(BufferBase{data, marker: PhantomData})
 	}
 }
 
@@ -162,7 +200,7 @@ impl<D, B> BufferBase<D, B>
 	pub fn zeros_with_bias(len: usize) -> Result<AnyBuffer<B>> {
 		use std::iter;
 		if len == 0 {
-			return Err(Error::zero_sized_signal_buffer()) // TODO: Rework error kind.
+			return Err(Error::attempt_to_create_zero_sized_buffer())
 		}
 		Ok(AnyBuffer{
 			data: Array::from_iter(iter::repeat(0.0)
@@ -186,7 +224,7 @@ impl<D, B> BufferBase<D, B>
 	#[inline]
 	pub fn zeros(len: usize) -> Result<UnbiasedSignalBuffer> {
 		if len == 0 {
-			return Err(Error::zero_sized_signal_buffer()) // TODO: Rework error kind.
+			return Err(Error::attempt_to_create_zero_sized_buffer())
 		}
 		Ok(UnbiasedSignalBuffer{
 			data: Array::zeros(len),
@@ -374,11 +412,19 @@ mod tests {
 		#[test]
 		#[ignore]
 		fn partial_eq() {
+
 		}
 
 		#[test]
-		#[ignore]
 		fn from_raw_ok() {
+			let vec = vec![1.0, 2.0, 3.0, 4.0];
+			assert_eq!(
+				AnyBuffer::<marker::UnbiasedSignal>::from_raw(vec.clone()),
+				Ok(AnyBuffer{
+					data: Array::from_vec(vec.clone()),
+					marker: PhantomData
+				})
+			);
 		}
 
 		#[test]

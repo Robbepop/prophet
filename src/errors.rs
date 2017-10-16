@@ -29,10 +29,6 @@ pub enum ErrorKind {
 	/// represents zero (0) neurons.
 	ZeroLayerSize,
 
-	/// Occures when trying to create an `OutputBuffer`
-	/// with zero non-bias neuron values.
-	ZeroSizedSignalBuffer,
-
 	/// Occures when trying to assign a non-matching number of input
 	/// signals to a buffer.
 	NonMatchingNumberOfSignals,
@@ -49,13 +45,32 @@ pub enum ErrorKind {
 	/// for `0` (zero) outputs.
 	ZeroOutputsWeightsMatrix,
 
+	/// Occures upon trying to create a zero sized buffer.
+	AttemptToCreateZeroSizedBuffer,
+
+	/// Occures when the user provides too few values to create a new buffer.
+	TooFewValueProvidedForBufferCreation{
+		/// The expected minimum size of the user provided value array.
+		expected_min: usize,
+		/// The actual size of the user provided value array.
+		actual: usize
+	},
+
+	/// Occures when a user provided bias value does not match the expected value.
+	UnmatchingUserProvidedBiasValue{
+		/// The expected bias value.
+		expected: f32,
+		/// The actual bias value.
+		actual: f32
+	},
+
 	/// Occures when doing some generic operation (e.g. assigning) with
 	/// two buffers of unequal sizes.
 	UnmatchingBufferSizes{
 		/// The signal length of the left-hand-side buffer.
-		lhs_size: usize,
+		left: usize,
 		/// The signal length of the right-hand-side buffer.
-		rhs_size: usize
+		right: usize
 	},
 
 	/// Occures when trying to create a `SampleCollection` from an empty set of samples.
@@ -100,6 +115,13 @@ pub enum ErrorKind {
 		expected_len: usize
 	}
 }
+
+// Error kinds:
+// 
+// - AttemptToCreateZeroSizedBuffer
+// - TooFewValueProvidedForBufferCreation{expected_min, actual}
+// - UnmatchingUserProvidedBiasValue{expected, actual}
+// - UnmatchingBufferSizes{left, right}
 
 /// The error class used in `Prophet`.
 #[derive(Debug, Clone, PartialEq)]
@@ -207,15 +229,6 @@ impl Error {
 		}
 	}
 
-	/// Creates a new `ZeroSizedOutputBuffer` error.
-	pub(crate) fn zero_sized_signal_buffer() -> Error {
-		Error{
-			kind: ErrorKind::ZeroSizedSignalBuffer,
-			message: "Tried to create an OutputBuffer representing zero non-bias values.".to_owned(),
-			annotation: None
-		}
-	}
-
 	/// Creates a new `ZeroInputsWeightsMatrix` error.
 	pub(crate) fn zero_inputs_weights_matrix() -> Error {
 		Error{
@@ -234,10 +247,47 @@ impl Error {
 		}
 	}
 
+	/// Creates a new `AttemptToCreateZeroSizedBuffer` error.
+	pub(crate) fn attempt_to_create_zero_sized_buffer() -> Error {
+		Error{
+			kind: ErrorKind::AttemptToCreateZeroSizedBuffer,
+			message: "Attempted to create a buffer with a length (dimension) of zero (1).".to_owned(),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `TooFewValueProvidedForBufferCreation` error.
+	pub(crate) fn too_few_values_provided_for_buffer_creation(expected_min: usize, actual: usize) -> Error {
+		assert!(actual < expected_min);
+		Error{
+			kind: ErrorKind::TooFewValueProvidedForBufferCreation{expected_min, actual},
+			message: format!(
+				"Expected at least {:?} user provided array elements for buffer creation
+				 but found only {:?} instead.",
+				 expected_min,
+				 actual
+			),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `UnmatchingUserProvidedBiasValue` error.
+	pub(crate) fn unmatching_user_provided_bias_value(expected: f32, actual: f32) -> Error {
+		assert!(expected != actual);
+		Error{
+			kind: ErrorKind::UnmatchingUserProvidedBiasValue{expected, actual},
+			message: format!(
+				"Expected a bias value of {:?} as the last value of the given data but found a bias value of
+			     {:?} instead.", expected, actual
+			),
+			annotation: None
+		}
+	}
+
 	/// Creates a new `UnmatchingBufferSizes` error.
 	pub(crate) fn unmatching_buffer_sizes(lhs_size: usize, rhs_size: usize) -> Error {
 		Error{
-			kind: ErrorKind::UnmatchingBufferSizes{lhs_size, rhs_size},
+			kind: ErrorKind::UnmatchingBufferSizes{left: lhs_size, right: rhs_size},
 			message: format!(
 				"Tried to operate on buffers with non-matching sizes of {:?} and {:?} elements.",
 				lhs_size,

@@ -457,14 +457,14 @@ mod tests {
 		#[test]
 		fn create_empty_input() {
 			let sample = Sample::new(vec![], vec![42.0]);
-			let expected = Err(Error::zero_sized_signal_buffer());
+			let expected = Err(Error::attempt_to_create_zero_sized_buffer());
 			assert_eq!(sample, expected);
 		}
 
 		#[test]
 		fn create_empty_expected() {
 			let sample = Sample::new(vec![1337.0], vec![]);
-			let expected = Err(Error::zero_sized_signal_buffer());
+			let expected = Err(Error::attempt_to_create_zero_sized_buffer());
 			assert_eq!(sample, expected);
 		}
 
