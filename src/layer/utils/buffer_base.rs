@@ -716,9 +716,12 @@ mod tests {
 		use super::*;
 
 		#[test]
-		#[ignore]
 		fn reset_to_zeros() {
+			let mut biased_error_signal = BiasedErrorSignalBuffer::from_raw_with_bias(
+				vec![1.0, 2.0, 0.0]).unwrap();
+			biased_error_signal.reset_to_zeros();
+			let zeros = BiasedErrorSignalBuffer::from_raw_with_bias(vec![0.0, 0.0, 0.0]).unwrap();
+			assert_eq!(biased_error_signal, zeros);
 		}
 	}
-
 }
