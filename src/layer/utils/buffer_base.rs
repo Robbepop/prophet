@@ -665,13 +665,35 @@ mod tests {
 		use super::*;
 
 		#[test]
-		#[ignore]
 		fn zeros_ok() {
+			fn assert_for_marker_and_len<B: Unbiased>(len: usize) {
+				use std::iter;
+				assert!(len != 0); // This test should only check for valid results!
+				assert_eq!(
+					AnyBuffer::<B>::zeros(len),
+					Ok(AnyBuffer{
+						data: Array::zeros(len),
+						marker: PhantomData
+					})
+				)
+			}
+			for n in 1..10 {
+				assert_for_marker_and_len::<marker::UnbiasedSignal>(n);
+				assert_for_marker_and_len::<marker::UnbiasedErrorSignal>(n);
+			}
 		}
 
 		#[test]
-		#[ignore]
 		fn zeros_fail() {
+			fn assert_for_marker_and_len<B: Unbiased>() {
+				use std::iter;
+				assert_eq!(
+					AnyBuffer::<B>::zeros(0),
+					Err(Error::attempt_to_create_zero_sized_buffer())
+				)
+			}
+			assert_for_marker_and_len::<marker::UnbiasedSignal>();
+			assert_for_marker_and_len::<marker::UnbiasedErrorSignal>();
 		}
 
 		#[test]
