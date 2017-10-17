@@ -649,8 +649,10 @@ mod tests {
 			fn assert_for_marker<B: Biased>() {
 				let mut biased_values = vec![42.0, 1337.0, B::DEFAULT_BIAS_VALUE];
 				let mut unbiased_values = vec![42.0, 1337.0];
-				let mut biased_view = AnyViewMut::<B>::from_raw_with_bias(&mut biased_values).unwrap();
-				let unbiased_view = AnyViewMut::<B::Unbiased>::from_raw(&mut unbiased_values).unwrap();
+				let biased_view = AnyViewMut::<B>::from_raw_with_bias(
+					&mut biased_values).unwrap();
+				let unbiased_view = AnyViewMut::<B::Unbiased>::from_raw(
+					&mut unbiased_values).unwrap();
 				assert_eq!(
 					biased_view.into_unbiased_mut(),
 					unbiased_view
@@ -746,13 +748,46 @@ mod tests {
 		}
 
 		#[test]
-		#[ignore]
 		fn assign_ok() {
+			fn assert_for_marker<B: Unbiased>() {
+				let mut buf_before = AnyBuffer::<B>::from_raw(
+					vec![42.0, 1337.0, 77.7]).unwrap();
+				let     buf_assign = AnyView::<B>::from_raw(
+					&[11.1, 22.2, 33.3]).unwrap();
+				buf_before.assign(&buf_assign).unwrap();
+				assert_eq!(
+					buf_before.view(),
+					buf_assign
+				);
+			}
+			assert_for_marker::<marker::UnbiasedSignal>();
+			assert_for_marker::<marker::UnbiasedErrorSignal>();
 		}
 
 		#[test]
-		#[ignore]
 		fn assign_fail() {
+			fn assert_for_marker<B: Unbiased>() {
+				let buf_before = AnyBuffer::<B>::from_raw(
+					vec![42.0, 1337.0, 77.7]).unwrap();
+				let     buf_less = AnyView::<B>::from_raw(
+					&[11.1, 22.2]).unwrap();
+				let     buf_more = AnyView::<B>::from_raw(
+					&[11.1, 22.2, 33.3, 44.4]).unwrap();
+				assert_ne!(buf_before.dim(), buf_less.dim()); // Test invariant!
+				assert_ne!(buf_before.dim(), buf_more.dim()); // Test invariant!
+				assert_eq!(
+					buf_before.clone().assign(&buf_less),
+					Err(Error::unmatching_buffer_sizes(buf_before.dim(), buf_less.dim())
+						.with_annotation("Occured in unbiased Buffer::assign method."))
+				);
+				assert_eq!(
+					buf_before.clone().assign(&buf_more),
+					Err(Error::unmatching_buffer_sizes(buf_before.dim(), buf_more.dim())
+						.with_annotation("Occured in unbiased Buffer::assign method."))
+				);
+			}
+			assert_for_marker::<marker::UnbiasedSignal>();
+			assert_for_marker::<marker::UnbiasedErrorSignal>();
 		}
 	}
 
