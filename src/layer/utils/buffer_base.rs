@@ -3,6 +3,8 @@ use ndarray;
 
 use errors::{Error, Result};
 
+use std::fmt;
+use std::fmt::Debug;
 use std::marker::PhantomData;
 
 mod marker {
@@ -60,7 +62,6 @@ use self::marker::{
 ///       `Array` or `ArrayView`.
 /// 
 /// Note 2: It has yet to be proven if an abstraction for biased versus non-biased content is useful.
-#[derive(Debug)]
 pub struct BufferBase<D, B>
 	where D: Data,
 	      B: Marker
@@ -86,7 +87,7 @@ pub type AnyViewMut<'a, B> = BufferBase<ViewMutRepr<'a>, B>;
 pub type BiasedSignalBufferBase<D> = BufferBase<D, marker::BiasedSignal>;
 pub type UnbiasedSignalBufferBase<D> = BufferBase<D, marker::UnbiasedSignal>;
 pub type BiasedErrorSignalBufferBase<D> = BufferBase<D, marker::BiasedErrorSignal>;
-pub type UnbiasedErrorSignalBufferBase<D> = BufferBase<D, marker::UnbiasedErrorSignal>;
+// pub type UnbiasedErrorSignalBufferBase<D> = BufferBase<D, marker::UnbiasedErrorSignal>; // Never used!
 
 pub type BiasedSignalBuffer = BiasedSignalBufferBase<OwnedRepr>;
 pub type BiasedSignalView<'a> = BiasedSignalBufferBase<ViewRepr<'a>>;
@@ -94,7 +95,7 @@ pub type BiasedSignalViewMut<'a> = BiasedSignalBufferBase<ViewMutRepr<'a>>;
 
 pub type UnbiasedSignalBuffer = UnbiasedSignalBufferBase<OwnedRepr>;
 pub type UnbiasedSignalView<'a> = UnbiasedSignalBufferBase<ViewRepr<'a>>;
-pub type UnbiasedSignalViewMut<'a> = UnbiasedSignalBufferBase<ViewMutRepr<'a>>;
+// pub type UnbiasedSignalViewMut<'a> = UnbiasedSignalBufferBase<ViewMutRepr<'a>>; // Never used!
 
 pub type BiasedErrorSignalBuffer = BiasedErrorSignalBufferBase<OwnedRepr>;
 pub type BiasedErrorSignalView<'a> = BiasedErrorSignalBufferBase<ViewRepr<'a>>;
@@ -110,6 +111,18 @@ impl<D, B> PartialEq for BufferBase<D, B>
 	fn eq(&self, rhs: &Self) -> bool {
 		self.data == rhs.data
 	}
+}
+
+impl<D, B> Debug for BufferBase<D, B>
+	where D: Data,
+	      B: Marker
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("BufferBase")
+            .field("data", &self.data)
+            .field("marker", &self.marker)
+            .finish()
+    }
 }
 
 impl<B> Clone for AnyBuffer<B>
@@ -410,31 +423,28 @@ mod tests {
 		use super::*;
 
 		#[test]
-		#[ignore]
-		fn partial_eq() {
-
-		}
-
-		#[test]
-		fn from_raw_ok() {
-			let vec = vec![1.0, 2.0, 3.0, 4.0];
-			assert_eq!(
-				AnyBuffer::<marker::UnbiasedSignal>::from_raw(vec.clone()),
-				Ok(AnyBuffer{
-					data: Array::from_vec(vec.clone()),
-					marker: PhantomData
-				})
-			);
-		}
-
-		#[test]
-		#[ignore]
-		fn from_raw_fail() {
+		fn partial_eq_true() {
+			fn assert_for_marker<B: Unbiased>() {
+				let two_vals: Vec<f32> = vec![1.0, 2.0];
+				let three_vals: Vec<f32> = vec![1.0, 2.0, 3.0];
+				let three = AnyBuffer::<B>::from_raw(three_vals.clone()).unwrap();
+				let same_as_three = AnyBuffer::<B>::from_raw(three_vals.clone()).unwrap();
+				let just_two = AnyBuffer::<B>::from_raw(two_vals.clone()).unwrap();
+				let same_as_just_two = AnyBuffer::<B>::from_raw(two_vals.clone()).unwrap();
+				assert_eq!(three, same_as_three);
+				assert_eq!(same_as_three, three);
+				assert_eq!(just_two, same_as_just_two);
+				assert_eq!(same_as_just_two, just_two);
+				assert_ne!(three, just_two);
+				assert_ne!(just_two, three);
+			}
+			assert_for_marker::<marker::UnbiasedSignal>();
+			assert_for_marker::<marker::UnbiasedErrorSignal>();
 		}
 
 		#[test]
 		#[ignore]
-		fn len() {
+		fn dim() {
 		}
 
 		#[test]
@@ -490,63 +500,170 @@ mod tests {
 		#[ignore]
 		fn clone() {
 		}
+	}
 
-		mod biased {
-			use super::*;
+	mod biased {
+		use super::*;
 
-			#[test]
-			#[ignore]
-			fn zeros_with_bias_ok() {
-			}
-
-			#[test]
-			#[ignore]
-			fn zeros_with_bias_fail() {
-			}
-
-			#[test]
-			#[ignore]
-			fn unbias() {
-			}
-
-			#[test]
-			#[ignore]
-			fn unbias_mut() {
-			}
-
-			#[test]
-			#[ignore]
-			fn into_unbias() {
-			}
-
-			#[test]
-			#[ignore]
-			fn into_unbias_mut() {
-			}
+		#[test]
+		#[ignore]
+		fn zeros_with_bias_ok() {
 		}
 
-		mod unbiased {
-			use super::*;
+		#[test]
+		#[ignore]
+		fn zeros_with_bias_fail() {
+		}
 
-			#[test]
-			#[ignore]
-			fn zeros_ok() {
+		#[test]
+		fn from_raw_with_bias_ok() {
+			fn assert_for_marker<B: Biased>() {
+				{
+					let vec = vec![1.0, 2.0, B::DEFAULT_BIAS_VALUE];
+					let actual   = AnyBuffer::<B>::from_raw_with_bias(vec.clone());
+					let expected = Ok(AnyBuffer{
+						data: Array::from_vec(vec.clone()),
+						marker: PhantomData
+					});
+					assert_eq!(actual, expected);
+				}{
+					let slice = &[1.0, 2.0, B::DEFAULT_BIAS_VALUE];
+					let actual   = AnyView::<B>::from_raw_with_bias(slice);
+					let expected = Ok(AnyView{
+						data: slice.into(),
+						marker: PhantomData
+					});
+					assert_eq!(actual, expected);
+				}{
+					let actual_vals = &mut [1.0, 2.0, B::DEFAULT_BIAS_VALUE];
+					// Requires different slices due to borrow checker!
+					let expected_vals = &mut [1.0, 2.0, B::DEFAULT_BIAS_VALUE];
+					let actual   = AnyViewMut::<B>::from_raw_with_bias(actual_vals);
+					let expected = Ok(AnyViewMut{
+						data: expected_vals.into(),
+						marker: PhantomData
+					});
+					assert_eq!(actual, expected);
+				}
 			}
+			assert_for_marker::<marker::BiasedSignal>();
+			assert_for_marker::<marker::BiasedErrorSignal>();
+		}
 
-			#[test]
-			#[ignore]
-			fn zeros_fail() {
+		#[test]
+		fn from_raw_with_bias_fail() {
+			fn assert_for_marker<B: Biased>() {
+				{
+					let actual   = AnyBuffer::<B>::from_raw_with_bias(vec![]);
+					let expected = Err(Error::attempt_to_create_zero_sized_buffer());
+					assert_eq!(actual, expected);
+				}
+				{
+					let actual   = AnyBuffer::<B>::from_raw_with_bias(vec![42.0]);
+					let expected = Err(Error::too_few_values_provided_for_buffer_creation(2, 1));
+					assert_eq!(actual, expected);
+				}
+				{
+					let actual   = AnyBuffer::<B>::from_raw_with_bias(vec![1.0, 42.0]);
+					let expected = Err(Error::unmatching_user_provided_bias_value(B::DEFAULT_BIAS_VALUE, 42.0));
+					assert_eq!(actual, expected);
+				}
 			}
+			assert_for_marker::<marker::BiasedSignal>();
+			assert_for_marker::<marker::BiasedErrorSignal>();
+		}
 
-			#[test]
-			#[ignore]
-			fn assign_ok() {
-			}
+		#[test]
+		#[ignore]
+		fn unbias() {
+		}
 
-			#[test]
-			#[ignore]
-			fn assign_fail() {
+		#[test]
+		#[ignore]
+		fn unbias_mut() {
+		}
+
+		#[test]
+		#[ignore]
+		fn into_unbias() {
+		}
+
+		#[test]
+		#[ignore]
+		fn into_unbias_mut() {
+		}
+	}
+
+	mod unbiased {
+		use super::*;
+
+		#[test]
+		#[ignore]
+		fn zeros_ok() {
+		}
+
+		#[test]
+		#[ignore]
+		fn zeros_fail() {
+		}
+
+		#[test]
+		fn from_raw_ok() {
+			fn assert_for_marker<B: Unbiased>() {
+				{
+					let vec = vec![1.0, 2.0, 3.0];
+					let actual   = AnyBuffer::<B>::from_raw(vec.clone());
+					let expected = Ok(AnyBuffer{
+						data: Array::from_vec(vec.clone()),
+						marker: PhantomData
+					});
+					assert_eq!(actual, expected);
+				}{
+					let slice = &[1.0, 2.0, 3.0];
+					let actual   = AnyView::<B>::from_raw(slice);
+					let expected = Ok(AnyView{
+						data: slice.into(),
+						marker: PhantomData
+					});
+					assert_eq!(actual, expected);
+				}{
+					let actual_vals = &mut [1.0, 2.0, 3.0];
+					// Requires different slices due to borrow checker!
+					let expected_vals = &mut [1.0, 2.0, 3.0];
+					let actual   = AnyViewMut::<B>::from_raw(actual_vals);
+					let expected = Ok(AnyViewMut{
+						data: expected_vals.into(),
+						marker: PhantomData
+					});
+					assert_eq!(actual, expected);
+				}
 			}
+			assert_for_marker::<marker::UnbiasedSignal>();
+			assert_for_marker::<marker::UnbiasedErrorSignal>();
+		}
+
+		#[test]
+		fn from_raw_fail() {
+			fn assert_for_marker<B: Unbiased>() {
+				{
+					let vec      = vec![];
+					let actual   = AnyBuffer::<B>::from_raw(vec.clone());
+					let expected = Err(Error::attempt_to_create_zero_sized_buffer());
+					assert_eq!(actual, expected);
+				}
+			}
+			assert_for_marker::<marker::UnbiasedSignal>();
+			assert_for_marker::<marker::UnbiasedErrorSignal>();
+		}
+
+		#[test]
+		#[ignore]
+		fn assign_ok() {
+		}
+
+		#[test]
+		#[ignore]
+		fn assign_fail() {
 		}
 	}
 
