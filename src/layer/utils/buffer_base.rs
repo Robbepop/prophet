@@ -11,7 +11,7 @@ mod marker {
 	pub trait Marker: Copy + Clone + PartialEq {}
 
 	pub trait Biased: Marker {
-		type Unbiased: Marker;
+		type Unbiased: Unbiased;
 		const DEFAULT_BIAS_VALUE: f32;
 	}
 
@@ -597,13 +597,35 @@ mod tests {
 		}
 
 		#[test]
-		#[ignore]
 		fn unbias() {
+			fn assert_for_marker<B: Biased>() {
+				let biased_values = vec![42.0, 1337.0, B::DEFAULT_BIAS_VALUE];
+				let unbiased_values = vec![42.0, 1337.0];
+				let biased_buf = AnyBuffer::<B>::from_raw_with_bias(biased_values).unwrap();
+				let unbiased_buf = AnyView::<B::Unbiased>::from_raw(&unbiased_values).unwrap();
+				assert_eq!(
+					biased_buf.unbias(),
+					unbiased_buf
+				);
+			}
+			assert_for_marker::<marker::BiasedSignal>();
+			assert_for_marker::<marker::BiasedErrorSignal>();
 		}
 
 		#[test]
-		#[ignore]
 		fn unbias_mut() {
+			fn assert_for_marker<B: Biased>() {
+				let biased_values = vec![42.0, 1337.0, B::DEFAULT_BIAS_VALUE];
+				let mut unbiased_values = vec![42.0, 1337.0];
+				let mut biased_buf = AnyBuffer::<B>::from_raw_with_bias(biased_values).unwrap();
+				let unbiased_buf = AnyViewMut::<B::Unbiased>::from_raw(&mut unbiased_values).unwrap();
+				assert_eq!(
+					biased_buf.unbias_mut(),
+					unbiased_buf
+				);
+			}
+			assert_for_marker::<marker::BiasedSignal>();
+			assert_for_marker::<marker::BiasedErrorSignal>();
 		}
 
 		#[test]
