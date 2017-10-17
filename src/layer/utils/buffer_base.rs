@@ -444,7 +444,43 @@ mod tests {
 
 		#[test]
 		#[ignore]
+		fn clone() {
+		}
+
+		#[test]
 		fn dim() {
+			fn assert_for_marker<B: Marker>(len: usize) {
+				assert_ne!(len, 0);
+				{
+					let buf = AnyBuffer::<B>{
+						data: Array::zeros(len),
+						marker: PhantomData
+					};
+					assert_eq!(buf.dim(), len);
+				}
+				{
+					let arr = Array::zeros(len);
+					let buf = AnyView::<B>{
+						data: arr.view(),
+						marker: PhantomData
+					};
+					assert_eq!(buf.dim(), len);
+				}
+				{
+					let mut arr = Array::zeros(len);
+					let buf = AnyViewMut::<B>{
+						data: arr.view_mut(),
+						marker: PhantomData
+					};
+					assert_eq!(buf.dim(), len);
+				}
+			}
+			for n in 1..10 {
+				assert_for_marker::<marker::BiasedSignal>(n);
+				assert_for_marker::<marker::BiasedErrorSignal>(n);
+				assert_for_marker::<marker::UnbiasedSignal>(n);
+				assert_for_marker::<marker::UnbiasedErrorSignal>(n);
+			}
 		}
 
 		#[test]
@@ -493,15 +529,6 @@ mod tests {
 		}
 	}
 
-	mod buffer {
-		use super::*;
-
-		#[test]
-		#[ignore]
-		fn clone() {
-		}
-	}
-
 	mod biased {
 		use super::*;
 
@@ -528,7 +555,6 @@ mod tests {
 		#[test]
 		fn zeros_with_bias_fail() {
 			fn assert_for_marker_and_len<B: Biased>() {
-				use std::iter;
 				assert_eq!(
 					AnyBuffer::<B>::zeros_with_bias(0),
 					Err(Error::attempt_to_create_zero_sized_buffer())
@@ -669,7 +695,6 @@ mod tests {
 		#[test]
 		fn zeros_ok() {
 			fn assert_for_marker_and_len<B: Unbiased>(len: usize) {
-				use std::iter;
 				assert!(len != 0); // This test should only check for valid results!
 				assert_eq!(
 					AnyBuffer::<B>::zeros(len),
@@ -688,7 +713,6 @@ mod tests {
 		#[test]
 		fn zeros_fail() {
 			fn assert_for_marker_and_len<B: Unbiased>() {
-				use std::iter;
 				assert_eq!(
 					AnyBuffer::<B>::zeros(0),
 					Err(Error::attempt_to_create_zero_sized_buffer())
