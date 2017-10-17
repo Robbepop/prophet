@@ -629,13 +629,35 @@ mod tests {
 		}
 
 		#[test]
-		#[ignore]
 		fn into_unbias() {
+			fn assert_for_marker<B: Biased>() {
+				let biased_values = vec![42.0, 1337.0, B::DEFAULT_BIAS_VALUE];
+				let unbiased_values = vec![42.0, 1337.0];
+				let biased_view = AnyView::<B>::from_raw_with_bias(&biased_values).unwrap();
+				let unbiased_view = AnyView::<B::Unbiased>::from_raw(&unbiased_values).unwrap();
+				assert_eq!(
+					biased_view.into_unbiased(),
+					unbiased_view
+				);
+			}
+			assert_for_marker::<marker::BiasedSignal>();
+			assert_for_marker::<marker::BiasedErrorSignal>();
 		}
 
 		#[test]
-		#[ignore]
 		fn into_unbias_mut() {
+			fn assert_for_marker<B: Biased>() {
+				let mut biased_values = vec![42.0, 1337.0, B::DEFAULT_BIAS_VALUE];
+				let mut unbiased_values = vec![42.0, 1337.0];
+				let mut biased_view = AnyViewMut::<B>::from_raw_with_bias(&mut biased_values).unwrap();
+				let unbiased_view = AnyViewMut::<B::Unbiased>::from_raw(&mut unbiased_values).unwrap();
+				assert_eq!(
+					biased_view.into_unbiased_mut(),
+					unbiased_view
+				);
+			}
+			assert_for_marker::<marker::BiasedSignal>();
+			assert_for_marker::<marker::BiasedErrorSignal>();
 		}
 	}
 
