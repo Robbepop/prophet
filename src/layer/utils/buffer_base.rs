@@ -506,13 +506,36 @@ mod tests {
 		use super::*;
 
 		#[test]
-		#[ignore]
 		fn zeros_with_bias_ok() {
+			fn assert_for_marker_and_len<B: Biased>(len: usize) {
+				use std::iter;
+				assert!(len != 0); // This test should only check for valid results!
+				assert_eq!(
+					AnyBuffer::<B>::zeros_with_bias(len),
+					Ok(AnyBuffer{
+						data: Array::from_iter(
+							iter::repeat(0.0).take(len).chain(iter::once(B::DEFAULT_BIAS_VALUE))),
+						marker: PhantomData
+					})
+				)
+			}
+			for n in 1..10 {
+				assert_for_marker_and_len::<marker::BiasedSignal>(n);
+				assert_for_marker_and_len::<marker::BiasedErrorSignal>(n);
+			}
 		}
 
 		#[test]
-		#[ignore]
 		fn zeros_with_bias_fail() {
+			fn assert_for_marker_and_len<B: Biased>() {
+				use std::iter;
+				assert_eq!(
+					AnyBuffer::<B>::zeros_with_bias(0),
+					Err(Error::attempt_to_create_zero_sized_buffer())
+				)
+			}
+			assert_for_marker_and_len::<marker::BiasedSignal>();
+			assert_for_marker_and_len::<marker::BiasedErrorSignal>();
 		}
 
 		#[test]
