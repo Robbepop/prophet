@@ -750,23 +750,61 @@ mod tests {
 		}
 
 		#[test]
-		#[ignore]
 		fn data() {
+			fn assert_for_marker<B: Unbiased>() {
+				let buf = AnyBuffer::<B>::from_raw(
+					vec![1.0, 2.2, 42.0, 13.37, -1.0]).unwrap();
+				assert_eq!(
+					buf.data(),
+					ArrayView1::<f32>::from(&[1.0, 2.2, 42.0, 13.37, -1.0])
+				);
+			}
+			assert_for_marker::<marker::UnbiasedSignal>();
+			assert_for_marker::<marker::UnbiasedErrorSignal>();
 		}
 
 		#[test]
-		#[ignore]
 		fn data_mut() {
+			fn assert_for_marker<B: Unbiased>() {
+				let mut buf = AnyBuffer::<B>::from_raw(
+					vec![1.0, 2.2, 42.0, 13.37, -1.0]).unwrap();
+				assert_eq!(
+					buf.data_mut(),
+					ArrayViewMut1::<f32>::from(&mut [1.0, 2.2, 42.0, 13.37, -1.0])
+				);
+			}
+			assert_for_marker::<marker::UnbiasedSignal>();
+			assert_for_marker::<marker::UnbiasedErrorSignal>();
 		}
 
 		#[test]
-		#[ignore]
 		fn into_data() {
+			fn assert_for_marker<B: Unbiased>() {
+				let buf = AnyView::<B>::from_raw(
+					&[1.0, 2.2, 42.0, 13.37, -1.0]).unwrap();
+				assert_eq!(
+					buf.into_data(),
+					ArrayView1::<f32>::from(&[1.0, 2.2, 42.0, 13.37, -1.0])
+				);
+			}
+			assert_for_marker::<marker::UnbiasedSignal>();
+			assert_for_marker::<marker::UnbiasedErrorSignal>();
 		}
 
 		#[test]
-		#[ignore]
 		fn into_data_mut() {
+			fn assert_for_marker<B: Unbiased>() {
+				let mut vec1 = vec![1.0, 2.2, 42.0, 13.37, -1.0];
+				let mut vec2 = vec1.clone();
+				assert_eq!(vec1, vec2);
+				let buf = AnyViewMut::<B>::from_raw(&mut vec1).unwrap();
+				assert_eq!(
+					buf.into_data_mut(),
+					ArrayViewMut1::<f32>::from(&mut vec2)
+				);
+			}
+			assert_for_marker::<marker::UnbiasedSignal>();
+			assert_for_marker::<marker::UnbiasedErrorSignal>();
 		}
 	}
 
