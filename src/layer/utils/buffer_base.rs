@@ -657,6 +657,11 @@ mod tests {
 
 		#[test]
 		#[ignore]
+		fn into_iter() {
+		}
+
+		#[test]
+		#[ignore]
 		fn data() {
 		}
 
@@ -673,11 +678,6 @@ mod tests {
 		#[test]
 		#[ignore]
 		fn into_data_mut() {
-		}
-
-		#[test]
-		#[ignore]
-		fn into_iter() {
 		}
 	}
 
