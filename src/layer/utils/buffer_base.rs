@@ -574,8 +574,75 @@ mod tests {
 		}
 
 		#[test]
-		#[ignore]
 		fn view_mut() {
+			fn assert_for_biased() {
+				fn assert_for_marker<B: Biased>() {
+					fn assert_for_buffer<B: Biased>(arr_with_bias: Array1<f32>) {
+						let mut arr_with_bias = arr_with_bias;
+						let mut buf = AnyBuffer::<B>::from_raw_with_bias(arr_with_bias.clone()).unwrap();
+						assert_eq!(
+							buf.view_mut(),
+							AnyViewMut::<B>{
+								data: arr_with_bias.view_mut(),
+								marker: PhantomData
+							}
+						);
+					}
+					fn assert_for_view_mut<B: Biased>(arr_with_bias: Array1<f32>) {
+						let mut arr_with_bias = arr_with_bias;
+						let mut cloned_arr_with_bias = arr_with_bias.clone();
+						let mut view_mut = AnyViewMut::<B>::from_raw_with_bias(&mut cloned_arr_with_bias).unwrap();
+						assert_eq!(
+							view_mut.view_mut(),
+							AnyViewMut::<B>{
+								data: arr_with_bias.view_mut(),
+								marker: PhantomData
+							}
+						);
+					}
+					let arr_with_bias = Array1::<f32>::from_vec(
+						vec![1.0, 2.0, B::DEFAULT_BIAS_VALUE]);
+					assert_for_buffer::<B>(arr_with_bias.clone());
+					assert_for_view_mut::<B>(arr_with_bias.clone());
+				}
+				assert_for_marker::<marker::BiasedSignal>();
+				assert_for_marker::<marker::BiasedErrorSignal>();
+			}
+			fn assert_for_unbiased() {
+				fn assert_for_marker<B: Unbiased>() {
+					fn assert_for_buffer<B: Unbiased>(arr: Array1<f32>) {
+						let mut arr = arr;
+						let mut buf = AnyBuffer::<B>::from_raw(arr.clone()).unwrap();
+						assert_eq!(
+							buf.view_mut(),
+							AnyViewMut::<B>{
+								data: arr.view_mut(),
+								marker: PhantomData
+							}
+						);
+					}
+					fn assert_for_view_mut<B: Unbiased>(arr: Array1<f32>) {
+						let mut arr = arr;
+						let mut cloned_arr = arr.clone();
+						let mut view_mut = AnyViewMut::<B>::from_raw(&mut cloned_arr).unwrap();
+						assert_eq!(
+							view_mut.view_mut(),
+							AnyViewMut::<B>{
+								data: arr.view_mut(),
+								marker: PhantomData
+							}
+						);
+					}
+					let arr = Array1::<f32>::from_vec(
+						vec![1.0, 2.0, 3.0]);
+					assert_for_buffer::<B>(arr.clone());
+					assert_for_view_mut::<B>(arr.clone());
+				}
+				assert_for_marker::<marker::UnbiasedSignal>();
+				assert_for_marker::<marker::UnbiasedErrorSignal>();
+			}
+			assert_for_biased();
+			assert_for_unbiased();
 		}
 
 		#[test]
