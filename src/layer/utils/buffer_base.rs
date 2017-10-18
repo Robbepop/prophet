@@ -443,8 +443,21 @@ mod tests {
 		}
 
 		#[test]
-		#[ignore]
 		fn clone() {
+			fn assert_for_marker<B: Unbiased>() {
+				let buf_a = AnyBuffer::<B>::from_raw(vec![1.0, 42.0, 13.37]).unwrap();
+				let buf_b = buf_a.clone();
+				assert_eq!(buf_a, buf_b);
+				assert_eq!(
+					buf_a,
+					AnyBuffer::<B>{
+						data: Array1::<f32>::from_vec(vec![1.0, 42.0, 13.37]),
+						marker: PhantomData
+					}
+				);
+			}
+			assert_for_marker::<marker::UnbiasedSignal>();
+			assert_for_marker::<marker::UnbiasedErrorSignal>();
 		}
 
 		#[test]
