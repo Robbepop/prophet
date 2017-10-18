@@ -706,8 +706,34 @@ mod tests {
 		}
 
 		#[test]
-		#[ignore]
 		fn into_iter() {
+			fn assert_for_biased<B: Biased>() {
+				let buf = AnyBuffer::<B>::from_raw_with_bias(
+						vec![1.0, 2.0, 42.0, 13.37, B::DEFAULT_BIAS_VALUE])
+					.unwrap();
+				let mut iter = buf.into_iter();
+				assert_eq!(iter.next(), Some(&1.0));
+				assert_eq!(iter.next(), Some(&2.0));
+				assert_eq!(iter.next(), Some(&42.0));
+				assert_eq!(iter.next(), Some(&13.37));
+				assert_eq!(iter.next(), Some(&B::DEFAULT_BIAS_VALUE));
+				assert_eq!(iter.next(), None);
+			}
+			fn assert_for_unbiased<B: Unbiased>() {
+				let buf = AnyBuffer::<B>::from_raw(
+					vec![1.0, 2.0, 42.0, 13.37, -1.0]).unwrap();
+				let mut iter = buf.into_iter();
+				assert_eq!(iter.next(), Some(&1.0));
+				assert_eq!(iter.next(), Some(&2.0));
+				assert_eq!(iter.next(), Some(&42.0));
+				assert_eq!(iter.next(), Some(&13.37));
+				assert_eq!(iter.next(), Some(&-1.0));
+				assert_eq!(iter.next(), None);
+			}
+			assert_for_biased::<marker::BiasedSignal>();
+			assert_for_biased::<marker::BiasedErrorSignal>();
+			assert_for_unbiased::<marker::UnbiasedSignal>();
+			assert_for_unbiased::<marker::UnbiasedErrorSignal>();
 		}
 
 		#[test]
