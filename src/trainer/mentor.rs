@@ -8,7 +8,13 @@ use trainer::sample::SampleGen;
 use trainer::{
 	TrainCondition
 };
-use errors::{Result};
+use errors::{
+	Error,
+	Result,
+	MentorBuilderDoubledField,
+	MentorBuilderMissingField,
+	MentorBuilderInvalidArgument
+};
 use trainer::condition;
 use trainer::MeanSquaredError;
 
@@ -170,18 +176,19 @@ impl Mentor {
 	/// 
 	/// - If some required property was not set in the builer.
 	fn from_builder(builder: InitializingMentor) -> Result<Mentor> {
+		use self::MentorBuilderMissingField::*;
 		let sample_gen =
 			match builder.sample_gen {
 				Some(sample_gen) => sample_gen,
 				None => {
-					panic!("No sample gen specified during building process!")
+					return Err(Error::mentor_builder_missing_initialization(SampleGen))
 				}
 			};
-		let stop_when = 
+		let stop_when =
 			match builder.stop_when {
 				Some(stop_when) => stop_when,
 				None => {
-					panic!("No halting condition specified during building process!")
+					return Err(Error::mentor_builder_missing_initialization(StopWhen))
 				}
 			};
 		let log_when =
@@ -391,8 +398,9 @@ impl<MB> MentorBuilder for MB where MB: MentorBuilderOrError {
 				Ok(this)
 			}
 			Some(old_lr) => {
-				// TODO: Do proper error handling here:
-				panic!("Already set learn rate to {:?}. Cannot set twice!", old_lr.to_f32());
+				use self::MentorBuilderDoubledField::LearnRate;
+				Err(Error::mentor_builder_initialized_field_twice(LearnRate)
+					.with_annotation(format!("Already set learn rate to {:?}.", old_lr.to_f32())))
 			}
 		}
 	}
@@ -407,16 +415,17 @@ impl<MB> MentorBuilder for MB where MB: MentorBuilderOrError {
 				Ok(this)
 			}
 			Some(old_lm) => {
-				// TODO: Do proper error handling here:
-				panic!("Already set learn momentum to {:?}. Cannot set twice!", old_lm.to_f32());
+				use self::MentorBuilderDoubledField::LearnMomentum;
+				Err(Error::mentor_builder_initialized_field_twice(LearnMomentum)
+					.with_annotation(format!("Already set learn momentum to {:?}.", old_lm.to_f32())))
 			}
 		}
 	}
 
 	fn epoch_len(self, epoch_len: usize) -> Result<InitializingMentor> {
 		if epoch_len == 0 {
-			// TODO: Do proper error handling here:
-			panic!("Cannot set epoch length to zero (`0`). Epoch length must be a positive number.")
+			use self::MentorBuilderInvalidArgument::EpochLen;
+			return Err(Error::mentor_builder_invalid_argument(EpochLen))
 		}
 		let mut this = self.builder_or_error()?;
 		match this.epoch_len {
@@ -425,16 +434,17 @@ impl<MB> MentorBuilder for MB where MB: MentorBuilderOrError {
 				Ok(this)
 			}
 			Some(old_epoch_len) => {
-				// TODO: Do proper error handling here:
-				panic!("Already set epoch length to {:?}. Cannot set it twice!", old_epoch_len);
+				use self::MentorBuilderDoubledField::EpochLen;
+				Err(Error::mentor_builder_initialized_field_twice(EpochLen)
+					.with_annotation(format!("Already set epoch length to {:?}.", old_epoch_len)))
 			}
 		}
 	}
 
 	fn batch_len(self, batch_len: usize) -> Result<InitializingMentor> {
 		if batch_len == 0 {
-			// TODO: Do proper error handling here:
-			panic!("Cannot set batch length to zero (`0`). Batch length must be a positive number.")
+			use self::MentorBuilderInvalidArgument::BatchLen;
+			return Err(Error::mentor_builder_invalid_argument(BatchLen))
 		}
 		let mut this = self.builder_or_error()?;
 		match this.batch_len {
@@ -443,8 +453,9 @@ impl<MB> MentorBuilder for MB where MB: MentorBuilderOrError {
 				Ok(this)
 			}
 			Some(old_batch_len) => {
-				// TODO: Do proper error handling here:
-				panic!("Already set batch length to {:?}. Cannot set it twice!", old_batch_len);
+				use self::MentorBuilderDoubledField::BatchLen;
+				Err(Error::mentor_builder_initialized_field_twice(BatchLen)
+					.with_annotation(format!("Already set batch length to {:?}.", old_batch_len)))
 			}
 		}
 	}
@@ -459,8 +470,8 @@ impl<MB> MentorBuilder for MB where MB: MentorBuilderOrError {
 				Ok(this)
 			}
 			Some(_) => {
-				// TODO: Do proper error handling here:
-				panic!("Already set a sample generator. Confused which one to use. Cannot set twice.");
+				use self::MentorBuilderDoubledField::SampleGen;
+				Err(Error::mentor_builder_initialized_field_twice(SampleGen))
 			}
 		}
 	}
@@ -475,8 +486,8 @@ impl<MB> MentorBuilder for MB where MB: MentorBuilderOrError {
 				Ok(this)
 			}
 			Some(_) => {
-				// TODO: Do proper error handling here:
-				panic!("Already set a halting condition. Confused which one to use. Cannot set twice.");
+				use self::MentorBuilderDoubledField::StopWhen;
+				Err(Error::mentor_builder_initialized_field_twice(StopWhen))
 			}
 		}
 	}
@@ -491,8 +502,8 @@ impl<MB> MentorBuilder for MB where MB: MentorBuilderOrError {
 				Ok(this)
 			}
 			Some(_) => {
-				// TODO: Do proper error handling here:
-				panic!("Already set a logging condition. Confused which one to use. Cannot set twice.");
+				use self::MentorBuilderDoubledField::LogWhen;
+				Err(Error::mentor_builder_initialized_field_twice(LogWhen))
 			}
 		}
 	}
@@ -698,5 +709,9 @@ mod tests {
 			ctx.update_mse(MeanSquaredError::from(0.5));
 			assert_eq!(ctx.latest_mse(), MeanSquaredError::from(0.5));
 		}
+	}
+
+	mod mentor_builder {
+		use super::*;
 	}
 }

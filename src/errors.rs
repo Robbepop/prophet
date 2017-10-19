@@ -113,15 +113,45 @@ pub enum ErrorKind {
 		actual_len: usize,
 		/// The size of the buffer storing the expected values.
 		expected_len: usize
-	}
+	},
+
+	/// Occures when double initializing a field for `MentorBuilder`.
+	MentorBuilderInitializedFieldTwice(MentorBuilderDoubledField),
+
+	/// Occures when missing the initialization of a field for `MentorBuilder`.
+	MentorBuilderMissingInitialization(MentorBuilderMissingField),
+
+	/// Occures when trying to initialize a `MentorBuilder` with an invalid argument.
+	/// 
+	/// Note that this is a very generic error.
+	MentorBuilderInvalidArgument(MentorBuilderInvalidArgument)
 }
 
-// Error kinds:
-// 
-// - AttemptToCreateZeroSizedBuffer
-// - TooFewValueProvidedForBufferCreation{expected_min, actual}
-// - UnmatchingUserProvidedBiasValue{expected, actual}
-// - UnmatchingBufferSizes{left, right}
+/// Fields of `Mentor` that may be incorrectly initialized twice (or more).
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum MentorBuilderDoubledField {
+	LearnRate,
+	LearnMomentum,
+	EpochLen,
+	BatchLen,
+	SampleGen,
+	StopWhen,
+	LogWhen
+}
+
+/// Fields of `Mentor` that may be missing during the initialization step.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum MentorBuilderMissingField {
+	SampleGen,
+	StopWhen
+}
+
+/// Fields of `Mentor` that may be invalidly initialized during the initialization step.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum MentorBuilderInvalidArgument {
+	EpochLen,
+	BatchLen
+}
 
 /// The error class used in `Prophet`.
 #[derive(Debug, Clone, PartialEq)]
@@ -381,6 +411,40 @@ impl Error {
 		}
 	}
 
+	/// Creates a new `MentorBuilderInitializedFieldTwice` error.
+	pub(crate) fn mentor_builder_initialized_field_twice(field: MentorBuilderDoubledField) -> Error {
+		Error{
+			kind: ErrorKind::MentorBuilderInitializedFieldTwice(field),
+			message: format!(
+				"Tried to initialize the field {:?} twice during the initialization step for creating a training process.",
+				field
+			),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `MentorBuilderMissingInitialization` error.
+	pub(crate) fn mentor_builder_missing_initialization(field: MentorBuilderMissingField) -> Error {
+		Error{
+			kind: ErrorKind::MentorBuilderMissingInitialization(field),
+			message: format!(
+				"Missing an initialization of the field {:?} to properly construct a training process.",
+				field
+			),
+			annotation: None
+		}
+	}
+
+	/// Creates a new `MentorBuilderInvalidArgument` error.
+	pub(crate) fn mentor_builder_invalid_argument(arg: MentorBuilderInvalidArgument) -> Error {
+		Error{
+			kind: ErrorKind::MentorBuilderInvalidArgument(arg),
+			message: format!(
+				"Invalidly tried to initialized {:?} to zero (0).", arg
+			),
+			annotation: None
+		}
+	}
 }
 
 impl<T> Into<Result<T>> for Error {
