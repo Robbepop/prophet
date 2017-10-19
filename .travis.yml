@@ -38,7 +38,11 @@ before_script:
 
 script:
 - |
-  cargo check
-  cargo test --release
-  cargo kcov --release --coveralls
-  bash <(curl -s https://codecov.io/bash)
+  cargo check &&
+  echo "Cargo: Passed initial compile check." &&
+  cargo test --release &&
+  echo "Cargo: Passed unittests." &&
+  cargo kcov --release --coveralls &&
+  echo "KCov: Coverage report and uploading to coveralls - done." &&
+  bash <(curl -s https://codecov.io/bash) &&
+  echo "CodeCov: Uploading of data was successful!"
