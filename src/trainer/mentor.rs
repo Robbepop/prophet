@@ -35,7 +35,10 @@ impl Context {
 		epoch_len: usize,
 		batch_len: usize,
 		lr: LearnRate,
-		lm: LearnMomentum) -> Context {
+		lm: LearnMomentum
+	)
+		-> Context
+	{
 		Context{
 			time_started: time::Instant::now(),
 			iteration: 0,
@@ -90,7 +93,7 @@ impl Context {
 	/// 
 	/// Note that this always returns `true` for non-batched learning.
 	#[inline]
-	pub fn batch_finished(&self) -> bool {
+	pub fn is_batch_finished(&self) -> bool {
 		self.batch_bit == 0
 	}
 }
@@ -237,7 +240,7 @@ impl Mentor {
 			self.ctx.next();
 			{
 				let sample = self.sample_gen.next_sample();
-				let latest_mse = if self.ctx.batch_finished() {
+				let latest_mse = if self.ctx.is_batch_finished() {
 					self.nn.predict_supervised(sample)
 					       .optimize_supervised(self.ctx.lr, self.ctx.lm)
 					       .stats()
@@ -554,5 +557,146 @@ mod tests {
 		println!(" - Finished learning.");
 
 		// validate_rounded(net, samples);
+	}
+
+	mod context {
+		use super::*;
+
+		#[test]
+		fn new() {
+			fn assert_for(epoch_len: usize, batch_len: usize, lr: LearnRate, lm: LearnMomentum) {
+				let mut actual = Context::new(epoch_len, batch_len, lr, lm);
+				// Hack to counter uncontrollable time shifts:
+				use std::time;
+				let test_time_started = time::Instant::now();
+				actual.time_started = test_time_started;
+				// Define what is expected, use the hack for time started.
+				let expected = Context{
+					time_started: test_time_started,
+					iteration: 0,
+					epochs_passed: 0,
+					epoch_len,
+					latest_mse: MeanSquaredError::new(1.0).unwrap(),
+					batch_len,
+					batch_bit: 0,
+					lr,
+					lm
+				};
+				assert_eq!(expected, actual);
+			}
+			for &epoch_len in &[1, 2, 5, 10, 25] {
+				for &batch_len in &[1, 2, 5, 10, 25] {
+					for lr in [0.01, 0.1, 0.3, 0.5, 1.0].iter().map(|lr| *lr).map(LearnRate::from) {
+						for lm in [0.0, 0.25, 0.33, 0.5].iter().map(|lm| *lm).map(LearnMomentum::from) {
+							assert_for(epoch_len, batch_len, lr, lm);
+						}
+					}
+				}
+			}
+		}
+
+		#[test]
+		fn next() {
+			fn assert_for(epoch_len: usize, batch_len: usize, lr: LearnRate, lm: LearnMomentum) {
+				fn assert_next_step(ctx: &mut Context, expected: &mut Context) {
+					let epoch_len = ctx.epoch_len;
+					let batch_len = ctx.batch_len;
+					ctx.next();
+					expected.iteration += 1;
+					if (expected.iteration % epoch_len) == 0 {
+						expected.epochs_passed += 1;
+					}
+					expected.batch_bit += 1;
+					expected.batch_bit %= batch_len;
+					assert_eq!(ctx, expected);
+				}
+				let mut ctx = Context::new(epoch_len, batch_len, lr, lm);
+				let mut expected = ctx.clone();
+				for _ in 0..10 {
+					assert_next_step(&mut ctx, &mut expected);
+				}
+			}
+			for &epoch_len in &[1, 2, 5, 10, 25] {
+				for &batch_len in &[1, 2, 5, 10, 25] {
+					for lr in [0.01, 0.1, 0.3, 0.5, 1.0].iter().map(|lr| *lr).map(LearnRate::from) {
+						for lm in [0.0, 0.25, 0.33, 0.5].iter().map(|lm| *lm).map(LearnMomentum::from) {
+							assert_for(epoch_len, batch_len, lr, lm);
+						}
+					}
+				}
+			}
+		}
+
+		#[test]
+		fn update_mse() {
+			fn assert_for(mse: MeanSquaredError) {
+				let mut ctx = Context::new(1, 1, LearnRate::from(0.1), LearnMomentum::from(0.5));
+				ctx.update_mse(mse);
+				assert_eq!(ctx.latest_mse, mse);
+			}
+			for mse in [0.0, 0.5, 1.0, 42.0, 77.7, 13.37].iter().map(|mse| MeanSquaredError::from(*mse)) {
+				assert_for(mse)
+			}
+		}
+
+		#[test]
+		fn is_batch_finished() {
+			{
+				let mut ctx = Context::new(1, 1, LearnRate::from(0.5), LearnMomentum::from(0.5));
+				assert_eq!(ctx.is_batch_finished(), true);
+				ctx.next();
+				assert_eq!(ctx.is_batch_finished(), true);
+			}
+			{
+				let mut ctx = Context::new(1, 2, LearnRate::from(0.5), LearnMomentum::from(0.5));
+				assert_eq!(ctx.is_batch_finished(), true);
+				ctx.next();
+				assert_eq!(ctx.is_batch_finished(), false);
+				ctx.next();
+				assert_eq!(ctx.is_batch_finished(), true);
+			}
+		}
+
+		#[test]
+		fn time_started() {
+			let ctx = Context::new(1, 1, LearnRate::from(0.5), LearnMomentum::from(0.5));
+			let test_time_started = ctx.time_started;
+			assert_eq!(ctx.time_started(), test_time_started);
+		}
+
+		#[test]
+		fn iterations() {
+			let n = 10;
+			let mut ctx = Context::new(1, 1, LearnRate::from(0.5), LearnMomentum::from(0.5));
+			assert_eq!(ctx.iterations(), 0);
+			for _ in 0..n {
+				ctx.next();
+			}
+			assert_eq!(ctx.iterations(), n);
+		}
+
+		#[test]
+		fn epochs_passed() {
+			fn assert_for(epoch_len: usize) {
+				let n = 10;
+				let mut ctx = Context::new(epoch_len, 1, LearnRate::from(0.5), LearnMomentum::from(0.5));
+				assert_eq!(ctx.epochs_passed(), 0);
+				for _ in 0..n {
+					ctx.next();
+				}
+				assert_eq!(ctx.epochs_passed(), n / epoch_len);
+			}
+			for &epoch_len in &[1, 2, 3, 5, 10, 42] {
+				assert_for(epoch_len)
+			}
+		}
+
+		#[test]
+		fn latest_mse() {
+			let mut ctx = Context::new(1, 1, LearnRate::from(0.5), LearnMomentum::from(0.5));
+			assert_eq!(ctx.latest_mse(), MeanSquaredError::from(1.0));
+			ctx.update_mse(MeanSquaredError::from(0.5));
+			assert_eq!(ctx.latest_mse(), MeanSquaredError::from(0.5));
+		}
 	}
 }
