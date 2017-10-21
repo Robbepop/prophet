@@ -172,7 +172,7 @@ pub trait SampleGen: Debug {
 }
 
 /// A `SampleGen` that iterates over its finite set of samples in a sequential fashion.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SequentialSampleScheduler{
 	samples: SampleCollection,
 	current: usize

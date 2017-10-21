@@ -467,7 +467,7 @@ impl<T, Sampler, StopWhen> MentorBuilderFinish<Sampler, StopWhen, Unset> for T
 {
 	fn start(self) -> Result<NeuralNet> {
 		let this = self.builder_or_error()?;
-		let this = this.log_when(condition::Always)?;
+		let this = this.log_when(condition::Never)?;
 		Mentor::from_builder(this)?.finish()
 	}
 }
@@ -888,10 +888,137 @@ mod tests {
 			)
 		}
 
-		// fn epoch_len(self, epoch_len: usize) -> Result<InitializingMentor>;
-		// fn batch_len(self, batch_len: usize) -> Result<InitializingMentor>;
-		// fn sample_gen<G>(self, sample_gen: G) -> Result<InitializingMentor>
-		// fn stop_when<C>(self, stop_when: C) -> Result<InitializingMentor>
-		// fn log_when<C>(self, log_when: C) -> Result<InitializingMentor>
+		#[test]
+		fn batch_len_init() {
+			assert_eq!(dummy_builder().batch_len, None)
+		}
+
+		#[test]
+		fn batch_len_ok() {
+			let new_batch_len = 10;
+			assert_eq!(dummy_builder().batch_len(new_batch_len).unwrap().batch_len, Some(new_batch_len))
+		}
+
+		#[test]
+		fn batch_len_fail_zero() {
+			assert_eq!(
+				dummy_builder().batch_len(0),
+				Err(Error::mentor_builder_invalid_argument(MentorBuilderInvalidArgument::BatchLen))
+			)
+		}
+
+		#[test]
+		fn batch_len_fail_double() {
+			let old_batch_len = 42;
+			let new_batch_len = 1337;
+			let b = dummy_builder().batch_len(old_batch_len).unwrap();
+			assert_eq!(
+				b.batch_len(new_batch_len),
+				Err(Error::mentor_builder_initialized_field_twice(MentorBuilderDoubledField::BatchLen)
+					.with_annotation(format!("Already set batch length to {:?}.", old_batch_len)))
+			)
+		}
+
+		#[test]
+		fn sample_gen_init() {
+			assert_eq!(dummy_builder().sample_gen, Unset)
+		}
+
+		#[test]
+		fn sample_gen_ok() {
+			use trainer::sample::{Sample, SampleCollection, SequentialSampleScheduler};
+			let dummy_samples = samples![ [0.0] => 1.0 ];
+			let new_sample_gen = SequentialSampleScheduler::new(dummy_samples);
+			assert_eq!(
+				dummy_builder().sample_gen(new_sample_gen.clone()).unwrap().sample_gen,
+				new_sample_gen
+			)
+		}
+
+		#[test]
+		fn stop_when_init() {
+			assert_eq!(dummy_builder().stop_when, Unset)
+		}
+
+		#[test]
+		fn stop_when_ok() {
+			let new_stop_when = condition::Always;
+			assert_eq!(
+				dummy_builder().stop_when(new_stop_when).unwrap().stop_when,
+				new_stop_when
+			)
+		}
+
+		#[test]
+		fn log_when_init() {
+			assert_eq!(dummy_builder().log_when, Unset)
+		}
+
+		#[test]
+		fn log_when_ok() {
+			let new_log_when = condition::Always;
+			assert_eq!(
+				dummy_builder().log_when(new_log_when).unwrap().log_when,
+				new_log_when
+			)
+		}
+	}
+
+	mod mentor {
+		use super::*;
+
+		use topology_v4::{
+			Topology,
+			TopologyBuilder
+		};
+		use trainer::sample::SequentialSampleScheduler;
+
+		fn dummy_topology() -> Topology {
+			Topology::input(1).fully_connect( 1)
+		}
+
+		fn dummy_sample_gen() -> SequentialSampleScheduler {
+			use trainer::sample::{Sample, SampleCollection};
+			let dummy_samples = samples![ [0.0] => 1.0 ];
+			SequentialSampleScheduler::new(dummy_samples)
+		}
+
+		fn dummy_builder() -> InitializingMentor<SequentialSampleScheduler, condition::Always, Unset> {
+			InitializingMentor::new(dummy_topology())
+				.sample_gen(dummy_sample_gen())
+				.stop_when(condition::Always)
+				.unwrap()
+		}
+
+		#[test]
+		#[ignore]
+		fn from_builder_ok() {
+			// assert_eq!(
+			// 	Mentor::from_builder(dummy_builder()),
+			// 	Mentor{
+			// 		nn: NeuralNet::from_topology(dummy_topology()).unwrap(),
+			// 		sample_gen: dummy_sample_gen(),
+			// 		stop_when: condition::Always,
+			// 		log_when: condition::Never,
+			// 		ctx: Context::new(1, 1, LearnRate::from(0.15), LearnMomentum::from(0.0))
+			// 	}
+			// )
+
+			// fn from_builder(builder: InitializingMentor<Sampler, StopWhen, LogWhen>) -> Result<Self> {
+			// 	let ctx = Context::new(
+			// 		builder.epoch_len.unwrap_or_else(|| builder.sample_gen.finite_len().unwrap_or(1)),
+			// 		builder.batch_len.unwrap_or(1),
+			// 		builder.lr.unwrap_or_else(|| LearnRate::from(0.15)),
+			// 		builder.lm.unwrap_or_else(|| LearnMomentum::from(0.0))
+			// 	);
+			// 	Ok(Mentor{
+			// 		nn: builder.nn,
+			// 		sample_gen: builder.sample_gen,
+			// 		stop_when: builder.stop_when,
+			// 		log_when: builder.log_when,
+			// 		ctx
+			// 	})
+			// }
+		}
 	}
 }
