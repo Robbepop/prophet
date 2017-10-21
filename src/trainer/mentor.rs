@@ -12,7 +12,6 @@ use errors::{
 	Error,
 	Result,
 	MentorBuilderDoubledField,
-	MentorBuilderMissingField,
 	MentorBuilderInvalidArgument
 };
 use trainer::condition;
@@ -135,7 +134,7 @@ impl TrainingState for Context {
 /// in order to train neural networks. The `Mentor` and its API simply
 /// provides an easy-to-use interface for a training procedure based on
 /// the API of this library.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Mentor<Sampler, StopWhen, LogWhen>
 	where StopWhen: TrainCondition,
 	      LogWhen : TrainCondition,
@@ -162,7 +161,7 @@ use self::marker::Unset;
 pub type UninitializedMentor = InitializingMentor<Unset, Unset, Unset>;
 
 /// Used to construct fully-fledged `Mentor`s using the well-known builder pattern.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct InitializingMentor<Sampler, StopWhen, LogWhen> {
 	nn: NeuralNet,
 	sample_gen: Sampler,
@@ -172,6 +171,16 @@ pub struct InitializingMentor<Sampler, StopWhen, LogWhen> {
 	batch_len: Option<usize>,
 	lr: Option<LearnRate>,
 	lm: Option<LearnMomentum>
+}
+
+pub trait Train {
+	fn train(self) -> UninitializedMentor;
+}
+
+impl<T> Train for T where T: Into<NeuralNet> {
+	fn train(self) -> UninitializedMentor {
+		UninitializedMentor::new(self)
+	}
 }
 
 impl<Sampler, StopWhen, LogWhen> Mentor<Sampler, StopWhen, LogWhen>
@@ -197,28 +206,6 @@ impl<Sampler, StopWhen, LogWhen> Mentor<Sampler, StopWhen, LogWhen>
 	/// 
 	/// - If some required property was not set in the builer.
 	fn from_builder(builder: InitializingMentor<Sampler, StopWhen, LogWhen>) -> Result<Self> {
-		// use self::MentorBuilderMissingField::*;
-		// let sample_gen =
-		// 	match builder.sample_gen {
-		// 		Some(sample_gen) => sample_gen,
-		// 		None => {
-		// 			return Err(Error::mentor_builder_missing_initialization(SampleGen))
-		// 		}
-		// 	};
-		// let stop_when =
-		// 	match builder.stop_when {
-		// 		Some(stop_when) => stop_when,
-		// 		None => {
-		// 			return Err(Error::mentor_builder_missing_initialization(StopWhen))
-		// 		}
-		// 	};
-		// let log_when =
-		// 	match builder.log_when {
-		// 		Some(log_when) => log_when,
-		// 		None => {
-		// 			condition::Always
-		// 		}
-		// 	};
 		let ctx = Context::new(
 			builder.epoch_len.unwrap_or_else(|| builder.sample_gen.finite_len().unwrap_or(1)),
 			builder.batch_len.unwrap_or(1),
@@ -497,7 +484,6 @@ impl<T, Sampler, StopWhen, LogWhen> MentorBuilderFinish<Sampler, StopWhen, LogWh
 	}
 }
 
-// impl<Sampler, StopWhen, LogWhen> InitializingMentor<Sampler, StopWhen, LogWhen> {
 impl<T, Sampler, StopWhen, LogWhen> MentorBuilder<Sampler, StopWhen, LogWhen> for T
 	where T: MentorBuilderOrError<Builder = InitializingMentor<Sampler, StopWhen, LogWhen>>
 {
@@ -621,7 +607,8 @@ mod tests {
 
 		println!(" - Starting setup of learning process ...");
 
-		let training = UninitializedMentor::new(net)
+		let training = net
+			.train()
 			.sample_gen(RandomSampleScheduler::new(samples))
 			.learn_rate(0.3)
 			.learn_momentum(0.5)
@@ -796,35 +783,40 @@ mod tests {
 
 		#[test]
 		fn new() {
-			// let builder = dummy_builder();
-			// assert!(builder.sample_gen.is_none());
-			// assert!(builder.stop_when.is_none());
-			// assert!(builder.log_when.is_none());
-			// assert!(builder.epoch_len.is_none());
-			// assert!(builder.batch_len.is_none());
-			// assert!(builder.lr.is_none());
-			// assert!(builder.lm.is_none());
+			let builder = dummy_builder();
+			assert_eq!(builder.sample_gen, Unset);
+			assert_eq!(builder.stop_when, Unset);
+			assert_eq!(builder.log_when, Unset);
+			assert!(builder.epoch_len.is_none());
+			assert!(builder.batch_len.is_none());
+			assert!(builder.lr.is_none());
+			assert!(builder.lm.is_none());
 		}
 
 		#[test]
-		fn learn_rate_ok() {
-			// let fst_lr = LearnRate::from(0.5);
-			// let snd_lr = LearnRate::from(1.0);
-			// let b = dummy_builder();
-			// assert!(b.lr.is_none());
-			// let b = b.learn_rate(fst_lr);
-			// assert!(b.is_ok());
-			// assert!(b.lr.is_some());
-			// let b = b.learn_rate(snd_lr);
-			// assert!(b.is_err());
+		fn learn_rate() {
+			use utils::LearnRate;
+			let fst_lr = LearnRate::from(0.5);
+			let snd_lr = LearnRate::from(1.0);
+			let b = dummy_builder();
+			assert!(b.lr.is_none());
+			let b = b.learn_rate(fst_lr);
+			assert!(b.is_ok());
+			let b = b.unwrap();
+			assert!(b.lr.is_some());
+			assert_eq!(
+				b.learn_rate(snd_lr),
+				Err(Error::mentor_builder_initialized_field_twice(MentorBuilderDoubledField::LearnRate)
+					.with_annotation(format!("Already set learn rate to {:?}.", fst_lr.to_f32())))
+			);
 		}
 
-// fn learn_rate<LR>(self, lr: LR) -> Result<InitializingMentor>
-// fn learn_momentum<LM>(self, lm: LM) -> Result<InitializingMentor>
-// fn epoch_len(self, epoch_len: usize) -> Result<InitializingMentor>;
-// fn batch_len(self, batch_len: usize) -> Result<InitializingMentor>;
-// fn sample_gen<G>(self, sample_gen: G) -> Result<InitializingMentor>
-// fn stop_when<C>(self, stop_when: C) -> Result<InitializingMentor>
-// fn log_when<C>(self, log_when: C) -> Result<InitializingMentor>
+		// fn learn_rate<LR>(self, lr: LR) -> Result<InitializingMentor>
+		// fn learn_momentum<LM>(self, lm: LM) -> Result<InitializingMentor>
+		// fn epoch_len(self, epoch_len: usize) -> Result<InitializingMentor>;
+		// fn batch_len(self, batch_len: usize) -> Result<InitializingMentor>;
+		// fn sample_gen<G>(self, sample_gen: G) -> Result<InitializingMentor>
+		// fn stop_when<C>(self, stop_when: C) -> Result<InitializingMentor>
+		// fn log_when<C>(self, log_when: C) -> Result<InitializingMentor>
 	}
 }

@@ -118,9 +118,6 @@ pub enum ErrorKind {
 	/// Occures when double initializing a field for `MentorBuilder`.
 	MentorBuilderInitializedFieldTwice(MentorBuilderDoubledField),
 
-	/// Occures when missing the initialization of a field for `MentorBuilder`.
-	MentorBuilderMissingInitialization(MentorBuilderMissingField),
-
 	/// Occures when trying to initialize a `MentorBuilder` with an invalid argument.
 	/// 
 	/// Note that this is a very generic error.
@@ -137,13 +134,6 @@ pub enum MentorBuilderDoubledField {
 	SampleGen,
 	StopWhen,
 	LogWhen
-}
-
-/// Fields of `Mentor` that may be missing during the initialization step.
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum MentorBuilderMissingField {
-	SampleGen,
-	StopWhen
 }
 
 /// Fields of `Mentor` that may be invalidly initialized during the initialization step.
@@ -417,18 +407,6 @@ impl Error {
 			kind: ErrorKind::MentorBuilderInitializedFieldTwice(field),
 			message: format!(
 				"Tried to initialize the field {:?} twice during the initialization step for creating a training process.",
-				field
-			),
-			annotation: None
-		}
-	}
-
-	/// Creates a new `MentorBuilderMissingInitialization` error.
-	pub(crate) fn mentor_builder_missing_initialization(field: MentorBuilderMissingField) -> Error {
-		Error{
-			kind: ErrorKind::MentorBuilderMissingInitialization(field),
-			message: format!(
-				"Missing an initialization of the field {:?} to properly construct a training process.",
 				field
 			),
 			annotation: None
