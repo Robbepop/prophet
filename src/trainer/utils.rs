@@ -50,14 +50,14 @@ impl MeanSquaredError {
 	{
 		let actual = actual.into();
 		let expected = expected.into();
-		if actual.len() == 0 {
+		if actual.dim() == 0 {
 			return Err(Error::mse_invalid_empty_actual_buffer())
 		}
-		if expected.len() == 0 {
+		if expected.dim() == 0 {
 			return Err(Error::mse_invalid_empty_expected_buffer())
 		}
-		if actual.len() != expected.len() {
-			return Err(Error::mse_unmatching_actual_and_empty_buffers(actual.len(), expected.len()))
+		if actual.dim() != expected.dim() {
+			return Err(Error::mse_unmatching_actual_and_empty_buffers(actual.dim(), expected.dim()))
 		}
 		use itertools;
 		Ok(

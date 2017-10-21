@@ -303,7 +303,7 @@ impl Error {
 
 	/// Creates a new `UnmatchingUserProvidedBiasValue` error.
 	pub(crate) fn unmatching_user_provided_bias_value(expected: f32, actual: f32) -> Error {
-		assert!(expected != actual);
+		assert!((expected - actual).abs() > ::std::f32::EPSILON);
 		Error{
 			kind: ErrorKind::UnmatchingUserProvidedBiasValue{expected, actual},
 			message: format!(

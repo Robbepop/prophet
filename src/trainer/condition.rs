@@ -61,7 +61,7 @@ pub struct Never;
 pub struct Not<C>
 	where C: TrainCondition
 {
-	inner: Box<C>
+	inner: C
 }
 
 /// Evaluates to `true` if both inner conditions evaluate to `true` for the given `TrainingState`.
@@ -74,9 +74,9 @@ pub struct Conjunction<L, R>
 	      R: TrainCondition
 {
 	/// The left-hand-side halting condition.
-	lhs: Box<L>,
+	lhs: L,
 	/// The right-hand-side halting condition.
-	rhs: Box<R>
+	rhs: R
 }
 
 /// Evaluates to `true` if any inner condition evaluates to `true` for the given `TrainingState`.
@@ -88,9 +88,9 @@ pub struct Disjunction<L, R>
 	      R: TrainCondition
 {
 	/// The left-hand-side halting condition.
-	lhs: Box<L>,
+	lhs: L,
 	/// The right-hand-side halting condition.
-	rhs: Box<R>
+	rhs: R
 }
 
 /// Evaluates to `true` if the duration passed since the start of the training process of the
@@ -164,7 +164,7 @@ impl<C> Not<C>
 {
 	/// Creates a new `TrainCondition` that represents a logical-not.
 	pub fn new(inner: C) -> Self {
-		Not{inner: Box::new(inner)}
+		Not{inner: inner}
 	}
 }
 
@@ -183,10 +183,7 @@ impl<L, R> Conjunction<L, R>
 {
 	/// Creates a new `TrainCondition` that represents a logical-and.
 	pub fn new(lhs: L, rhs: R) -> Self {
-		Conjunction{
-			lhs: Box::new(lhs),
-			rhs: Box::new(rhs)
-		}
+		Conjunction{lhs, rhs}
 	}
 }
 
@@ -206,10 +203,7 @@ impl<L, R> Disjunction<L, R>
 {
 	/// Creates a new `TrainCondition` that represents a logical-or.
 	pub fn new(lhs: L, rhs: R) -> Self {
-		Disjunction{
-			lhs: Box::new(lhs),
-			rhs: Box::new(rhs)
-		}
+		Disjunction{lhs, rhs}
 	}
 }
 
