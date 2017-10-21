@@ -803,7 +803,7 @@ mod tests {
 			let b = b.learn_rate(fst_lr);
 			assert!(b.is_ok());
 			let b = b.unwrap();
-			assert!(b.lr.is_some());
+			assert_eq!(b.lr, Some(fst_lr));
 			assert_eq!(
 				b.learn_rate(snd_lr),
 				Err(Error::mentor_builder_initialized_field_twice(MentorBuilderDoubledField::LearnRate)
@@ -811,8 +811,83 @@ mod tests {
 			);
 		}
 
-		// fn learn_rate<LR>(self, lr: LR) -> Result<InitializingMentor>
-		// fn learn_momentum<LM>(self, lm: LM) -> Result<InitializingMentor>
+		#[test]
+		fn learn_rate_init() {
+			assert_eq!(dummy_builder().lr, None)
+		}
+
+		#[test]
+		fn learn_rate_ok() {
+			let new_lr = LearnRate::from(0.5);
+			assert_eq!(dummy_builder().learn_rate(new_lr).unwrap().lr, Some(new_lr))
+		}
+
+		#[test]
+		fn learn_rate_fail() {
+			let old_lr = LearnRate::from(0.5);
+			let new_lr = LearnRate::from(1.0);
+			let b = dummy_builder().learn_rate(old_lr).unwrap();
+			assert_eq!(
+				b.learn_rate(new_lr),
+				Err(Error::mentor_builder_initialized_field_twice(MentorBuilderDoubledField::LearnRate)
+					.with_annotation(format!("Already set learn rate to {:?}.", old_lr.to_f32())))
+			)
+		}
+
+		#[test]
+		fn learn_momentum_init() {
+			assert_eq!(dummy_builder().lm, None)
+		}
+
+		#[test]
+		fn learn_momentum_ok() {
+			let new_lm = LearnMomentum::from(0.5);
+			assert_eq!(dummy_builder().learn_momentum(new_lm).unwrap().lm, Some(new_lm))
+		}
+
+		#[test]
+		fn learn_momentum_fail() {
+			let old_lm = LearnMomentum::from(0.5);
+			let new_lm = LearnMomentum::from(1.0);
+			let b = dummy_builder().learn_momentum(old_lm).unwrap();
+			assert_eq!(
+				b.learn_momentum(new_lm),
+				Err(Error::mentor_builder_initialized_field_twice(MentorBuilderDoubledField::LearnMomentum)
+					.with_annotation(format!("Already set learn momentum to {:?}.", old_lm.to_f32())))
+			)
+		}
+
+		#[test]
+		fn epoch_len_init() {
+			assert_eq!(dummy_builder().epoch_len, None)
+		}
+
+		#[test]
+		fn epoch_len_ok() {
+			let new_epoch_len = 10;
+			assert_eq!(dummy_builder().epoch_len(new_epoch_len).unwrap().epoch_len, Some(new_epoch_len))
+		}
+
+		#[test]
+		fn epoch_len_fail_zero() {
+			assert_eq!(
+				dummy_builder().epoch_len(0),
+				Err(Error::mentor_builder_invalid_argument(MentorBuilderInvalidArgument::EpochLen))
+			)
+		}
+
+		#[test]
+		fn epoch_len_fail_double() {
+			let old_epoch_len = 42;
+			let new_epoch_len = 1337;
+			let b = dummy_builder().epoch_len(old_epoch_len).unwrap();
+			assert_eq!(
+				b.epoch_len(new_epoch_len),
+				Err(Error::mentor_builder_initialized_field_twice(MentorBuilderDoubledField::EpochLen)
+					.with_annotation(format!("Already set epoch length to {:?}.", old_epoch_len)))
+			)
+		}
+
 		// fn epoch_len(self, epoch_len: usize) -> Result<InitializingMentor>;
 		// fn batch_len(self, batch_len: usize) -> Result<InitializingMentor>;
 		// fn sample_gen<G>(self, sample_gen: G) -> Result<InitializingMentor>
