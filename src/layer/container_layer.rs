@@ -155,3 +155,58 @@ impl SizedLayer for ContainerLayer {
 		self.output_layer().outputs()
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	// use super::*;
+
+	#[test]
+	#[ignore]
+	fn from_vec() {
+	}
+
+	#[test]
+	#[ignore]
+	fn propagate_error_signal_internally() {
+	}
+
+	#[test]
+	#[ignore]
+	fn inputs() {
+	}
+
+	#[test]
+	#[ignore]
+	fn outputs() {
+	}
+
+	#[test]
+	#[ignore]
+	fn output_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn process_input_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn calculate_output_error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn propagate_error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn apply_error_signal_correction() {
+	}
+}

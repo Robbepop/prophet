@@ -4,6 +4,7 @@ use utils::{LearnRate, LearnMomentum};
 use errors::{Result};
 use activation::Activation;
 use topology_v4;
+use topology_v4::LayerSize;
 
 /// Activation layers simply apply their activation function onto incoming signals.
 #[derive(Debug, Clone, PartialEq)]
@@ -31,11 +32,14 @@ impl ActivationLayer {
 	/// Creates a new `ActivationLayer` with the given number of inputs
 	/// and outputs (not respecting the bias input and output) and given
 	/// an activation function.
-	pub fn with_activation(len: usize, act: Activation) -> Result<Self> {
+	pub fn new<L>(len: L, act: Activation) -> Result<Self>
+		where L: Into<LayerSize>
+	{
+		let len = len.into();
 		Ok(ActivationLayer{
-			inputs      : BiasedSignalBuffer::zeros_with_bias(len)?,
-			outputs     : BiasedSignalBuffer::zeros_with_bias(len)?,
-			error_signal: BiasedErrorSignalBuffer::zeros_with_bias(len)?,
+			inputs      : BiasedSignalBuffer::zeros_with_bias(len.to_usize())?,
+			outputs     : BiasedSignalBuffer::zeros_with_bias(len.to_usize())?,
+			error_signal: BiasedErrorSignalBuffer::zeros_with_bias(len.to_usize())?,
 			act
 		})
 	}
@@ -43,8 +47,8 @@ impl ActivationLayer {
 	/// Creates a new `ActivationLayer` from the given topology based abstract activation layer.
 	pub fn from_top_layer(top_layer: topology_v4::ActivationLayer) -> Result<ActivationLayer> {
 		use topology_v4::Layer;
-		ActivationLayer::with_activation(
-			top_layer.input_len().to_usize(), top_layer.activation_fn()
+		ActivationLayer::new(
+			top_layer.input_len(), top_layer.activation_fn()
 		)
 	}
 }
@@ -153,5 +157,66 @@ impl SizedLayer for ActivationLayer {
 
 	fn outputs(&self) -> usize {
 		self.outputs.dim()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	// use super::*;
+
+	#[test]
+	#[ignore]
+	fn new() {
+		// Cannot fail anymore with the use of LayerSize.
+	}
+
+	#[test]
+	#[ignore]
+	fn from_top_layer() {
+	}
+
+	#[test]
+	#[ignore]
+	fn from() {
+	}
+
+	#[test]
+	#[ignore]
+	fn inputs() {
+	}
+
+	#[test]
+	#[ignore]
+	fn outputs() {
+	}
+
+	#[test]
+	#[ignore]
+	fn output_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn process_input_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn calculate_output_error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn propagate_error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn apply_error_signal_correction() {
 	}
 }

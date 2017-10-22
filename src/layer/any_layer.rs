@@ -13,20 +13,20 @@ pub enum AnyLayer {
 use self::AnyLayer::{Activation, FullyConnected, Container};
 
 impl From<ActivationLayer> for AnyLayer {
-	fn from(act_layer: ActivationLayer) -> Self {
-		AnyLayer::Activation(act_layer)
+	fn from(layer: ActivationLayer) -> Self {
+		AnyLayer::Activation(layer)
 	}
 }
 
 impl From<FullyConnectedLayer> for AnyLayer {
-	fn from(fc_layer: FullyConnectedLayer) -> Self {
-		AnyLayer::FullyConnected(fc_layer)
+	fn from(layer: FullyConnectedLayer) -> Self {
+		AnyLayer::FullyConnected(layer)
 	}
 }
 
 impl From<ContainerLayer> for AnyLayer {
-	fn from(c_layer: ContainerLayer) -> Self {
-		AnyLayer::Container(c_layer)
+	fn from(layer: ContainerLayer) -> Self {
+		AnyLayer::Container(layer)
 	}
 }
 
@@ -133,5 +133,70 @@ impl SizedLayer for AnyLayer {
 			FullyConnected(ref layer) => layer.outputs(),
 			Container(ref layer) => layer.outputs()
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	// use super::*;
+
+	#[test]
+	#[ignore]
+	fn from_top_any_layer() {
+	}
+
+	#[test]
+	#[ignore]
+	fn from_activation_layer() {
+	}
+
+	#[test]
+	#[ignore]
+	fn from_container_layer() {
+	}
+
+	#[test]
+	#[ignore]
+	fn from_fully_connected_layer() {
+	}
+
+	#[test]
+	#[ignore]
+	fn inputs() {
+	}
+
+	#[test]
+	#[ignore]
+	fn outputs() {
+	}
+
+	#[test]
+	#[ignore]
+	fn output_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn process_input_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn calculate_output_error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn propagate_error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn apply_error_signal_correction() {
 	}
 }

@@ -3,6 +3,7 @@ use layer::traits::prelude::*;
 use errors::{Result};
 use utils::{LearnRate, LearnMomentum};
 use topology_v4;
+use topology_v4::LayerSize;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FullyConnectedLayer {
@@ -36,9 +37,14 @@ impl FullyConnectedLayer {
 	/// # Errors
 	/// 
 	/// If input or output lengths are zero.
-	pub fn random(inputs: usize, outputs: usize) -> Result<FullyConnectedLayer> {
+	pub fn random<I, O>(inputs: I, outputs: O) -> Result<FullyConnectedLayer>
+		where I: Into<LayerSize>,
+		      O: Into<LayerSize>
+	{
+		let inputs = inputs.into();
+		let outputs = outputs.into();
 		Ok(FullyConnectedLayer::with_weights(
-			WeightsMatrix::random(inputs, outputs)?)?)
+			WeightsMatrix::random(inputs.to_usize(), outputs.to_usize())?)?)
 	}
 
 	/// Creates a new `FullyConnectedLayer` from the given topology based abstract fully connected layer.
@@ -145,5 +151,71 @@ impl SizedLayer for FullyConnectedLayer {
 
 	fn outputs(&self) -> usize {
 		self.weights.outputs()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	// use super::*;
+
+	#[test]
+	#[ignore]
+	fn with_weights() {
+	}
+
+	#[test]
+	#[ignore]
+	fn random() {
+		// Cannot fail anymore with the use of LayerSize.
+	}
+
+	#[test]
+	#[ignore]
+	fn from_top_layer() {
+	}
+
+	#[test]
+	#[ignore]
+	fn from() {
+	}
+
+	#[test]
+	#[ignore]
+	fn inputs() {
+	}
+
+	#[test]
+	#[ignore]
+	fn outputs() {
+	}
+
+	#[test]
+	#[ignore]
+	fn output_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn process_input_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn calculate_output_error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn propagate_error_signal() {
+	}
+
+	#[test]
+	#[ignore]
+	fn apply_error_signal_correction() {
 	}
 }

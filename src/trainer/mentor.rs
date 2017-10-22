@@ -965,30 +965,30 @@ mod tests {
 	}
 
 	mod mentor {
-		use super::*;
+		// use super::*;
 
-		use topology_v4::{
-			Topology,
-			TopologyBuilder
-		};
-		use trainer::sample::SequentialSampleScheduler;
+		// use topology_v4::{
+		// 	Topology,
+		// 	TopologyBuilder
+		// };
+		// use trainer::sample::SequentialSampleScheduler;
 
-		fn dummy_topology() -> Topology {
-			Topology::input(1).fully_connect( 1)
-		}
+		// fn dummy_topology() -> Topology {
+		// 	Topology::input(1).fully_connect( 1)
+		// }
 
-		fn dummy_sample_gen() -> SequentialSampleScheduler {
-			use trainer::sample::{Sample, SampleCollection};
-			let dummy_samples = samples![ [0.0] => 1.0 ];
-			SequentialSampleScheduler::new(dummy_samples)
-		}
+		// fn dummy_sample_gen() -> SequentialSampleScheduler {
+		// 	use trainer::sample::{Sample, SampleCollection};
+		// 	let dummy_samples = samples![ [0.0] => 1.0 ];
+		// 	SequentialSampleScheduler::new(dummy_samples)
+		// }
 
-		fn dummy_builder() -> InitializingMentor<SequentialSampleScheduler, condition::Always, Unset> {
-			InitializingMentor::new(dummy_topology())
-				.sample_gen(dummy_sample_gen())
-				.stop_when(condition::Always)
-				.unwrap()
-		}
+		// fn dummy_builder() -> InitializingMentor<SequentialSampleScheduler, condition::Always, Unset> {
+		// 	InitializingMentor::new(dummy_topology())
+		// 		.sample_gen(dummy_sample_gen())
+		// 		.stop_when(condition::Always)
+		// 		.unwrap()
+		// }
 
 		#[test]
 		#[ignore]
