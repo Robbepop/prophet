@@ -567,7 +567,7 @@ mod tests {
 	use super::*;
 
 	#[test]
-	// #[ignore]
+	#[ignore]
 	fn xor() {
 		use Activation::Tanh;
 		use trainer::RandomSampleScheduler;
