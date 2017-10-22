@@ -22,11 +22,15 @@ impl ContainerLayer {
 	/// given layers within the vector do not match.
 	pub fn from_vec(layers: Vec<AnyLayer>) -> Result<ContainerLayer> {
 		if layers.is_empty() {
-			panic!("ContainerLayer requires to contain at least one child layer."); // TODO: Rewrite as error.
+			panic!("Error: ContainerLayer requires to contain at least one child layer."); // TODO: Rewrite as error.
 		}
 		use itertools::Itertools;
-		if layers.iter().tuple_windows().any(|(l, r)| l.outputs() != r.inputs()) {
-			panic!("ContainerLayer requires all given layers to match their neighbours inputs and outputs.") // TODO: Rewrite as error.
+		for (ith, (l, r)) in layers.iter().tuple_windows().enumerate() {
+			if l.outputs() != r.inputs() {
+				panic!("Error: `ContainerLayer` requires parity between neighbouring lhs-outputs and rhs-inputs \
+				        but the lhs-outputs (= {:?}) do not match the rhs-inputs (= {:?}) in the {:?}th layer pair.",
+				        l.outputs(), r.inputs(), ith) // TODO: Rewrite as error.
+			}
 		}
 		Ok(ContainerLayer{
 			childs: layers
