@@ -222,8 +222,8 @@ impl<Sampler, StopWhen, LogWhen> Mentor<Sampler, StopWhen, LogWhen>
 	}
 
 	fn log_statistics(&mut self) {
-		use log::LogLevel;
-		if log_enabled!(LogLevel::Info) && self.log_when.evaluate(&self.ctx) {
+		use log::Level;
+		if log_enabled!(Level::Info) && self.log_when.evaluate(&self.ctx) {
 			info!(
 				"\n\
 				 =======================================================\n\

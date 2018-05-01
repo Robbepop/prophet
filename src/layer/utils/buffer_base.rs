@@ -373,7 +373,7 @@ impl<'a, B> AnyView<'a, B>
 	#[inline]
 	pub fn into_unbiased(self) -> AnyView<'a, B::Unbiased> {
 		let mut data = self.data;
-		data.islice(s![..-1]);
+		data.slice_inplace(s![..-1]);
 		AnyView{data, marker: PhantomData}
 	}
 }
@@ -384,7 +384,7 @@ impl<'a, B> AnyViewMut<'a, B>
 	#[inline]
 	pub fn into_unbiased_mut(self) -> AnyViewMut<'a, B::Unbiased> {
 		let mut data = self.data;
-		data.islice(s![..-1]);
+		data.slice_inplace(s![..-1]);
 		AnyViewMut{data, marker: PhantomData}
 	}
 }
