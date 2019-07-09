@@ -14,7 +14,7 @@ documentation = "https://docs.rs/prophet"
 description   = """A neural network implementation with a focus on cache-efficiency and sequential performance."""
 
 [dependencies]
-rand         = "0.7"
+rand         = "0.6"
 num          = "0.2"
 ndarray      = "0.12"
 ndarray-rand = "0.9"
