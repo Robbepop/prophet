@@ -4,6 +4,7 @@ version = "0.5.0"
 authors = ["Robbepop"]
 license = "MIT/Apache-2.0"
 readme  = "README.md"
+edition = "2018"
 
 keywords   = ["learning", "neural", "machine-learning", "classifier"]
 categories = ["science"]
