@@ -2,11 +2,10 @@ use ndarray::prelude::*;
 use ndarray::iter::{Lanes, LanesMut};
 use ndarray_rand::RandomExt;
 
-use rand::distributions::Range;
-
 use std::marker::PhantomData;
 
 use crate::errors::{Error, Result};
+use rand::distributions::Uniform;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MatrixBase<E>{
@@ -52,7 +51,7 @@ impl WeightsMatrix {
 		let biased_inputs = inputs + 1;
 		let biased_shape  = (outputs, biased_inputs);
 		Ok(WeightsMatrix{
-			data: Array2::random(biased_shape, Range::new(-1.0, 1.0)),
+			data: Array2::random(biased_shape, Uniform::new(-1.0, 1.0)),
 			marker: PhantomData
 		})
 	}
