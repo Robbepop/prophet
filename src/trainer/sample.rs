@@ -4,11 +4,11 @@ use ndarray::prelude::*;
 use rand::XorShiftRng;
 use rand;
 
-use layer::utils::{
+use crate::layer::utils::{
 	UnbiasedSignalView,
 	UnbiasedSignalBuffer
 };
-use errors::{Error, Result};
+use crate::errors::{Error, Result};
 
 use std::fmt::Debug;
 

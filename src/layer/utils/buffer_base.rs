@@ -1,7 +1,7 @@
 use ndarray::prelude::*;
 use ndarray;
 
-use errors::{Error, Result};
+use crate::errors::{Error, Result};
 
 use std::fmt;
 use std::fmt::Debug;

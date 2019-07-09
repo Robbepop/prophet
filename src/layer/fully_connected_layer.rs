@@ -1,9 +1,9 @@
-use layer::utils::prelude::*;
-use layer::traits::prelude::*;
-use errors::{Result};
-use utils::{LearnRate, LearnMomentum};
-use topology_v4;
-use topology_v4::LayerSize;
+use crate::layer::utils::prelude::*;
+use crate::layer::traits::prelude::*;
+use crate::errors::{Result};
+use crate::utils::{LearnRate, LearnMomentum};
+use crate::topology_v4;
+use crate::topology_v4::LayerSize;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FullyConnectedLayer {
@@ -53,7 +53,7 @@ impl FullyConnectedLayer {
 	/// 
 	/// If the given topology based abstract fully connected layer is invalid.
 	pub fn from_top_layer(top_layer: topology_v4::FullyConnectedLayer) -> Result<FullyConnectedLayer> {
-		use topology_v4::Layer;
+		use crate::topology_v4::Layer;
 		FullyConnectedLayer::random(
 			top_layer.input_len().to_usize(), top_layer.input_len().to_usize()
 		)

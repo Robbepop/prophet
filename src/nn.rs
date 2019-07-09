@@ -1,21 +1,21 @@
 use ndarray::ArrayView1;
 
-use traits::{Predict};
-use layer::utils::prelude::*;
-use layer::{
+use crate::traits::{Predict};
+use crate::layer::utils::prelude::*;
+use crate::layer::{
 	HasOutputSignal,
 	ProcessInputSignal,
 	CalculateOutputErrorSignal,
 	ApplyErrorSignalCorrection
 };
-use layer::{ContainerLayer};
-use layer;
-use utils::{LearnRate, LearnMomentum};
-use topology_v4::{
+use crate::layer::{ContainerLayer};
+use crate::layer;
+use crate::utils::{LearnRate, LearnMomentum};
+use crate::topology_v4::{
 	Topology
 };
-use errors::{Result};
-use trainer::{
+use crate::errors::{Result};
+use crate::trainer::{
 	SupervisedSample,
 	PredictSupervised,
 	OptimizeSupervised,

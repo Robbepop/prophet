@@ -1,10 +1,10 @@
-use layer::utils::prelude::*;
-use layer::traits::prelude::*;
-use utils::{LearnRate, LearnMomentum};
-use errors::{Result};
-use activation::Activation;
-use topology_v4;
-use topology_v4::LayerSize;
+use crate::layer::utils::prelude::*;
+use crate::layer::traits::prelude::*;
+use crate::utils::{LearnRate, LearnMomentum};
+use crate::errors::{Result};
+use crate::activation::Activation;
+use crate::topology_v4;
+use crate::topology_v4::LayerSize;
 
 /// Activation layers simply apply their activation function onto incoming signals.
 #[derive(Debug, Clone, PartialEq)]
@@ -46,7 +46,7 @@ impl ActivationLayer {
 
 	/// Creates a new `ActivationLayer` from the given topology based abstract activation layer.
 	pub fn from_top_layer(top_layer: topology_v4::ActivationLayer) -> Result<ActivationLayer> {
-		use topology_v4::Layer;
+		use crate::topology_v4::Layer;
 		ActivationLayer::new(
 			top_layer.input_len(), top_layer.activation_fn()
 		)

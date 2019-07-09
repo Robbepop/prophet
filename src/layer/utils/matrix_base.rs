@@ -6,7 +6,7 @@ use rand::distributions::Range;
 
 use std::marker::PhantomData;
 
-use errors::{Error, Result};
+use crate::errors::{Error, Result};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MatrixBase<E>{

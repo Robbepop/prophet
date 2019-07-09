@@ -1,5 +1,5 @@
-use trainer::SupervisedSample;
-use utils::{
+use crate::trainer::SupervisedSample;
+use crate::utils::{
 	LearnRate,
 	LearnMomentum
 };

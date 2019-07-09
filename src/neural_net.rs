@@ -11,10 +11,10 @@ use ndarray::{Zip, Ix};
 
 use itertools::{multizip, Itertools};
 
-use traits::prelude::*;
-use utils::{LearnRate, LearnMomentum};
-use activation::Activation;
-use topology::*;
+use crate::traits::prelude::*;
+use crate::utils::{LearnRate, LearnMomentum};
+use crate::activation::Activation;
+use crate::topology::*;
 
 /// A fully connected layer within a neural net.
 ///

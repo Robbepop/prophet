@@ -2,7 +2,7 @@
 //! which form the basis for topologies of neural networks.
 
 use std::slice::Iter;
-use activation::Activation;
+use crate::activation::Activation;
 
 /// Represents the topology element for a fully connected layer
 /// with input neurons, output neurons and an activation function.

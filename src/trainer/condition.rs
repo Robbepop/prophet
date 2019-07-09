@@ -7,8 +7,8 @@
 use std::time;
 use std::fmt::Debug;
 
-use errors::{Error, Result};
-use trainer::MeanSquaredError;
+use crate::errors::{Error, Result};
+use crate::trainer::MeanSquaredError;
 
 /// Provides an interface for training stats during the training process
 /// that can be used and queried by halting conditions to check whether their

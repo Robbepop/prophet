@@ -1,5 +1,5 @@
-use layer::utils::prelude::*;
-use utils::{LearnRate, LearnMomentum};
+use crate::layer::utils::prelude::*;
+use crate::utils::{LearnRate, LearnMomentum};
 
 pub(crate) trait ProcessInputSignal {
 	fn process_input_signal(&mut self, signal: BiasedSignalView);

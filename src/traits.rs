@@ -2,7 +2,7 @@
 
 use ndarray::*;
 
-use utils::{
+use crate::utils::{
 	LearnRate,
 	LearnMomentum
 };

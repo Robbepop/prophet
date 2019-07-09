@@ -65,7 +65,7 @@ fn gen_random_samples<F>(amount: usize,
 
 #[test]
 fn train_xor() {
-	use Activation::Tanh;
+	use crate::Activation::Tanh;
 
 	let (t, f) = (1.0, -1.0);
 	let samples = samples_vec![
@@ -124,7 +124,7 @@ fn train_xor() {
 
 #[test]
 fn train_and() {
-	use Activation::Tanh;
+	use crate::Activation::Tanh;
 
 	let (t, f) = (1.0, -1.0);
 	let samples = samples_vec![
@@ -176,7 +176,7 @@ fn train_and() {
 
 #[test]
 fn train_compare() {
-	use Activation::Tanh;
+	use crate::Activation::Tanh;
 
 	let count_learn_samples = 10_000;
 	let count_test_samples  =    100;
