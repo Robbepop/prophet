@@ -504,7 +504,9 @@ mod tests {
 
 		#[test]
 		fn interval() {
-			let dur_in_s = 1000;
+			// Similar to `before_and_after_elapsed()`, the clock on CI might start from 0s,
+			// we have to pick a really small duration for this test not to panic.
+			let dur_in_s = 10;
 			let     dur  = time::Duration::from_secs(dur_in_s);
 			let half_dur = time::Duration::from_secs(dur_in_s / 2);
 			let mut cond = TimeInterval::new(dur);
