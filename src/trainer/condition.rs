@@ -434,6 +434,8 @@ mod tests {
 			let     dur = time::Duration::from_secs(1000);
 			let mut ctx = time_elapsed_ctx();
 			let mut cond = TimeElapsed(dur);
+			println!("{:?}", dur);
+			println!("{:?}", ctx.time_started);
 			assert_eq!(cond.evaluate(&ctx), false);
 			ctx.time_started -= dur;
 			assert_eq!(cond.evaluate(&ctx), true);
