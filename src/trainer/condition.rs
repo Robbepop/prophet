@@ -431,11 +431,13 @@ mod tests {
 
 		#[test]
 		fn before_and_after_elapsed() {
-			let     dur = time::Duration::from_secs(1000);
+			// This test breaks on CI if their `Instant::now()` (what `ctx.time_started` is),
+			// comes from a system clock that's not  up to date. In fact, on Appveyor the time
+			// now seems to start from 0s(?) judging from the fact that we can observe an
+			// `Instant { t: 303.4676818s }` ...
+			let     dur = time::Duration::from_secs(10);
 			let mut ctx = time_elapsed_ctx();
 			let mut cond = TimeElapsed(dur);
-			println!("{:?}", dur);
-			println!("{:?}", ctx.time_started);
 			assert_eq!(cond.evaluate(&ctx), false);
 			ctx.time_started -= dur;
 			assert_eq!(cond.evaluate(&ctx), true);
