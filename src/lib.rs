@@ -44,7 +44,7 @@
 //! 	.learn_momentum(0.6) // use the given learn momentum
 //! 	.log_config(LogConfig::Iterations(100)) // log state every 100 iterations
 //! 	.scheduling(Scheduling::Random)         // use random sample scheduling
-//! 	.criterion(Criterion::RecentMSE(0.03))  // train until the recent MSE is below 0.03
+//! 	.criterion(Criterion::RecentMSE(0.0001))  // train until the recent MSE is below 0.0001
 //! 
 //! 	.go()      // start the training session
 //! 	.unwrap(); // be ashamed to unwrap a Result
