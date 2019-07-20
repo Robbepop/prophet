@@ -1,8 +1,8 @@
-use layer::any_layer::AnyLayer;
-use layer::utils::prelude::*;
-use layer::traits::prelude::*;
-use errors::{Result};
-use utils::{LearnRate, LearnMomentum};
+use crate::layer::any_layer::AnyLayer;
+use crate::layer::utils::prelude::*;
+use crate::layer::traits::prelude::*;
+use crate::errors::{Result};
+use crate::utils::{LearnRate, LearnMomentum};
 
 /// `ContainerLayer` is itself a neuronal layer that contains other layers in sequential order.
 /// 

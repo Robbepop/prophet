@@ -1,6 +1,6 @@
 use ndarray::AsArray;
 
-use errors::{Error, Result};
+use crate::errors::{Error, Result};
 
 /// Represents a mean-squared-error value.
 /// 

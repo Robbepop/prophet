@@ -1,9 +1,9 @@
-use layer::utils::prelude::*;
-use layer::traits::prelude::*;
-use errors::{Result};
-use utils::{LearnRate, LearnMomentum};
-use topology_v4;
-use topology_v4::LayerSize;
+use crate::layer::utils::prelude::*;
+use crate::layer::traits::prelude::*;
+use crate::errors::{Result};
+use crate::utils::{LearnRate, LearnMomentum};
+use crate::topology_v4;
+use crate::topology_v4::LayerSize;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FullyConnectedLayer {
@@ -15,11 +15,11 @@ pub struct FullyConnectedLayer {
 
 impl FullyConnectedLayer {
 	/// Creates a new `FullyConnectedLayer` with the given weights.
-	/// 
+	///
 	/// Note: The given weights imply the resulting layer's input and output signal lengths.
-	/// 
+	///
 	/// # Errors
-	/// 
+	///
 	/// If the implied input and output signals have a length of zero.
 	pub(crate) fn with_weights(weights: WeightsMatrix) -> Result<FullyConnectedLayer> {
 		let (inputs, outputs) = (weights.inputs(), weights.outputs());
@@ -33,9 +33,9 @@ impl FullyConnectedLayer {
 
 	/// Creates a new `FullyConnectedLayer` with default settings with the given
 	/// lengths for the input and output signals.
-	/// 
+	///
 	/// # Errors
-	/// 
+	///
 	/// If input or output lengths are zero.
 	pub fn random<I, O>(inputs: I, outputs: O) -> Result<FullyConnectedLayer>
 		where I: Into<LayerSize>,
@@ -48,12 +48,12 @@ impl FullyConnectedLayer {
 	}
 
 	/// Creates a new `FullyConnectedLayer` from the given topology based abstract fully connected layer.
-	/// 
+	///
 	/// # Errors
-	/// 
+	///
 	/// If the given topology based abstract fully connected layer is invalid.
 	pub fn from_top_layer(top_layer: topology_v4::FullyConnectedLayer) -> Result<FullyConnectedLayer> {
-		use topology_v4::Layer;
+		use crate::topology_v4::Layer;
 		FullyConnectedLayer::random(
 			top_layer.input_len().to_usize(), top_layer.input_len().to_usize()
 		)
@@ -99,7 +99,7 @@ impl PropagateErrorSignal for FullyConnectedLayer {
 	{
 		use ndarray::Zip;
 		use itertools::*;
-		multizip((self.weights.genrows(), &self.error_signal.unbias())).foreach(|(s_wrow, &s_e)| {
+		multizip((self.weights.genrows(), &self.error_signal.unbias())).for_each(|(s_wrow, &s_e)| {
 			Zip::from(&mut propagated.error_signal_mut().unbias_mut().data_mut())
 				.and(&s_wrow.view())
 				.apply(|p_e, &s_w| {
@@ -114,7 +114,7 @@ impl ApplyErrorSignalCorrection for FullyConnectedLayer {
 		// use std::ops::AddAssign;
 		use ndarray::Zip;
 		use itertools::*;
-		multizip((self.deltas.genrows_mut(), &self.error_signal.unbias())).foreach(|(mut s_drow, &s_e)| {
+		multizip((self.deltas.genrows_mut(), &self.error_signal.unbias())).for_each(|(mut s_drow, &s_e)| {
 			Zip::from(&mut s_drow.view_mut()).and(input_signal.unbias().data()).apply(|s_dw, &p_i| {
 				*s_dw = (1.0 - lm.to_f32()) * lr.to_f32() * p_i * s_e + lm.to_f32() * *s_dw;
 			});

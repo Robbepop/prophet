@@ -1,8 +1,9 @@
 use ndarray::prelude::*;
 
-use rand::{Rng, ThreadRng, thread_rng};
+use rand::{Rng, thread_rng};
 
-use mentor::configs::Scheduling;
+use crate::mentor::configs::Scheduling;
+use rand::rngs::ThreadRng;
 
 // /// Mentors are objects that train a given disciple structure
 // /// resulting in a prophet structure that can be used to predict
@@ -53,7 +54,7 @@ impl<A1, A2> From<(A1, A2)> for Sample
 }
 
 /// A sample view used to train a disciple during supervised learning.
-/// 
+///
 /// Views are non-owning.
 #[derive(Debug, Clone)]
 pub struct SampleView<'a> {
@@ -75,9 +76,9 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 
 
 /// Creates a vector of samples.
-/// 
+///
 /// Given the following definitions
-/// 
+///
 /// ```rust,no_run
 /// # #[allow(unused_variables)]
 /// let t =  1.0;
@@ -85,7 +86,7 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 /// let f = -1.0;
 /// ```
 /// ... this macro invokation ...
-/// 
+///
 /// ```rust
 /// # #[macro_use]
 /// # extern crate prophet;
@@ -102,9 +103,9 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 /// ];
 /// # }
 /// ```
-/// 
+///
 /// ... will expand to this
-/// 
+///
 /// ```rust,no_run
 /// # extern crate prophet;
 /// # use prophet::prelude::*;
@@ -184,7 +185,7 @@ impl ::std::fmt::Debug for Scheduler {
 impl Scheduler {
 	/// Creates a new `Scheduler` from a given scheduling strategy.
 	fn from_kind(kind: Scheduling) -> Self {
-		use mentor::configs::Scheduling::*;
+		use crate::mentor::configs::Scheduling::*;
 		match kind {
 			Random    => Scheduler::Random(thread_rng()),
 			Iterative => Scheduler::Iterative(0),

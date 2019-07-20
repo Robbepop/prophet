@@ -1,8 +1,8 @@
 
 use std::time::{Duration};
 
-use errors::{Result, Error};
-use utils::{LearnRate, LearnMomentum};
+use crate::errors::{Result, Error};
+use crate::utils::{LearnRate, LearnMomentum};
 
 /// Cirterias after which the learning process holds.
 #[derive(Debug, Copy, Clone, PartialEq)]

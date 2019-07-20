@@ -1,28 +1,28 @@
 use std::time::{SystemTime};
 
-use neural_net::NeuralNet;
-use utils::{
+use crate::neural_net::NeuralNet;
+use crate::utils::{
 	LearnRate,
 	LearnMomentum
 };
-use traits::{
+use crate::traits::{
 	Predict,
 	UpdateGradients,
 	UpdateWeights
 };
-use errors::{Result, Error};
-use topology::Topology;
-use mentor::configs::{
+use crate::errors::{Result, Error};
+use crate::topology::Topology;
+use crate::mentor::configs::{
 	LearnRateConfig,
 	LearnMomentumConfig,
 	Criterion,
 	LogConfig,
 	Scheduling
 };
-use mentor::samples::{SampleScheduler};
-use mentor::deviation::Deviation;
-use mentor::logger::{Stats, Logger};
-use mentor::samples::Sample;
+use crate::mentor::samples::{SampleScheduler};
+use crate::mentor::deviation::Deviation;
+use crate::mentor::logger::{Stats, Logger};
+use crate::mentor::samples::Sample;
 
 
 impl Topology {
@@ -340,7 +340,7 @@ pub struct Training {
 
 impl Training {
 	fn is_done(&self) -> bool {
-		use mentor::configs::Criterion::*;
+		use crate::mentor::configs::Criterion::*;
 		match self.cfg.criterion {
 			TimeOut(duration) => {
 				self.starttime.elapsed().unwrap() >= duration

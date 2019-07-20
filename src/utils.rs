@@ -1,4 +1,4 @@
-use errors::{Result, Error};
+use crate::errors::{Result, Error};
 
 /// Learn rate used during supervised learning.
 #[derive(Debug, Copy, Clone, PartialEq)]

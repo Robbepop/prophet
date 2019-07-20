@@ -3,18 +3,17 @@
 
 use std::vec::Vec;
 
-use rand::distributions::Range;
-
 use ndarray_rand::RandomExt;
 use ndarray::prelude::*;
 use ndarray::{Zip, Ix};
 
 use itertools::{multizip, Itertools};
 
-use traits::prelude::*;
-use utils::{LearnRate, LearnMomentum};
-use activation::Activation;
-use topology::*;
+use crate::traits::prelude::*;
+use crate::utils::{LearnRate, LearnMomentum};
+use crate::activation::Activation;
+use crate::topology::*;
+use rand::distributions::Uniform;
 
 /// A fully connected layer within a neural net.
 ///
@@ -66,11 +65,11 @@ struct FullyConnectedLayer {
 pub struct NeuralNet {
 	/// A bias-extended input buffer for user input
 	/// that is not required to respect bias values.
-	/// 
+	///
 	/// This is needed so that the internal implementation
 	/// can use the invariant of symmetrically sized buffers
 	/// and weight-matrices for optimization purposes.
-	/// 
+	///
 	/// Later this operation could be done with a unique layer type,
 	///    e.g. `InputLayer`: adds bias values to user-provided input.
 	input: Array1<f32>,
@@ -83,7 +82,7 @@ impl FullyConnectedLayer {
 		use std::iter;
 
 		// Implicitely add a bias neuron to all arrays and matrices.
-		// 
+		//
 		// In theory this is only required for gradients and both
 		// weight matrices, not for outputs. However, it is done for outputs, too,
 		// to create size-symmetry which simplifies implementation of
@@ -128,11 +127,11 @@ impl FullyConnectedLayer {
 		let biased_shape  = (n_outputs, biased_inputs);
 
 		FullyConnectedLayer::with_weights(
-			Array2::random(biased_shape, Range::new(-1.0, 1.0)), activation)
+			Array2::random(biased_shape, Uniform::new(-1.0, 1.0)), activation)
 	}
 
 	/// Count output neurons of this layer.
-	/// 
+	///
 	/// This method should be only used for debugging purposes!
 	#[inline]
 	fn count_outputs(&self) -> Ix {
@@ -140,7 +139,7 @@ impl FullyConnectedLayer {
 	}
 
 	/// Count gradients of this layer.
-	/// 
+	///
 	/// This method should be only used for debugging purposes!
 	#[inline]
 	fn count_gradients(&self) -> Ix {
@@ -159,21 +158,21 @@ impl FullyConnectedLayer {
 	/// and be returned as readable slice.
 	///
 	/// ### Expects
-	/// 
+	///
 	///  - input with `n` elements
-	/// 
+	///
 	/// ### Requires
-	/// 
+	///
 	///  - weight matrix with `m` rows and `n` columns
-	/// 
+	///
 	/// ### Asserts
-	/// 
+	///
 	///  - output with `m` elements
-	/// 
+	///
 	/// ### Returns
-	/// 
+	///
 	///  - A view to the resulting output. Useful for method chaining and reductions.
-	/// 
+	///
 	fn feed_forward(
 		&mut self,
 		input: ArrayView1<f32>
@@ -194,11 +193,11 @@ impl FullyConnectedLayer {
 
 	/// Used internally in the output layer to initialize gradients for the back propagation phase.
 	/// Sets the gradient for the bias neuron to zero - hopefully this is the correct behaviour.
-	/// 
+	///
 	/// ### Returns
-	/// 
+	///
 	/// `&Self` to allow for method chaining, especially reductions.
-	/// 
+	///
 	fn calculate_output_gradients(
 		&mut self,
 	    target_values: ArrayView1<f32>
@@ -231,11 +230,11 @@ impl FullyConnectedLayer {
 	}
 
 	/// Applies this layer's activation function on all gradients of this layer.
-	/// 
+	///
 	/// ### Expects
-	/// 
+	///
 	/// - number of gradients equals number of outputs
-	/// 
+	///
 	fn apply_activation_to_gradients(&mut self) {
 		debug_assert_eq!(self.count_gradients(), self.count_outputs());
 
@@ -246,7 +245,7 @@ impl FullyConnectedLayer {
 
 		// OLD CODE: slightly faster sequentially, but also not as easy parallelizable as new code above ...
 		// multizip((&mut self.gradients, &self.outputs))
-		// 	.foreach(|(gradient, &output)| *gradient *= act.derived(output));
+		// 	.for_each(|(gradient, &output)| *gradient *= act.derived(output));
 	}
 
 	/// Applies this layer's activation function on all outputs of this layer.
@@ -259,9 +258,9 @@ impl FullyConnectedLayer {
 	/// using the given activation function.
 	/// This also computes the gradient for the bias neuron.
 	/// Returns readable reference to self to allow for method chaining.
-	/// 
+	///
 	/// ### Returns
-	/// 
+	///
 	/// `&Self` to allow for method chaining, especially reductions.
 	fn propagate_gradients(
 		&mut self,
@@ -273,9 +272,9 @@ impl FullyConnectedLayer {
 		debug_assert_eq!(prev.weights.cols()    , self.count_gradients());
 
 		multizip((prev.weights.genrows(), prev.gradients.iter()))
-			.foreach(|(prev_weights_row, prev_gradient)| {
+			.for_each(|(prev_weights_row, prev_gradient)| {
 				multizip((self.gradients.iter_mut(), prev_weights_row.iter()))
-					.foreach(|(gradient, weight)| *gradient += weight * prev_gradient)
+					.for_each(|(gradient, weight)| *gradient += weight * prev_gradient)
 			});
 
 		self.apply_activation_to_gradients();
@@ -298,10 +297,10 @@ impl FullyConnectedLayer {
 		// Compute new delta weights.
 		multizip((self.delta_weights.genrows_mut(),
 		          self.gradients.iter()))
-			.foreach(|(mut delta_weights_row, gradient)| {
+			.for_each(|(mut delta_weights_row, gradient)| {
 				multizip((prev_outputs.iter(),
 				          delta_weights_row.iter_mut()))
-					.foreach(|(prev_output, delta_weight)| {
+					.for_each(|(prev_output, delta_weight)| {
 						*delta_weight =
 							// Individual input, magnified by the gradient and train rate
 							learn_rate.to_f32() * prev_output * gradient
@@ -374,7 +373,7 @@ impl<'b, A> Predict<A> for NeuralNet
 					layer.feed_forward(prev)
 				})
 		} else {
-			unreachable!("Since neural networks can never have an empty stack of layers 
+			unreachable!("Since neural networks can never have an empty stack of layers
 				          this code should never be reachable.");
 		}
 	}
@@ -396,7 +395,7 @@ impl<'a, A> UpdateGradients<A> for NeuralNet
 impl UpdateWeights for NeuralNet
 {
 	fn update_weights(
-		&mut self, 
+		&mut self,
 		rate: LearnRate,
 		momentum: LearnMomentum
 	) {
@@ -505,7 +504,7 @@ mod tests {
 				for act in &activations {
 					let mut expected_gradients_activated = expected_gradients.clone();
 					multizip((expected_gradients_activated.slice_mut(s![..-1]), outputs.slice(s![..-1])))
-						.foreach(|(g, o)| *g *= act.derived(*o));
+						.for_each(|(g, o)| *g *= act.derived(*o));
 					assert_raw_config_with_expected(
 						outputs.clone(), *act,
 						targets.clone(),
@@ -583,7 +582,7 @@ mod tests {
 				for act in &activations {
 					let mut expected_gradients = expected_gradients_without_act.clone();
 					multizip((&mut expected_gradients, &self_outputs))
-						.foreach(|(g, o)| *g *= act.derived(*o));
+						.for_each(|(g, o)| *g *= act.derived(*o));
 					assert_raw_config_with_expected(
 						self_outputs.clone(), *act,
 						next_weights.clone(),
@@ -656,8 +655,8 @@ mod tests {
 				let lr = learn_rate.to_f32();
 				let lm = learn_momentum.to_f32();
 				let mut expected_deltas = self_delta_weights.clone();
-				multizip((expected_deltas.genrows_mut(), &self_gradients)).foreach(|(mut s_dw_rows, s_g)| {
-					multizip((&mut s_dw_rows, &prev_outputs)).foreach(|(dw, p_o)| {
+				multizip((expected_deltas.genrows_mut(), &self_gradients)).for_each(|(mut s_dw_rows, s_g)| {
+					multizip((&mut s_dw_rows, &prev_outputs)).for_each(|(dw, p_o)| {
 						*dw = lr * s_g * (*p_o) + lm * (*dw);
 					})
 				});

@@ -3,8 +3,8 @@
 
 use std::vec;
 
-use activation::Activation;
-use errors::{Result, Error};
+use crate::activation::Activation;
+use crate::errors::{Result, Error};
 
 /// Represents the number of neurons within a layer of a topology.
 /// 
@@ -316,7 +316,7 @@ mod tests {
 	use super::*;
 
 	fn activation_fns() -> Vec<Activation> {
-		use activation::Activation::*;
+		use crate::activation::Activation::*;
 		vec![
 			Identity,
 			BinaryStep,
@@ -406,7 +406,7 @@ mod tests {
 
 	mod activation_layer {
 		use super::*;
-		use activation::Activation::*;
+		use crate::activation::Activation::*;
 
 		#[test]
 		fn new() {
@@ -466,7 +466,7 @@ mod tests {
 
 	mod any_layer {
 		use super::*;
-		use activation::Activation::*;
+		use crate::activation::Activation::*;
 
 		#[test]
 		fn from_fully_connected_layer() {
@@ -517,7 +517,7 @@ mod tests {
 
 	mod topology {
 		use super::*;
-		use activation::Activation::*;
+		use crate::activation::Activation::*;
 
 		fn simple_dummy_topology() -> Topology {
 			Topology::input(1).fully_connect( 1)

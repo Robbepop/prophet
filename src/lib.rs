@@ -44,7 +44,7 @@
 //! 	.learn_momentum(0.6) // use the given learn momentum
 //! 	.log_config(LogConfig::Iterations(100)) // log state every 100 iterations
 //! 	.scheduling(Scheduling::Random)         // use random sample scheduling
-//! 	.criterion(Criterion::RecentMSE(0.03))  // train until the recent MSE is below 0.03
+//! 	.criterion(Criterion::RecentMSE(0.0001))  // train until the recent MSE is below 0.0001
 //! 
 //! 	.go()      // start the training session
 //! 	.unwrap(); // be ashamed to unwrap a Result
@@ -132,40 +132,40 @@ pub mod topology;
 pub mod topology_v4;
 mod mentor;
 
-pub use activation::Activation;
-pub use neural_net::NeuralNet;
+pub use crate::activation::Activation;
+pub use crate::neural_net::NeuralNet;
 
-pub use mentor::configs::{LogConfig, Scheduling, Criterion};
-pub use mentor::training::{Mentor, MentorBuilder};
-pub use mentor::samples::{Sample, SampleView};
+pub use crate::mentor::configs::{LogConfig, Scheduling, Criterion};
+pub use crate::mentor::training::{Mentor, MentorBuilder};
+pub use crate::mentor::samples::{Sample, SampleView};
 
-pub use traits::{Predict};
-pub use errors::{Result, ErrorKind};
+pub use crate::traits::{Predict};
+pub use crate::errors::{Result, ErrorKind};
 
 /// The prophet prelude publicly imports all propet modules the user
 /// needs in order to create, train and use neural networks.
 pub mod prelude {
 	#[doc(no_inline)]
-	pub use activation::Activation;
+	pub use crate::activation::Activation;
 
 	#[doc(no_inline)]
-	pub use neural_net::NeuralNet;
+	pub use crate::neural_net::NeuralNet;
 
 	#[doc(no_inline)]
-	pub use traits::{Predict};
+	pub use crate::traits::{Predict};
 
 	#[doc(no_inline)]
-	pub use topology::{Topology, TopologyBuilder, Layer};
+	pub use crate::topology::{Topology, TopologyBuilder, Layer};
 
 	#[doc(no_inline)]
-	pub use errors::{Result, ErrorKind};
+	pub use crate::errors::{Result, ErrorKind};
 
 	#[doc(no_inline)]
-	pub use mentor::configs::{LogConfig, Scheduling, Criterion};
+	pub use crate::mentor::configs::{LogConfig, Scheduling, Criterion};
 
 	#[doc(no_inline)]
-	pub use mentor::training::{Mentor, MentorBuilder};
+	pub use crate::mentor::training::{Mentor, MentorBuilder};
 
 	#[doc(no_inline)]
-	pub use mentor::samples::{Sample, SampleView};
+	pub use crate::mentor::samples::{Sample, SampleView};
 }

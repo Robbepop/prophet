@@ -1,8 +1,8 @@
-use layer::{ActivationLayer, FullyConnectedLayer, ContainerLayer};
-use layer::utils::prelude::*;
-use layer::traits::prelude::*;
-use utils::{LearnRate, LearnMomentum};
-use topology_v4;
+use crate::layer::{ActivationLayer, FullyConnectedLayer, ContainerLayer};
+use crate::layer::utils::prelude::*;
+use crate::layer::traits::prelude::*;
+use crate::utils::{LearnRate, LearnMomentum};
+use crate::topology_v4;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AnyLayer {
@@ -32,7 +32,7 @@ impl From<ContainerLayer> for AnyLayer {
 
 impl From<topology_v4::AnyLayer> for AnyLayer {
 	fn from(any_top_layer: topology_v4::AnyLayer) -> AnyLayer {
-		use topology_v4::AnyLayer::*;
+		use crate::topology_v4::AnyLayer::*;
 		match any_top_layer {
 			Activation(layer) => ActivationLayer::from(layer).into(),
 			FullyConnected(layer) => FullyConnectedLayer::from(layer).into()

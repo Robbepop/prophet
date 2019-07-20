@@ -8,15 +8,16 @@ extern crate itertools;
 extern crate approx;
 
 use prophet::prelude::*;
-use rand::{Open01, Rng, thread_rng};
+use rand::{Rng, thread_rng};
 use std::time::Duration;
+use rand::distributions::Uniform;
 
 fn validate_impl(mut net: NeuralNet, samples: Vec<Sample>, rounded: bool) {
 	use itertools::{Itertools, multizip};
 	for sample in samples {
 		let predicted = net.predict(sample.input.view());
 		multizip((predicted.iter(), sample.target.iter()))
-			.foreach(|(&predicted, &expected)| {
+			.for_each(|(&predicted, &expected)| {
 				if rounded {
 					relative_eq!(predicted.round(), expected);
 				}
@@ -50,9 +51,8 @@ fn gen_random_samples<F>(amount: usize,
 	let mut rng = thread_rng();
 	let mut samples = Vec::with_capacity(amount);
 	for _ in 0..amount {
-		let inputs = rng.gen_iter::<Open01<f32>>()
+		let inputs = rng.sample_iter(&Uniform::new(0_f32, 1_f32))
 			.take(input_size)
-			.map(|Open01(val)| val)
 			.collect::<Vec<f32>>();
 		assert_eq!(inputs.len(), input_size);
 		let outputs = mapping(&inputs);
@@ -65,7 +65,7 @@ fn gen_random_samples<F>(amount: usize,
 
 #[test]
 fn train_xor() {
-	use Activation::Tanh;
+	use crate::Activation::Tanh;
 
 	let (t, f) = (1.0, -1.0);
 	let samples = samples_vec![
@@ -124,7 +124,7 @@ fn train_xor() {
 
 #[test]
 fn train_and() {
-	use Activation::Tanh;
+	use crate::Activation::Tanh;
 
 	let (t, f) = (1.0, -1.0);
 	let samples = samples_vec![
@@ -176,7 +176,7 @@ fn train_and() {
 
 #[test]
 fn train_compare() {
-	use Activation::Tanh;
+	use crate::Activation::Tanh;
 
 	let count_learn_samples = 10_000;
 	let count_test_samples  =    100;

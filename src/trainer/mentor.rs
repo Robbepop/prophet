@@ -1,21 +1,21 @@
-use trainer::TrainingState;
-use nn::NeuralNet;
-use utils::{
+use crate::trainer::TrainingState;
+use crate::nn::NeuralNet;
+use crate::utils::{
 	LearnRate,
 	LearnMomentum
 };
-use trainer::sample::SampleGen;
-use trainer::{
+use crate::trainer::sample::SampleGen;
+use crate::trainer::{
 	TrainCondition
 };
-use errors::{
+use crate::errors::{
 	Error,
 	Result,
 	MentorBuilderDoubledField,
 	MentorBuilderInvalidArgument
 };
-use trainer::condition;
-use trainer::MeanSquaredError;
+use crate::trainer::condition;
+use crate::trainer::MeanSquaredError;
 
 use std::time;
 
@@ -246,7 +246,7 @@ impl<Sampler, StopWhen, LogWhen> Mentor<Sampler, StopWhen, LogWhen>
 	/// 
 	/// Returns the fully trained neural network when the training is finished.
 	pub fn finish(mut self) -> Result<NeuralNet> {
-		use trainer::{
+		use crate::trainer::{
 			PredictSupervised,
 			OptimizeSupervised,
 			EvaluateSupervised
@@ -569,16 +569,16 @@ mod tests {
 	#[test]
 	#[ignore]
 	fn xor() {
-		use Activation::Tanh;
-		use trainer::RandomSampleScheduler;
-		use trainer::condition;
-		use topology_v4::{
+		use crate::Activation::Tanh;
+		use crate::trainer::RandomSampleScheduler;
+		use crate::trainer::condition;
+		use crate::topology_v4::{
 			Topology,
 			TopologyBuilder
 		};
 		use std::time;
 
-		use trainer::sample::{
+		use crate::trainer::sample::{
 			Sample,
 			SampleCollection
 		};
@@ -768,7 +768,7 @@ mod tests {
 	mod mentor_builder {
 		use super::*;
 
-		use topology_v4::{
+		use crate::topology_v4::{
 			Topology,
 			TopologyBuilder
 		};
@@ -795,7 +795,7 @@ mod tests {
 
 		#[test]
 		fn learn_rate() {
-			use utils::LearnRate;
+			use crate::utils::LearnRate;
 			let fst_lr = LearnRate::from(0.5);
 			let snd_lr = LearnRate::from(1.0);
 			let b = dummy_builder();
@@ -926,7 +926,7 @@ mod tests {
 
 		#[test]
 		fn sample_gen_ok() {
-			use trainer::sample::{Sample, SampleCollection, SequentialSampleScheduler};
+			use crate::trainer::sample::{Sample, SampleCollection, SequentialSampleScheduler};
 			let dummy_samples = samples![ [0.0] => 1.0 ];
 			let new_sample_gen = SequentialSampleScheduler::new(dummy_samples);
 			assert_eq!(

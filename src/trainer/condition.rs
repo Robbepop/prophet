@@ -7,8 +7,8 @@
 use std::time;
 use std::fmt::Debug;
 
-use errors::{Error, Result};
-use trainer::MeanSquaredError;
+use crate::errors::{Error, Result};
+use crate::trainer::MeanSquaredError;
 
 /// Provides an interface for training stats during the training process
 /// that can be used and queried by halting conditions to check whether their
@@ -431,7 +431,11 @@ mod tests {
 
 		#[test]
 		fn before_and_after_elapsed() {
-			let     dur = time::Duration::from_secs(1000);
+			// This test breaks on CI if their `Instant::now()` (what `ctx.time_started` is),
+			// comes from a system clock that's not  up to date. In fact, on Appveyor the time
+			// now seems to start from 0s(?) judging from the fact that we can observe an
+			// `Instant { t: 303.4676818s }` ...
+			let     dur = time::Duration::from_secs(10);
 			let mut ctx = time_elapsed_ctx();
 			let mut cond = TimeElapsed(dur);
 			assert_eq!(cond.evaluate(&ctx), false);
@@ -500,7 +504,9 @@ mod tests {
 
 		#[test]
 		fn interval() {
-			let dur_in_s = 1000;
+			// Similar to `before_and_after_elapsed()`, the clock on CI might start from 0s,
+			// we have to pick a really small duration for this test not to panic.
+			let dur_in_s = 10;
 			let     dur  = time::Duration::from_secs(dur_in_s);
 			let half_dur = time::Duration::from_secs(dur_in_s / 2);
 			let mut cond = TimeInterval::new(dur);
