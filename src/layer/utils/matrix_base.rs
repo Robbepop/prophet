@@ -1,5 +1,5 @@
-use ndarray::prelude::*;
 use ndarray::iter::{Lanes, LanesMut};
+use ndarray::prelude::*;
 use ndarray_rand::RandomExt;
 
 use std::marker::PhantomData;
@@ -8,9 +8,9 @@ use crate::errors::{Error, Result};
 use rand::distributions::Uniform;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MatrixBase<E>{
+pub struct MatrixBase<E> {
 	data: Array2<f32>,
-	marker: PhantomData<E>
+	marker: PhantomData<E>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -25,17 +25,17 @@ pub type DeltaWeightsMatrix = MatrixBase<DeltaWeightsMarker>;
 impl DeltaWeightsMatrix {
 	pub fn zeros(inputs: usize, outputs: usize) -> Result<DeltaWeightsMatrix> {
 		if inputs == 0 {
-			return Err(Error::zero_inputs_weights_matrix())
+			return Err(Error::zero_inputs_weights_matrix());
 		}
 		if outputs == 0 {
-			return Err(Error::zero_outputs_weights_matrix())
+			return Err(Error::zero_outputs_weights_matrix());
 		}
 		let biased_inputs = inputs + 1;
-		let biased_shape  = (outputs,  biased_inputs);
-		let total         =  outputs * biased_inputs;
-		Ok(DeltaWeightsMatrix{
+		let biased_shape = (outputs, biased_inputs);
+		let total = outputs * biased_inputs;
+		Ok(DeltaWeightsMatrix {
 			data: Array::zeros(total).into_shape(biased_shape).unwrap(),
-			marker: PhantomData
+			marker: PhantomData,
 		})
 	}
 }
@@ -43,16 +43,16 @@ impl DeltaWeightsMatrix {
 impl WeightsMatrix {
 	pub fn random(inputs: usize, outputs: usize) -> Result<WeightsMatrix> {
 		if inputs == 0 {
-			return Err(Error::zero_inputs_weights_matrix())
+			return Err(Error::zero_inputs_weights_matrix());
 		}
 		if outputs == 0 {
-			return Err(Error::zero_outputs_weights_matrix())
+			return Err(Error::zero_outputs_weights_matrix());
 		}
 		let biased_inputs = inputs + 1;
-		let biased_shape  = (outputs, biased_inputs);
-		Ok(WeightsMatrix{
+		let biased_shape = (outputs, biased_inputs);
+		Ok(WeightsMatrix {
 			data: Array2::random(biased_shape, Uniform::new(-1.0, 1.0)),
-			marker: PhantomData
+			marker: PhantomData,
 		})
 	}
 
@@ -68,9 +68,10 @@ impl<E> MatrixBase<E> {
 		self.data.cols() - 1
 	}
 
-	#[cfg(test)] // Only for testing purpose since never used.
-	             // Remove this restriction when you are sure to need this method again.
-	             // Date: 7th October 2017
+	#[cfg(test)]
+	// Only for testing purpose since never used.
+	// Remove this restriction when you are sure to need this method again.
+	// Date: 7th October 2017
 	#[inline]
 	pub fn biased_inputs(&self) -> usize {
 		self.data.cols()
@@ -110,9 +111,9 @@ mod tests {
 	#[test]
 	fn zeros_data() {
 		let z = DeltaWeightsMatrix::zeros(2, 5).unwrap();
-		let e = DeltaWeightsMatrix{
+		let e = DeltaWeightsMatrix {
 			data: Array::zeros((5, 3)),
-			marker: PhantomData
+			marker: PhantomData,
 		};
 		assert_eq!(z, e);
 	}
@@ -121,13 +122,16 @@ mod tests {
 	fn zeros_failure() {
 		assert_eq!(
 			DeltaWeightsMatrix::zeros(0, 1),
-			Err(Error::zero_inputs_weights_matrix()));
+			Err(Error::zero_inputs_weights_matrix())
+		);
 		assert_eq!(
 			DeltaWeightsMatrix::zeros(1, 0),
-			Err(Error::zero_outputs_weights_matrix()));
+			Err(Error::zero_outputs_weights_matrix())
+		);
 		assert_eq!(
 			DeltaWeightsMatrix::zeros(0, 0),
-			Err(Error::zero_inputs_weights_matrix()));
+			Err(Error::zero_inputs_weights_matrix())
+		);
 	}
 
 	#[test]
@@ -149,9 +153,9 @@ mod tests {
 	#[test]
 	fn random_data() {
 		let r = WeightsMatrix::random(2, 5).unwrap();
-		let z = WeightsMatrix{
+		let z = WeightsMatrix {
 			data: Array::zeros((5, 3)),
-			marker: PhantomData
+			marker: PhantomData,
 		};
 		assert!(r.view().all_close(&z.view(), 1.0));
 	}
@@ -160,38 +164,38 @@ mod tests {
 	fn random_failure() {
 		assert_eq!(
 			WeightsMatrix::random(0, 1),
-			Err(Error::zero_inputs_weights_matrix()));
+			Err(Error::zero_inputs_weights_matrix())
+		);
 		assert_eq!(
 			WeightsMatrix::random(1, 0),
-			Err(Error::zero_outputs_weights_matrix()));
+			Err(Error::zero_outputs_weights_matrix())
+		);
 		assert_eq!(
 			WeightsMatrix::random(0, 0),
-			Err(Error::zero_inputs_weights_matrix()));
+			Err(Error::zero_inputs_weights_matrix())
+		);
 	}
 
 	#[test]
 	fn apply_delta_weights() {
-		let mut w = WeightsMatrix{
-			data: Array::from_vec(vec![
-				 1.0,  2.0,  3.0,
-				10.0, 20.0, 30.0
-			]).into_shape((2, 3)).unwrap(),
-			marker: PhantomData
+		let mut w = WeightsMatrix {
+			data: Array::from_vec(vec![1.0, 2.0, 3.0, 10.0, 20.0, 30.0])
+				.into_shape((2, 3))
+				.unwrap(),
+			marker: PhantomData,
 		};
-		let d = DeltaWeightsMatrix{
-			data: Array::from_vec(vec![
-				0.1, 0.2, 0.3,
-				1.0, 2.0, 3.0
-			]).into_shape((2, 3)).unwrap(),
-			marker: PhantomData
+		let d = DeltaWeightsMatrix {
+			data: Array::from_vec(vec![0.1, 0.2, 0.3, 1.0, 2.0, 3.0])
+				.into_shape((2, 3))
+				.unwrap(),
+			marker: PhantomData,
 		};
 		w.apply_delta_weights(&d);
-		let expected_w = WeightsMatrix{
-			data: Array::from_vec(vec![
-				 1.1,  2.2,  3.3,
-				11.0, 22.0, 33.0
-			]).into_shape((2, 3)).unwrap(),
-			marker: PhantomData
+		let expected_w = WeightsMatrix {
+			data: Array::from_vec(vec![1.1, 2.2, 3.3, 11.0, 22.0, 33.0])
+				.into_shape((2, 3))
+				.unwrap(),
+			marker: PhantomData,
 		};
 		assert!(w.view().all_close(&expected_w.view(), 1e-10))
 	}

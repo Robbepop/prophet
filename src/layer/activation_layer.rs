@@ -1,10 +1,10 @@
-use crate::layer::utils::prelude::*;
-use crate::layer::traits::prelude::*;
-use crate::utils::{LearnRate, LearnMomentum};
-use crate::errors::{Result};
 use crate::activation::Activation;
+use crate::errors::Result;
+use crate::layer::traits::prelude::*;
+use crate::layer::utils::prelude::*;
 use crate::topology_v4;
 use crate::topology_v4::LayerSize;
+use crate::utils::{LearnMomentum, LearnRate};
 
 /// Activation layers simply apply their activation function onto incoming signals.
 #[derive(Debug, Clone, PartialEq)]
@@ -12,20 +12,20 @@ pub struct ActivationLayer {
 	/// These are only required for a correct implementation of the back propagation
 	/// algorithm where the derived activation function is applied to the net value
 	/// instead of the output signal, so with the current design we have to store both.
-	/// 
+	///
 	/// Maybe this situation could be improved in the future by using references
 	/// or shared ownership of the input with the previous layer ... but then again
 	/// we had to know our previous layer.
 	inputs: BiasedSignalBuffer,
 	/// The outputs of this activation layer.
-	/// 
+	///
 	/// This is basically equivalent to the input transformed with the activation
 	/// of this layer.
 	outputs: BiasedSignalBuffer,
 	/// The buffer for the back propagated error signal.
 	error_signal: BiasedErrorSignalBuffer,
 	/// The activation function of this `ActivationLayer`.
-	act: Activation
+	act: Activation,
 }
 
 impl ActivationLayer {
@@ -33,23 +33,22 @@ impl ActivationLayer {
 	/// and outputs (not respecting the bias input and output) and given
 	/// an activation function.
 	pub fn new<L>(len: L, act: Activation) -> Result<Self>
-		where L: Into<LayerSize>
+	where
+		L: Into<LayerSize>,
 	{
 		let len = len.into();
-		Ok(ActivationLayer{
-			inputs      : BiasedSignalBuffer::zeros_with_bias(len.to_usize())?,
-			outputs     : BiasedSignalBuffer::zeros_with_bias(len.to_usize())?,
+		Ok(ActivationLayer {
+			inputs: BiasedSignalBuffer::zeros_with_bias(len.to_usize())?,
+			outputs: BiasedSignalBuffer::zeros_with_bias(len.to_usize())?,
 			error_signal: BiasedErrorSignalBuffer::zeros_with_bias(len.to_usize())?,
-			act
+			act,
 		})
 	}
 
 	/// Creates a new `ActivationLayer` from the given topology based abstract activation layer.
 	pub fn from_top_layer(top_layer: topology_v4::ActivationLayer) -> Result<ActivationLayer> {
 		use crate::topology_v4::Layer;
-		ActivationLayer::new(
-			top_layer.input_len(), top_layer.activation_fn()
-		)
+		ActivationLayer::new(top_layer.input_len(), top_layer.activation_fn())
 	}
 }
 
@@ -66,7 +65,7 @@ impl ProcessInputSignal for ActivationLayer {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
 		}
 		let act = self.act; // Required since borrow-checker doesn't allow
-		                    // using `self.act` within method-call context.
+					// using `self.act` within method-call context.
 		use ndarray::Zip;
 		Zip::from(&mut self.inputs.unbias_mut().data_mut())
 			.and(&mut self.outputs.unbias_mut().data_mut())
@@ -83,7 +82,7 @@ impl CalculateOutputErrorSignal for ActivationLayer {
 		if self.outputs() != target_signals.dim() {
 			// Note: Target signals do not respect bias values.
 			//       We could model this in a way that `target_signals` are simply one element shorter.
-			//       Or they have also `1.0` as their last element which eliminates 
+			//       Or they have also `1.0` as their last element which eliminates
 			//       the resulting error signal's last element to `0.0`.
 			panic!("Error: unmatching length of output signal and target signal") // TODO: Replace this with error.
 		}
@@ -91,16 +90,14 @@ impl CalculateOutputErrorSignal for ActivationLayer {
 		Zip::from(&mut self.error_signal.unbias_mut().data_mut())
 			.and(&self.outputs.unbias().data())
 			.and(&target_signals.data())
-			.apply(|e, &o, &t| {
-				*e = t - o
-			}
-		);
+			.apply(|e, &o, &t| *e = t - o);
 	}
 }
 
 impl PropagateErrorSignal for ActivationLayer {
 	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
-		where P: HasErrorSignal
+	where
+		P: HasErrorSignal,
 	{
 		if self.inputs() != propagated.error_signal().dim() {
 			panic!("Error: unmatching signals to layer size") // TODO: Replace this with error.
@@ -112,9 +109,7 @@ impl PropagateErrorSignal for ActivationLayer {
 		Zip::from(&mut propagated.error_signal_mut().data_mut())
 			.and(&self.inputs.data())
 			.and(&self.error_signal.data())
-			.apply(|o_e, &s_n, &s_e| {
-				*o_e += s_e * act.derived(s_n)
-			});
+			.apply(|o_e, &s_n, &s_e| *o_e += s_e * act.derived(s_n));
 		// We need to set the error signals for `ActivationLayer`s to zero
 		// since it would corrupt error signal propagation without applying
 		// error signal correction afterwards which is a known optimization
@@ -125,7 +120,12 @@ impl PropagateErrorSignal for ActivationLayer {
 }
 
 impl ApplyErrorSignalCorrection for ActivationLayer {
-	fn apply_error_signal_correction(&mut self, _signal: BiasedSignalView, _lr: LearnRate, _lm: LearnMomentum) {
+	fn apply_error_signal_correction(
+		&mut self,
+		_signal: BiasedSignalView,
+		_lr: LearnRate,
+		_lm: LearnMomentum,
+	) {
 		// Nothing to do here since there are no weights that could be updated!
 	}
 }
@@ -172,51 +172,41 @@ mod tests {
 
 	#[test]
 	#[ignore]
-	fn from_top_layer() {
-	}
+	fn from_top_layer() {}
 
 	#[test]
 	#[ignore]
-	fn from() {
-	}
+	fn from() {}
 
 	#[test]
 	#[ignore]
-	fn inputs() {
-	}
+	fn inputs() {}
 
 	#[test]
 	#[ignore]
-	fn outputs() {
-	}
+	fn outputs() {}
 
 	#[test]
 	#[ignore]
-	fn output_signal() {
-	}
+	fn output_signal() {}
 
 	#[test]
 	#[ignore]
-	fn error_signal() {
-	}
+	fn error_signal() {}
 
 	#[test]
 	#[ignore]
-	fn process_input_signal() {
-	}
+	fn process_input_signal() {}
 
 	#[test]
 	#[ignore]
-	fn calculate_output_error_signal() {
-	}
+	fn calculate_output_error_signal() {}
 
 	#[test]
 	#[ignore]
-	fn propagate_error_signal() {
-	}
+	fn propagate_error_signal() {}
 
 	#[test]
 	#[ignore]
-	fn apply_error_signal_correction() {
-	}
+	fn apply_error_signal_correction() {}
 }

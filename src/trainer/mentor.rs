@@ -1,21 +1,11 @@
-use crate::trainer::TrainingState;
+use crate::errors::{Error, MentorBuilderDoubledField, MentorBuilderInvalidArgument, Result};
 use crate::nn::NeuralNet;
-use crate::utils::{
-	LearnRate,
-	LearnMomentum
-};
-use crate::trainer::sample::SampleGen;
-use crate::trainer::{
-	TrainCondition
-};
-use crate::errors::{
-	Error,
-	Result,
-	MentorBuilderDoubledField,
-	MentorBuilderInvalidArgument
-};
 use crate::trainer::condition;
+use crate::trainer::sample::SampleGen;
 use crate::trainer::MeanSquaredError;
+use crate::trainer::TrainCondition;
+use crate::trainer::TrainingState;
+use crate::utils::{LearnMomentum, LearnRate};
 
 use std::time;
 
@@ -30,21 +20,14 @@ struct Context {
 	batch_len: usize,
 	batch_bit: usize,
 	lr: LearnRate,
-	lm: LearnMomentum
+	lm: LearnMomentum,
 }
 
 impl Context {
 	/// Creates a new `Context` from the given `LearnRate` and `LearnMomentum`
 	/// and initializes the other values with their respective defaults.
-	pub fn new(
-		epoch_len: usize,
-		batch_len: usize,
-		lr: LearnRate,
-		lm: LearnMomentum
-	)
-		-> Context
-	{
-		Context{
+	pub fn new(epoch_len: usize, batch_len: usize, lr: LearnRate, lm: LearnMomentum) -> Context {
+		Context {
 			time_started: time::Instant::now(),
 			iteration: 0,
 			epochs_passed: 0,
@@ -52,12 +35,13 @@ impl Context {
 			latest_mse: MeanSquaredError::new(1.0).unwrap(),
 			batch_len,
 			batch_bit: 0,
-			lr, lm
+			lr,
+			lm,
 		}
 	}
 
 	/// Adjusts stats to the next step.
-	/// 
+	///
 	/// This adjusts iteration count, current epoch, as well as the current batch.
 	#[inline]
 	pub fn next(&mut self) {
@@ -93,9 +77,9 @@ impl Context {
 		self.latest_mse = latest_mse
 	}
 
-	/// Returns `true` if the latest batch was finished and the neural net is ready to 
+	/// Returns `true` if the latest batch was finished and the neural net is ready to
 	/// optimize itself according to the latest accumulated supervised predicitions.
-	/// 
+	///
 	/// Note that this always returns `true` for non-batched learning.
 	#[inline]
 	pub fn is_batch_finished(&self) -> bool {
@@ -126,25 +110,26 @@ impl TrainingState for Context {
 }
 
 /// A `Mentor` can be used to train a given neural network.
-/// 
+///
 /// It manages the training process, guarantees certain result qualities
 /// and offers great flexibility for customizing the training process.
-/// 
+///
 /// Note that users of this library do not depend on this structure
 /// in order to train neural networks. The `Mentor` and its API simply
 /// provides an easy-to-use interface for a training procedure based on
 /// the API of this library.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Mentor<Sampler, StopWhen, LogWhen>
-	where StopWhen: TrainCondition,
-	      LogWhen : TrainCondition,
-	      Sampler : SampleGen
+where
+	StopWhen: TrainCondition,
+	LogWhen: TrainCondition,
+	Sampler: SampleGen,
 {
 	nn: NeuralNet,
 	sample_gen: Sampler,
 	stop_when: StopWhen,
 	log_when: LogWhen,
-	ctx: Context
+	ctx: Context,
 }
 
 mod marker {
@@ -170,23 +155,27 @@ pub struct InitializingMentor<Sampler, StopWhen, LogWhen> {
 	epoch_len: Option<usize>,
 	batch_len: Option<usize>,
 	lr: Option<LearnRate>,
-	lm: Option<LearnMomentum>
+	lm: Option<LearnMomentum>,
 }
 
 pub trait Train {
 	fn train(self) -> UninitializedMentor;
 }
 
-impl<T> Train for T where T: Into<NeuralNet> {
+impl<T> Train for T
+where
+	T: Into<NeuralNet>,
+{
 	fn train(self) -> UninitializedMentor {
 		UninitializedMentor::new(self)
 	}
 }
 
 impl<Sampler, StopWhen, LogWhen> Mentor<Sampler, StopWhen, LogWhen>
-	where StopWhen: TrainCondition,
-	      LogWhen : TrainCondition,
-	      Sampler : SampleGen
+where
+	StopWhen: TrainCondition,
+	LogWhen: TrainCondition,
+	Sampler: SampleGen,
 {
 	// /// Initiates a training session for the given neural network or topology.
 	// pub fn train<NN>(nn: NN) -> UninitializedMentor
@@ -196,28 +185,30 @@ impl<Sampler, StopWhen, LogWhen> Mentor<Sampler, StopWhen, LogWhen>
 	// }
 
 	/// Creates a new `Mentor` from the given `InitializingMentor`.
-	/// 
+	///
 	/// This also initializes values that were not provided by the user
 	/// to their defaults.
-	/// 
+	///
 	/// Note that this does not start the training process by itself.
-	/// 
+	///
 	/// # Errors
-	/// 
+	///
 	/// - If some required property was not set in the builer.
 	fn from_builder(builder: InitializingMentor<Sampler, StopWhen, LogWhen>) -> Result<Self> {
 		let ctx = Context::new(
-			builder.epoch_len.unwrap_or_else(|| builder.sample_gen.finite_len().unwrap_or(1)),
+			builder
+				.epoch_len
+				.unwrap_or_else(|| builder.sample_gen.finite_len().unwrap_or(1)),
 			builder.batch_len.unwrap_or(1),
 			builder.lr.unwrap_or_else(|| LearnRate::from(0.15)),
-			builder.lm.unwrap_or_else(|| LearnMomentum::from(0.0))
+			builder.lm.unwrap_or_else(|| LearnMomentum::from(0.0)),
 		);
-		Ok(Mentor{
+		Ok(Mentor {
 			nn: builder.nn,
 			sample_gen: builder.sample_gen,
 			stop_when: builder.stop_when,
 			log_when: builder.log_when,
-			ctx
+			ctx,
 		})
 	}
 
@@ -228,41 +219,36 @@ impl<Sampler, StopWhen, LogWhen> Mentor<Sampler, StopWhen, LogWhen>
 				"\n\
 				 =======================================================\n\
 				 Prophet Library :: Log of `prophet::trainer::Mentor`:  \n\
-				  * Context                                             \n\
+				 * Context                                             \n\
 				 {:?}\n\
 				 -------------------------------------------------------\n\
-				  * Neural Net                                          \n\
+				 * Neural Net                                          \n\
 				 {:?}\n\
 				 =======================================================\n\
-				",
+				 ",
 				self.ctx, self.nn
 			)
 		}
 	}
 
 	/// Starts the training procedure for the given `Mentor` settings.
-	/// 
+	///
 	/// Note that this call may take a while depending on the requested quality of training result.
-	/// 
+	///
 	/// Returns the fully trained neural network when the training is finished.
 	pub fn finish(mut self) -> Result<NeuralNet> {
-		use crate::trainer::{
-			PredictSupervised,
-			OptimizeSupervised,
-			EvaluateSupervised
-		};
+		use crate::trainer::{EvaluateSupervised, OptimizeSupervised, PredictSupervised};
 		while !self.stop_when.evaluate(&self.ctx) {
 			self.ctx.next();
 			{
 				let sample = self.sample_gen.next_sample();
 				let latest_mse = if self.ctx.is_batch_finished() {
-					self.nn.predict_supervised(sample)
-					       .optimize_supervised(self.ctx.lr, self.ctx.lm)
-					       .stats()
-				}
-				else {
-					self.nn.predict_supervised(sample)
-					       .stats()
+					self.nn
+						.predict_supervised(sample)
+						.optimize_supervised(self.ctx.lr, self.ctx.lm)
+						.stats()
+				} else {
+					self.nn.predict_supervised(sample).stats()
 				};
 				self.ctx.update_mse(latest_mse);
 			}
@@ -273,7 +259,7 @@ impl<Sampler, StopWhen, LogWhen> Mentor<Sampler, StopWhen, LogWhen>
 }
 
 /// Types that implement this trait can build up `Mentor`s.
-/// 
+///
 /// This trait's main purpose is to allow for `MentorBuilder` and
 /// `Result<MentorBuilder>` to be unified in the streamlined process of building
 /// with method chaining to no longer require using `.unwrap()` or similar
@@ -287,7 +273,9 @@ pub trait MentorBuilderOrError {
 	fn builder_or_error(self) -> Result<Self::Builder>;
 }
 
-impl<Sampler, StopWhen, LogWhen> MentorBuilderOrError for InitializingMentor<Sampler, StopWhen, LogWhen> {
+impl<Sampler, StopWhen, LogWhen> MentorBuilderOrError
+	for InitializingMentor<Sampler, StopWhen, LogWhen>
+{
 	type Builder = Self;
 
 	#[inline]
@@ -296,7 +284,9 @@ impl<Sampler, StopWhen, LogWhen> MentorBuilderOrError for InitializingMentor<Sam
 	}
 }
 
-impl<Sampler, StopWhen, LogWhen> MentorBuilderOrError for Result<InitializingMentor<Sampler, StopWhen, LogWhen>> {
+impl<Sampler, StopWhen, LogWhen> MentorBuilderOrError
+	for Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
+{
 	type Builder = InitializingMentor<Sampler, StopWhen, LogWhen>;
 
 	#[inline]
@@ -306,7 +296,7 @@ impl<Sampler, StopWhen, LogWhen> MentorBuilderOrError for Result<InitializingMen
 }
 
 /// Types that build fully-fledged `Mentor`s via the well-known builder-pattern.
-/// 
+///
 /// The main purpose of this trait is to allow for greater flexibility in the building
 /// process so that users may leave away some manual error handling to improve usability
 /// of the mentor building process.
@@ -315,60 +305,74 @@ pub trait MentorBuilder<StopWhen, LogWhen, Sampler> {
 	type Builder: MentorBuilder<StopWhen, LogWhen, Sampler>;
 
 	/// Sets the learning rate that is used throughout the training session.
-	/// 
+	///
 	/// Note: It isn't yet possible to adjust the learning rate after this phase.
-	/// 
+	///
 	/// # Errors
-	/// 
+	///
 	/// - If the learning rate was already set for this builder.
 	fn learn_rate<LR>(self, lr: LR) -> Result<Self::Builder>
-		where LR: Into<LearnRate>;
+	where
+		LR: Into<LearnRate>;
 
 	/// Sets the learn momentum that is used throughout the training session.
-	/// 
+	///
 	/// Note: It isn't yet possible to adjust the learn momentum after this phase.
-	/// 
+	///
 	/// # Errors
-	/// 
+	///
 	/// - If the learn momentum was already set for this builder.
 	fn learn_momentum<LM>(self, lm: LM) -> Result<Self::Builder>
-		where LM: Into<LearnMomentum>;
+	where
+		LM: Into<LearnMomentum>;
 
 	/// Sets the epoch length that is used statistics purposes throughout the training session.
-	/// 
+	///
 	/// Defaults to the length of the sample set if it is finite; else defaults to one (`1`).
-	/// 
+	///
 	/// # Errors
-	/// 
+	///
 	/// - If the given epoch length is zero (`0`). Epoch length must be a positive number.
 	fn epoch_len(self, epoch_len: usize) -> Result<Self::Builder>;
 
 	/// Sets the batch length that is used for batched learning purposes throughout the training session.
-	/// 
+	///
 	/// Defaults to one (`1`) if no user-provided batch size is provided.
-	/// 
+	///
 	/// # Errors
-	/// 
+	///
 	/// - If the given epoch length is zero (`0`). Epoch length must be a positive number.
 	fn batch_len(self, batch_len: usize) -> Result<Self::Builder>;
 }
 
 pub trait MentorBuilderSampleGen<StopWhen, LogWhen> {
 	/// Sets the sample generator that is used throughout the training session.
-	fn sample_gen<Sampler>(self, sample_gen: Sampler) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
-		where Sampler: SampleGen;
+	fn sample_gen<Sampler>(
+		self,
+		sample_gen: Sampler,
+	) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
+	where
+		Sampler: SampleGen;
 }
 
 pub trait MentorBuilderStopWhen<Sampler, LogWhen> {
 	/// Sets the halting condition that is used to query when the training shall end.
-	fn stop_when<StopWhen>(self, stop_when: StopWhen) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
-		where StopWhen: TrainCondition;
+	fn stop_when<StopWhen>(
+		self,
+		stop_when: StopWhen,
+	) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
+	where
+		StopWhen: TrainCondition;
 }
 
 pub trait MentorBuilderLogWhen<Sampler, StopWhen> {
 	/// Sets the logging condition that is used to query when the training state shall be logged.
-	fn log_when<LogWhen>(self, log_when: LogWhen) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
-		where LogWhen: TrainCondition;
+	fn log_when<LogWhen>(
+		self,
+		log_when: LogWhen,
+	) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
+	where
+		LogWhen: TrainCondition;
 }
 
 pub trait MentorBuilderFinish<Sampler, StopWhen, LogWhen> {
@@ -380,14 +384,15 @@ pub trait MentorBuilderFinish<Sampler, StopWhen, LogWhen> {
 
 impl UninitializedMentor {
 	/// Create a new `InitializingMentor` for the given `NeuralNet`.
-	/// 
+	///
 	/// This initiates the configuration and settings phase of a training session
 	/// via automated mentoring. The entire process is formed according to the
 	/// well-known builder pattern that guides you through the creation process.
 	pub fn new<NN>(nn: NN) -> UninitializedMentor
-		where NN: Into<NeuralNet>
+	where
+		NN: Into<NeuralNet>,
 	{
-		InitializingMentor{
+		InitializingMentor {
 			nn: nn.into(),
 			sample_gen: Unset,
 			stop_when: Unset,
@@ -395,19 +400,24 @@ impl UninitializedMentor {
 			epoch_len: None,
 			batch_len: None,
 			lr: None,
-			lm: None
+			lm: None,
 		}
 	}
 }
 
 impl<T, StopWhen, LogWhen> MentorBuilderSampleGen<StopWhen, LogWhen> for T
-	where T: MentorBuilderOrError<Builder = InitializingMentor<Unset, StopWhen, LogWhen>>
+where
+	T: MentorBuilderOrError<Builder = InitializingMentor<Unset, StopWhen, LogWhen>>,
 {
-	fn sample_gen<Sampler>(self, sample_gen: Sampler) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
-		where Sampler: SampleGen
+	fn sample_gen<Sampler>(
+		self,
+		sample_gen: Sampler,
+	) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
+	where
+		Sampler: SampleGen,
 	{
 		let this = self.builder_or_error()?;
-		Ok(InitializingMentor{
+		Ok(InitializingMentor {
 			nn: this.nn,
 			sample_gen: sample_gen,
 			stop_when: this.stop_when,
@@ -415,19 +425,24 @@ impl<T, StopWhen, LogWhen> MentorBuilderSampleGen<StopWhen, LogWhen> for T
 			epoch_len: this.epoch_len,
 			batch_len: this.batch_len,
 			lr: this.lr,
-			lm: this.lm
+			lm: this.lm,
 		})
 	}
 }
 
 impl<T, Sampler, LogWhen> MentorBuilderStopWhen<Sampler, LogWhen> for T
-	where T: MentorBuilderOrError<Builder = InitializingMentor<Sampler, Unset, LogWhen>>
+where
+	T: MentorBuilderOrError<Builder = InitializingMentor<Sampler, Unset, LogWhen>>,
 {
-	fn stop_when<StopWhen>(self, stop_when: StopWhen) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
-		where StopWhen: TrainCondition
+	fn stop_when<StopWhen>(
+		self,
+		stop_when: StopWhen,
+	) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
+	where
+		StopWhen: TrainCondition,
 	{
 		let this = self.builder_or_error()?;
-		Ok(InitializingMentor{
+		Ok(InitializingMentor {
 			nn: this.nn,
 			sample_gen: this.sample_gen,
 			stop_when: stop_when,
@@ -435,19 +450,24 @@ impl<T, Sampler, LogWhen> MentorBuilderStopWhen<Sampler, LogWhen> for T
 			epoch_len: this.epoch_len,
 			batch_len: this.batch_len,
 			lr: this.lr,
-			lm: this.lm
+			lm: this.lm,
 		})
 	}
 }
 
 impl<T, Sampler, StopWhen> MentorBuilderLogWhen<Sampler, StopWhen> for T
-	where T: MentorBuilderOrError<Builder = InitializingMentor<Sampler, StopWhen, Unset>>
+where
+	T: MentorBuilderOrError<Builder = InitializingMentor<Sampler, StopWhen, Unset>>,
 {
-	fn log_when<LogWhen>(self, log_when: LogWhen) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
-		where LogWhen: TrainCondition
+	fn log_when<LogWhen>(
+		self,
+		log_when: LogWhen,
+	) -> Result<InitializingMentor<Sampler, StopWhen, LogWhen>>
+	where
+		LogWhen: TrainCondition,
 	{
 		let this = self.builder_or_error()?;
-		Ok(InitializingMentor{
+		Ok(InitializingMentor {
 			nn: this.nn,
 			sample_gen: this.sample_gen,
 			stop_when: this.stop_when,
@@ -455,15 +475,16 @@ impl<T, Sampler, StopWhen> MentorBuilderLogWhen<Sampler, StopWhen> for T
 			epoch_len: this.epoch_len,
 			batch_len: this.batch_len,
 			lr: this.lr,
-			lm: this.lm
+			lm: this.lm,
 		})
 	}
 }
 
 impl<T, Sampler, StopWhen> MentorBuilderFinish<Sampler, StopWhen, Unset> for T
-	where T: MentorBuilderOrError<Builder = InitializingMentor<Sampler, StopWhen, Unset>>,
-	      Sampler: SampleGen,
-	      StopWhen: TrainCondition
+where
+	T: MentorBuilderOrError<Builder = InitializingMentor<Sampler, StopWhen, Unset>>,
+	Sampler: SampleGen,
+	StopWhen: TrainCondition,
 {
 	fn start(self) -> Result<NeuralNet> {
 		let this = self.builder_or_error()?;
@@ -473,10 +494,11 @@ impl<T, Sampler, StopWhen> MentorBuilderFinish<Sampler, StopWhen, Unset> for T
 }
 
 impl<T, Sampler, StopWhen, LogWhen> MentorBuilderFinish<Sampler, StopWhen, LogWhen> for T
-	where T: MentorBuilderOrError<Builder = InitializingMentor<Sampler, StopWhen, LogWhen>>,
-	      Sampler: SampleGen,
-	      StopWhen: TrainCondition,
-	      LogWhen: TrainCondition
+where
+	T: MentorBuilderOrError<Builder = InitializingMentor<Sampler, StopWhen, LogWhen>>,
+	Sampler: SampleGen,
+	StopWhen: TrainCondition,
+	LogWhen: TrainCondition,
 {
 	fn start(self) -> Result<NeuralNet> {
 		let this = self.builder_or_error()?;
@@ -485,12 +507,14 @@ impl<T, Sampler, StopWhen, LogWhen> MentorBuilderFinish<Sampler, StopWhen, LogWh
 }
 
 impl<T, Sampler, StopWhen, LogWhen> MentorBuilder<Sampler, StopWhen, LogWhen> for T
-	where T: MentorBuilderOrError<Builder = InitializingMentor<Sampler, StopWhen, LogWhen>>
+where
+	T: MentorBuilderOrError<Builder = InitializingMentor<Sampler, StopWhen, LogWhen>>,
 {
 	type Builder = InitializingMentor<Sampler, StopWhen, LogWhen>;
 
 	fn learn_rate<LR>(self, lr: LR) -> Result<Self::Builder>
-		where LR: Into<LearnRate>
+	where
+		LR: Into<LearnRate>,
 	{
 		let mut this = self.builder_or_error()?;
 		match this.lr {
@@ -507,7 +531,8 @@ impl<T, Sampler, StopWhen, LogWhen> MentorBuilder<Sampler, StopWhen, LogWhen> fo
 	}
 
 	fn learn_momentum<LM>(self, lm: LM) -> Result<Self::Builder>
-		where LM: Into<LearnMomentum>
+	where
+		LM: Into<LearnMomentum>,
 	{
 		let mut this = self.builder_or_error()?;
 		match this.lm {
@@ -517,8 +542,11 @@ impl<T, Sampler, StopWhen, LogWhen> MentorBuilder<Sampler, StopWhen, LogWhen> fo
 			}
 			Some(old_lm) => {
 				use self::MentorBuilderDoubledField::LearnMomentum;
-				Err(Error::mentor_builder_initialized_field_twice(LearnMomentum)
-					.with_annotation(format!("Already set learn momentum to {:?}.", old_lm.to_f32())))
+				Err(
+					Error::mentor_builder_initialized_field_twice(LearnMomentum).with_annotation(
+						format!("Already set learn momentum to {:?}.", old_lm.to_f32()),
+					),
+				)
 			}
 		}
 	}
@@ -526,7 +554,7 @@ impl<T, Sampler, StopWhen, LogWhen> MentorBuilder<Sampler, StopWhen, LogWhen> fo
 	fn epoch_len(self, epoch_len: usize) -> Result<Self::Builder> {
 		if epoch_len == 0 {
 			use self::MentorBuilderInvalidArgument::EpochLen;
-			return Err(Error::mentor_builder_invalid_argument(EpochLen))
+			return Err(Error::mentor_builder_invalid_argument(EpochLen));
 		}
 		let mut this = self.builder_or_error()?;
 		match this.epoch_len {
@@ -545,7 +573,7 @@ impl<T, Sampler, StopWhen, LogWhen> MentorBuilder<Sampler, StopWhen, LogWhen> fo
 	fn batch_len(self, batch_len: usize) -> Result<Self::Builder> {
 		if batch_len == 0 {
 			use self::MentorBuilderInvalidArgument::BatchLen;
-			return Err(Error::mentor_builder_invalid_argument(BatchLen))
+			return Err(Error::mentor_builder_invalid_argument(BatchLen));
 		}
 		let mut this = self.builder_or_error()?;
 		match this.batch_len {
@@ -569,19 +597,13 @@ mod tests {
 	#[test]
 	#[ignore]
 	fn xor() {
-		use crate::Activation::Tanh;
-		use crate::trainer::RandomSampleScheduler;
+		use crate::topology_v4::{Topology, TopologyBuilder};
 		use crate::trainer::condition;
-		use crate::topology_v4::{
-			Topology,
-			TopologyBuilder
-		};
+		use crate::trainer::RandomSampleScheduler;
+		use crate::Activation::Tanh;
 		use std::time;
 
-		use crate::trainer::sample::{
-			Sample,
-			SampleCollection
-		};
+		use crate::trainer::sample::{Sample, SampleCollection};
 
 		println!("Starting unit-test for XOR-training.");
 		println!(" - Creating samples ...");
@@ -598,8 +620,10 @@ mod tests {
 		println!(" - Creating topology ...");
 
 		let top = Topology::input(2)
-			.fully_connect(2).activation(Tanh)
-			.fully_connect(1).activation(Tanh);
+			.fully_connect(2)
+			.activation(Tanh)
+			.fully_connect(1)
+			.activation(Tanh);
 
 		println!(" - Creating neural net from topology ...");
 
@@ -613,10 +637,11 @@ mod tests {
 			.learn_rate(0.3)
 			.learn_momentum(0.5)
 			.log_when(condition::TimeInterval::new(time::Duration::from_secs(1)))
-			.stop_when(condition::BelowRecentMSE::new(0.9, 0.05).unwrap()).unwrap();
+			.stop_when(condition::BelowRecentMSE::new(0.9, 0.05).unwrap())
+			.unwrap();
 
 		println!(" - Start learning ...");
-	
+
 		training.start().unwrap();
 
 		println!(" - Finished learning.");
@@ -636,7 +661,7 @@ mod tests {
 				let test_time_started = time::Instant::now();
 				actual.time_started = test_time_started;
 				// Define what is expected, use the hack for time started.
-				let expected = Context{
+				let expected = Context {
 					time_started: test_time_started,
 					iteration: 0,
 					epochs_passed: 0,
@@ -645,14 +670,22 @@ mod tests {
 					batch_len,
 					batch_bit: 0,
 					lr,
-					lm
+					lm,
 				};
 				assert_eq!(expected, actual);
 			}
 			for &epoch_len in &[1, 2, 5, 10, 25] {
 				for &batch_len in &[1, 2, 5, 10, 25] {
-					for lr in [0.01, 0.1, 0.3, 0.5, 1.0].iter().map(|lr| *lr).map(LearnRate::from) {
-						for lm in [0.0, 0.25, 0.33, 0.5].iter().map(|lm| *lm).map(LearnMomentum::from) {
+					for lr in [0.01, 0.1, 0.3, 0.5, 1.0]
+						.iter()
+						.map(|lr| *lr)
+						.map(LearnRate::from)
+					{
+						for lm in [0.0, 0.25, 0.33, 0.5]
+							.iter()
+							.map(|lm| *lm)
+							.map(LearnMomentum::from)
+						{
 							assert_for(epoch_len, batch_len, lr, lm);
 						}
 					}
@@ -683,8 +716,16 @@ mod tests {
 			}
 			for &epoch_len in &[1, 2, 5, 10, 25] {
 				for &batch_len in &[1, 2, 5, 10, 25] {
-					for lr in [0.01, 0.1, 0.3, 0.5, 1.0].iter().map(|lr| *lr).map(LearnRate::from) {
-						for lm in [0.0, 0.25, 0.33, 0.5].iter().map(|lm| *lm).map(LearnMomentum::from) {
+					for lr in [0.01, 0.1, 0.3, 0.5, 1.0]
+						.iter()
+						.map(|lr| *lr)
+						.map(LearnRate::from)
+					{
+						for lm in [0.0, 0.25, 0.33, 0.5]
+							.iter()
+							.map(|lm| *lm)
+							.map(LearnMomentum::from)
+						{
 							assert_for(epoch_len, batch_len, lr, lm);
 						}
 					}
@@ -699,7 +740,10 @@ mod tests {
 				ctx.update_mse(mse);
 				assert_eq!(ctx.latest_mse, mse);
 			}
-			for mse in [0.0, 0.5, 1.0, 42.0, 77.7, 13.37].iter().map(|mse| MeanSquaredError::from(*mse)) {
+			for mse in [0.0, 0.5, 1.0, 42.0, 77.7, 13.37]
+				.iter()
+				.map(|mse| MeanSquaredError::from(*mse))
+			{
 				assert_for(mse)
 			}
 		}
@@ -744,7 +788,8 @@ mod tests {
 		fn epochs_passed() {
 			fn assert_for(epoch_len: usize) {
 				let n = 10;
-				let mut ctx = Context::new(epoch_len, 1, LearnRate::from(0.5), LearnMomentum::from(0.5));
+				let mut ctx =
+					Context::new(epoch_len, 1, LearnRate::from(0.5), LearnMomentum::from(0.5));
 				assert_eq!(ctx.epochs_passed(), 0);
 				for _ in 0..n {
 					ctx.next();
@@ -768,13 +813,10 @@ mod tests {
 	mod mentor_builder {
 		use super::*;
 
-		use crate::topology_v4::{
-			Topology,
-			TopologyBuilder
-		};
+		use crate::topology_v4::{Topology, TopologyBuilder};
 
 		fn dummy_topology() -> Topology {
-			Topology::input(1).fully_connect( 1)
+			Topology::input(1).fully_connect(1)
 		}
 
 		fn dummy_builder() -> UninitializedMentor {
@@ -806,8 +848,10 @@ mod tests {
 			assert_eq!(b.lr, Some(fst_lr));
 			assert_eq!(
 				b.learn_rate(snd_lr),
-				Err(Error::mentor_builder_initialized_field_twice(MentorBuilderDoubledField::LearnRate)
-					.with_annotation(format!("Already set learn rate to {:?}.", fst_lr.to_f32())))
+				Err(Error::mentor_builder_initialized_field_twice(
+					MentorBuilderDoubledField::LearnRate
+				)
+				.with_annotation(format!("Already set learn rate to {:?}.", fst_lr.to_f32())))
 			);
 		}
 
@@ -829,8 +873,10 @@ mod tests {
 			let b = dummy_builder().learn_rate(old_lr).unwrap();
 			assert_eq!(
 				b.learn_rate(new_lr),
-				Err(Error::mentor_builder_initialized_field_twice(MentorBuilderDoubledField::LearnRate)
-					.with_annotation(format!("Already set learn rate to {:?}.", old_lr.to_f32())))
+				Err(Error::mentor_builder_initialized_field_twice(
+					MentorBuilderDoubledField::LearnRate
+				)
+				.with_annotation(format!("Already set learn rate to {:?}.", old_lr.to_f32())))
 			)
 		}
 
@@ -842,7 +888,10 @@ mod tests {
 		#[test]
 		fn learn_momentum_ok() {
 			let new_lm = LearnMomentum::from(0.5);
-			assert_eq!(dummy_builder().learn_momentum(new_lm).unwrap().lm, Some(new_lm))
+			assert_eq!(
+				dummy_builder().learn_momentum(new_lm).unwrap().lm,
+				Some(new_lm)
+			)
 		}
 
 		#[test]
@@ -852,8 +901,13 @@ mod tests {
 			let b = dummy_builder().learn_momentum(old_lm).unwrap();
 			assert_eq!(
 				b.learn_momentum(new_lm),
-				Err(Error::mentor_builder_initialized_field_twice(MentorBuilderDoubledField::LearnMomentum)
-					.with_annotation(format!("Already set learn momentum to {:?}.", old_lm.to_f32())))
+				Err(Error::mentor_builder_initialized_field_twice(
+					MentorBuilderDoubledField::LearnMomentum
+				)
+				.with_annotation(format!(
+					"Already set learn momentum to {:?}.",
+					old_lm.to_f32()
+				)))
 			)
 		}
 
@@ -865,14 +919,19 @@ mod tests {
 		#[test]
 		fn epoch_len_ok() {
 			let new_epoch_len = 10;
-			assert_eq!(dummy_builder().epoch_len(new_epoch_len).unwrap().epoch_len, Some(new_epoch_len))
+			assert_eq!(
+				dummy_builder().epoch_len(new_epoch_len).unwrap().epoch_len,
+				Some(new_epoch_len)
+			)
 		}
 
 		#[test]
 		fn epoch_len_fail_zero() {
 			assert_eq!(
 				dummy_builder().epoch_len(0),
-				Err(Error::mentor_builder_invalid_argument(MentorBuilderInvalidArgument::EpochLen))
+				Err(Error::mentor_builder_invalid_argument(
+					MentorBuilderInvalidArgument::EpochLen
+				))
 			)
 		}
 
@@ -883,8 +942,10 @@ mod tests {
 			let b = dummy_builder().epoch_len(old_epoch_len).unwrap();
 			assert_eq!(
 				b.epoch_len(new_epoch_len),
-				Err(Error::mentor_builder_initialized_field_twice(MentorBuilderDoubledField::EpochLen)
-					.with_annotation(format!("Already set epoch length to {:?}.", old_epoch_len)))
+				Err(Error::mentor_builder_initialized_field_twice(
+					MentorBuilderDoubledField::EpochLen
+				)
+				.with_annotation(format!("Already set epoch length to {:?}.", old_epoch_len)))
 			)
 		}
 
@@ -896,14 +957,19 @@ mod tests {
 		#[test]
 		fn batch_len_ok() {
 			let new_batch_len = 10;
-			assert_eq!(dummy_builder().batch_len(new_batch_len).unwrap().batch_len, Some(new_batch_len))
+			assert_eq!(
+				dummy_builder().batch_len(new_batch_len).unwrap().batch_len,
+				Some(new_batch_len)
+			)
 		}
 
 		#[test]
 		fn batch_len_fail_zero() {
 			assert_eq!(
 				dummy_builder().batch_len(0),
-				Err(Error::mentor_builder_invalid_argument(MentorBuilderInvalidArgument::BatchLen))
+				Err(Error::mentor_builder_invalid_argument(
+					MentorBuilderInvalidArgument::BatchLen
+				))
 			)
 		}
 
@@ -914,8 +980,10 @@ mod tests {
 			let b = dummy_builder().batch_len(old_batch_len).unwrap();
 			assert_eq!(
 				b.batch_len(new_batch_len),
-				Err(Error::mentor_builder_initialized_field_twice(MentorBuilderDoubledField::BatchLen)
-					.with_annotation(format!("Already set batch length to {:?}.", old_batch_len)))
+				Err(Error::mentor_builder_initialized_field_twice(
+					MentorBuilderDoubledField::BatchLen
+				)
+				.with_annotation(format!("Already set batch length to {:?}.", old_batch_len)))
 			)
 		}
 
@@ -930,7 +998,10 @@ mod tests {
 			let dummy_samples = samples![ [0.0] => 1.0 ];
 			let new_sample_gen = SequentialSampleScheduler::new(dummy_samples);
 			assert_eq!(
-				dummy_builder().sample_gen(new_sample_gen.clone()).unwrap().sample_gen,
+				dummy_builder()
+					.sample_gen(new_sample_gen.clone())
+					.unwrap()
+					.sample_gen,
 				new_sample_gen
 			)
 		}

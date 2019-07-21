@@ -1,7 +1,7 @@
 //! Errors that may happen while using this crate and its `Result` type are defined here.
 
-use std::fmt;
 use std::error;
+use std::fmt;
 use std::result;
 
 /// Kinds of errors that may occure while using this crate.
@@ -25,7 +25,7 @@ pub enum ErrorKind {
 	/// criterion is invalid.
 	InvalidRecentMSECriterion,
 
-	/// Occures when trying to create a `LayerSize` that 
+	/// Occures when trying to create a `LayerSize` that
 	/// represents zero (0) neurons.
 	ZeroLayerSize,
 
@@ -49,47 +49,47 @@ pub enum ErrorKind {
 	AttemptToCreateZeroSizedBuffer,
 
 	/// Occures when the user provides too few values to create a new buffer.
-	TooFewValueProvidedForBufferCreation{
+	TooFewValueProvidedForBufferCreation {
 		/// The expected minimum size of the user provided value array.
 		expected_min: usize,
 		/// The actual size of the user provided value array.
-		actual: usize
+		actual: usize,
 	},
 
 	/// Occures when a user provided bias value does not match the expected value.
-	UnmatchingUserProvidedBiasValue{
+	UnmatchingUserProvidedBiasValue {
 		/// The expected bias value.
 		expected: f32,
 		/// The actual bias value.
-		actual: f32
+		actual: f32,
 	},
 
 	/// Occures when doing some generic operation (e.g. assigning) with
 	/// two buffers of unequal sizes.
-	UnmatchingBufferSizes{
+	UnmatchingBufferSizes {
 		/// The signal length of the left-hand-side buffer.
 		left: usize,
 		/// The signal length of the right-hand-side buffer.
-		right: usize
+		right: usize,
 	},
 
 	/// Occures when trying to create a `SampleCollection` from an empty set of samples.
 	EmptySampleCollection,
 
 	/// Occures when trying to create a `SampleCollection` from a set of samples with unmatching input lengths.
-	UnmatchingSampleInputLength{
+	UnmatchingSampleInputLength {
 		/// The required sample signal input length.
 		required_len: usize,
 		/// The actual and errorneous sample signal input length.
-		actual_len: usize
+		actual_len: usize,
 	},
 
 	/// Occures when trying to create a `SampleCollection` from a set of samples with unmatching input lengths.
-	UnmatchingSampleExpectedLength{
+	UnmatchingSampleExpectedLength {
 		/// The required sample signal expected length.
 		required_len: usize,
 		/// The actual and errorneous sample signal expected length.
-		actual_len: usize
+		actual_len: usize,
 	},
 
 	/// Occures when trying to create a `BelowRecentMSE` condition with an invalid target value.
@@ -108,20 +108,20 @@ pub enum ErrorKind {
 	MSEInvalidEmptyExpectedBuffer,
 
 	/// Occures when trying to calculate a `MeanSquaredError` actual and expected buffers of unmatching sizes.
-	MSEUnmatchingActualAndExpectedBuffers{
+	MSEUnmatchingActualAndExpectedBuffers {
 		/// The size of the buffer storing the actual values.
 		actual_len: usize,
 		/// The size of the buffer storing the expected values.
-		expected_len: usize
+		expected_len: usize,
 	},
 
 	/// Occures when double initializing a field for `MentorBuilder`.
 	MentorBuilderInitializedFieldTwice(MentorBuilderDoubledField),
 
 	/// Occures when trying to initialize a `MentorBuilder` with an invalid argument.
-	/// 
+	///
 	/// Note that this is a very generic error.
-	MentorBuilderInvalidArgument(MentorBuilderInvalidArgument)
+	MentorBuilderInvalidArgument(MentorBuilderInvalidArgument),
 }
 
 /// Fields of `Mentor` that may be incorrectly initialized twice (or more).
@@ -133,22 +133,22 @@ pub enum MentorBuilderDoubledField {
 	BatchLen,
 	SampleGen,
 	StopWhen,
-	LogWhen
+	LogWhen,
 }
 
 /// Fields of `Mentor` that may be invalidly initialized during the initialization step.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum MentorBuilderInvalidArgument {
 	EpochLen,
-	BatchLen
+	BatchLen,
 }
 
 /// The error class used in `Prophet`.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Error{
-	kind      : ErrorKind,
-	message   : String,
-	annotation: Option<String>
+pub struct Error {
+	kind: ErrorKind,
+	message: String,
+	annotation: Option<String>,
 }
 
 impl Error {
@@ -169,12 +169,12 @@ impl Error {
 	pub fn annotation(&self) -> Option<&str> {
 		match self.annotation {
 			Some(ref ann) => Some(ann.as_str()),
-			None          => None
+			None => None,
 		}
 	}
 
 	// /// Returns a new `Error` for the given kind and with the given message.
-	// /// 
+	// ///
 	// /// Note: Instances created with this method won't have an annotation.
 	// ///       Use `with_annotation(..)` to add one if needed.
 	// #[inline]
@@ -183,11 +183,12 @@ impl Error {
 	// }
 
 	/// Consumes this error and returns itself with the given annotation added to it.
-	/// 
+	///
 	/// Note: This will replace an already existing annotation.
 	#[inline]
 	pub(crate) fn with_annotation<A>(mut self, annotation: A) -> Error
-		where A: Into<String>
+	where
+		A: Into<String>,
 	{
 		self.annotation = Some(annotation.into());
 		self
@@ -197,10 +198,10 @@ impl Error {
 impl Error {
 	/// Creates a new `ZeroLayerSize` error.
 	pub(crate) fn zero_layer_size() -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::ZeroLayerSize,
 			message: String::from("Cannot create a layer size representing zero (0) neurons."),
-			annotation: None
+			annotation: None,
 		}
 	}
 
@@ -233,96 +234,112 @@ impl Error {
 
 	/// Creates a new `InvalidLearnMomentum` error with the given invalid learning momentum.
 	pub(crate) fn unmatching_input_sample_size(actual: usize, req: usize) -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::UnmatchingInputSampleSize,
-			message: format!("Tried to create an input sample with {:?} neurons while {:?} are required.", actual, req),
-			annotation: None
+			message: format!(
+				"Tried to create an input sample with {:?} neurons while {:?} are required.",
+				actual, req
+			),
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `InvalidLearnMomentum` error with the given invalid learning momentum.
 	pub(crate) fn unmatching_target_sample_size(actual: usize, req: usize) -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::UnmatchingTargetSampleSize,
-			message: format!("Tried to create an target sample with {:?} neurons while {:?} are required.", actual, req),
-			annotation: None
+			message: format!(
+				"Tried to create an target sample with {:?} neurons while {:?} are required.",
+				actual, req
+			),
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `ZeroInputsWeightsMatrix` error.
 	pub(crate) fn zero_inputs_weights_matrix() -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::ZeroInputsWeightsMatrix,
-			message: "Tried to create a WeightsMatrix for zero inputs. Must be at least one!".to_owned(),
-			annotation: None
+			message: "Tried to create a WeightsMatrix for zero inputs. Must be at least one!"
+				.to_owned(),
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `ZeroInputsWeightsMatrix` error.
 	pub(crate) fn zero_outputs_weights_matrix() -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::ZeroOutputsWeightsMatrix,
-			message: "Tried to create a WeightsMatrix for zero outputs. Must be at least one!".to_owned(),
-			annotation: None
+			message: "Tried to create a WeightsMatrix for zero outputs. Must be at least one!"
+				.to_owned(),
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `AttemptToCreateZeroSizedBuffer` error.
 	pub(crate) fn attempt_to_create_zero_sized_buffer() -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::AttemptToCreateZeroSizedBuffer,
-			message: "Attempted to create a buffer with a length (dimension) of zero (1).".to_owned(),
-			annotation: None
+			message: "Attempted to create a buffer with a length (dimension) of zero (1)."
+				.to_owned(),
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `TooFewValueProvidedForBufferCreation` error.
-	pub(crate) fn too_few_values_provided_for_buffer_creation(expected_min: usize, actual: usize) -> Error {
+	pub(crate) fn too_few_values_provided_for_buffer_creation(
+		expected_min: usize,
+		actual: usize,
+	) -> Error {
 		assert!(actual < expected_min);
-		Error{
-			kind: ErrorKind::TooFewValueProvidedForBufferCreation{expected_min, actual},
+		Error {
+			kind: ErrorKind::TooFewValueProvidedForBufferCreation {
+				expected_min,
+				actual,
+			},
 			message: format!(
 				"Expected at least {:?} user provided array elements for buffer creation
 				 but found only {:?} instead.",
-				 expected_min,
-				 actual
+				expected_min, actual
 			),
-			annotation: None
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `UnmatchingUserProvidedBiasValue` error.
 	pub(crate) fn unmatching_user_provided_bias_value(expected: f32, actual: f32) -> Error {
 		assert!((expected - actual).abs() > ::std::f32::EPSILON);
-		Error{
-			kind: ErrorKind::UnmatchingUserProvidedBiasValue{expected, actual},
+		Error {
+			kind: ErrorKind::UnmatchingUserProvidedBiasValue { expected, actual },
 			message: format!(
 				"Expected a bias value of {:?} as the last value of the given data but found a bias value of
 			     {:?} instead.", expected, actual
 			),
-			annotation: None
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `UnmatchingBufferSizes` error.
 	pub(crate) fn unmatching_buffer_sizes(lhs_size: usize, rhs_size: usize) -> Error {
-		Error{
-			kind: ErrorKind::UnmatchingBufferSizes{left: lhs_size, right: rhs_size},
+		Error {
+			kind: ErrorKind::UnmatchingBufferSizes {
+				left: lhs_size,
+				right: rhs_size,
+			},
 			message: format!(
 				"Tried to operate on buffers with non-matching sizes of {:?} and {:?} elements.",
-				lhs_size,
-				rhs_size
+				lhs_size, rhs_size
 			),
-			annotation: None
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `EmptySampleCollection` error.
 	pub(crate) fn empty_sample_collection() -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::EmptySampleCollection,
 			message: "Tried to create a SampleCollection from an empty set of samples!".to_owned(),
-			annotation: None
+			annotation: None,
 		}
 	}
 
@@ -346,51 +363,65 @@ impl Error {
 
 	/// Creates a new `InvalidBelowRecentMSEConditionTarget` error.
 	pub(crate) fn invalid_below_recent_mse_target(invalid_target: f32) -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::InvalidBelowRecentMSEConditionTarget(invalid_target),
-			message: format!("Tried to create a BelowRecentMSE condition with an invalid target of {:?}!", invalid_target),
-			annotation: None
+			message: format!(
+				"Tried to create a BelowRecentMSE condition with an invalid target of {:?}!",
+				invalid_target
+			),
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `InvalidBelowRecentMSEConditionMomentum` error.
 	pub(crate) fn invalid_below_recent_mse_momentum(invalid_momentum: f32) -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::InvalidBelowRecentMSEConditionMomentum(invalid_momentum),
-			message: format!("Tried to create a BelowRecentMSE condition with an invalid momentum of {:?}!", invalid_momentum),
-			annotation: None
+			message: format!(
+				"Tried to create a BelowRecentMSE condition with an invalid momentum of {:?}!",
+				invalid_momentum
+			),
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `MSEInvalidNegativeValue` error.
 	pub(crate) fn mse_invalid_negative_value(value: f32) -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::MSEInvalidNegativeValue(value),
-			message: format!("Tried to instantiate a MeanSquaredError with a negative value of {:?}!", value),
-			annotation: None
+			message: format!(
+				"Tried to instantiate a MeanSquaredError with a negative value of {:?}!",
+				value
+			),
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `MSEInvalidEmptyActualBuffer` error.
 	pub(crate) fn mse_invalid_empty_actual_buffer() -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::MSEInvalidEmptyActualBuffer,
-			message: "Tried to calculate a MeanSquaredError with an empty actual buffer!".to_owned(),
-			annotation: None
+			message: "Tried to calculate a MeanSquaredError with an empty actual buffer!"
+				.to_owned(),
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `MSEInvalidEmptyExpectedBuffer` error.
 	pub(crate) fn mse_invalid_empty_expected_buffer() -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::MSEInvalidEmptyExpectedBuffer,
-			message: "Tried to calculate a MeanSquaredError with an empty expected buffer!".to_owned(),
-			annotation: None
+			message: "Tried to calculate a MeanSquaredError with an empty expected buffer!"
+				.to_owned(),
+			annotation: None,
 		}
 	}
 
 	/// Creates a new `MSEUnmatchingActualAndExpectedBuffers` error.
-	pub(crate) fn mse_unmatching_actual_and_empty_buffers(actual_len: usize, expected_len: usize) -> Error {
+	pub(crate) fn mse_unmatching_actual_and_empty_buffers(
+		actual_len: usize,
+		expected_len: usize,
+	) -> Error {
 		Error{
 			kind: ErrorKind::MSEUnmatchingActualAndExpectedBuffers{actual_len, expected_len},
 			message: format!(
@@ -402,7 +433,9 @@ impl Error {
 	}
 
 	/// Creates a new `MentorBuilderInitializedFieldTwice` error.
-	pub(crate) fn mentor_builder_initialized_field_twice(field: MentorBuilderDoubledField) -> Error {
+	pub(crate) fn mentor_builder_initialized_field_twice(
+		field: MentorBuilderDoubledField,
+	) -> Error {
 		Error{
 			kind: ErrorKind::MentorBuilderInitializedFieldTwice(field),
 			message: format!(
@@ -415,12 +448,10 @@ impl Error {
 
 	/// Creates a new `MentorBuilderInvalidArgument` error.
 	pub(crate) fn mentor_builder_invalid_argument(arg: MentorBuilderInvalidArgument) -> Error {
-		Error{
+		Error {
 			kind: ErrorKind::MentorBuilderInvalidArgument(arg),
-			message: format!(
-				"Invalidly tried to initialized {:?} to zero (0).", arg
-			),
-			annotation: None
+			message: format!("Invalidly tried to initialized {:?} to zero (0).", arg),
+			annotation: None,
 		}
 	}
 }

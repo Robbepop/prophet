@@ -1,6 +1,6 @@
 use ndarray::prelude::*;
 
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 
 use crate::mentor::configs::Scheduling;
 use rand::rngs::ThreadRng;
@@ -34,19 +34,21 @@ pub struct Sample {
 impl Sample {
 	/// Creates a new sample from a given input and a given target range of values.
 	pub fn new<A1, A2>(input: A1, target: A2) -> Sample
-		where A1: Into<Vec<f32>>,
-		      A2: Into<Vec<f32>>
+	where
+		A1: Into<Vec<f32>>,
+		A2: Into<Vec<f32>>,
 	{
-		Sample{
-			input : Array1::from_vec(input.into()),
-			target: Array1::from_vec(target.into())
+		Sample {
+			input: Array1::from_vec(input.into()),
+			target: Array1::from_vec(target.into()),
 		}
 	}
 }
 
 impl<A1, A2> From<(A1, A2)> for Sample
-    where A1: Into<Vec<f32>>,
-          A2: Into<Vec<f32>>
+where
+	A1: Into<Vec<f32>>,
+	A2: Into<Vec<f32>>,
 {
 	fn from(from: (A1, A2)) -> Sample {
 		Sample::new(from.0, from.1)
@@ -73,7 +75,6 @@ impl<'a> From<&'a Sample> for SampleView<'a> {
 		}
 	}
 }
-
 
 /// Creates a vector of samples.
 ///
@@ -176,7 +177,7 @@ impl ::std::fmt::Debug for Scheduler {
 	fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
 		use self::Scheduler::*;
 		match *self {
-			Random(_)    => write!(f, "Scheduler::Random(_)"),
+			Random(_) => write!(f, "Scheduler::Random(_)"),
 			Iterative(x) => write!(f, "Scheduler::Iterative({})", x),
 		}
 	}
@@ -187,7 +188,7 @@ impl Scheduler {
 	fn from_kind(kind: Scheduling) -> Self {
 		use crate::mentor::configs::Scheduling::*;
 		match kind {
-			Random    => Scheduler::Random(thread_rng()),
+			Random => Scheduler::Random(thread_rng()),
 			Iterative => Scheduler::Iterative(0),
 		}
 	}
@@ -199,9 +200,7 @@ impl Scheduler {
 	fn next(&mut self, num_samples: usize) -> usize {
 		use self::Scheduler::*;
 		match *self {
-			Random(ref mut rng) => {
-				rng.gen_range(0, num_samples)
-			},
+			Random(ref mut rng) => rng.gen_range(0, num_samples),
 			Iterative(ref mut cur) => {
 				let next = *cur as usize % num_samples;
 				*cur += 1;
@@ -214,7 +213,7 @@ impl Scheduler {
 /// Organizes the scheduling of samples with different strategies.
 #[derive(Debug, Clone)]
 pub struct SampleScheduler {
-	samples  : Vec<Sample>,
+	samples: Vec<Sample>,
 	scheduler: Scheduler,
 }
 

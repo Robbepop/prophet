@@ -1,56 +1,42 @@
 use ndarray::ArrayView1;
 
-use crate::traits::{Predict};
-use crate::layer::utils::prelude::*;
-use crate::layer::{
-	HasOutputSignal,
-	ProcessInputSignal,
-	CalculateOutputErrorSignal,
-	ApplyErrorSignalCorrection
-};
-use crate::layer::{ContainerLayer};
+use crate::errors::Result;
 use crate::layer;
-use crate::utils::{LearnRate, LearnMomentum};
-use crate::topology_v4::{
-	Topology
+use crate::layer::utils::prelude::*;
+use crate::layer::ContainerLayer;
+use crate::layer::{
+	ApplyErrorSignalCorrection, CalculateOutputErrorSignal, HasOutputSignal, ProcessInputSignal,
 };
-use crate::errors::{Result};
+use crate::topology_v4::Topology;
 use crate::trainer::{
-	SupervisedSample,
-	PredictSupervised,
-	OptimizeSupervised,
-	EvaluateSupervised,
-	MeanSquaredError
+	EvaluateSupervised, MeanSquaredError, OptimizeSupervised, PredictSupervised, SupervisedSample,
 };
+use crate::traits::Predict;
+use crate::utils::{LearnMomentum, LearnRate};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NeuralNet {
 	input: BiasedSignalBuffer,
-	layers: ContainerLayer
+	layers: ContainerLayer,
 }
 
 #[derive(Debug)]
 pub struct ReadyToOptimizeSupervised<'nn> {
 	nn: &'nn mut NeuralNet,
-	mse: MeanSquaredError
+	mse: MeanSquaredError,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct MSEEvaluator {
-	mse: MeanSquaredError
+	mse: MeanSquaredError,
 }
 
 impl NeuralNet {
 	/// Creates a new neural network from the given topology.
 	pub fn from_topology(top: Topology) -> Result<Self> {
-		Ok(NeuralNet{
-			input: BiasedSignalBuffer::zeros_with_bias(
-				top.input_len().to_usize())?,
-			layers: ContainerLayer::from_vec(top
-				.into_iter()
-				.map(layer::AnyLayer::from)
-				.collect()
-			)?
+		Ok(NeuralNet {
+			input: BiasedSignalBuffer::zeros_with_bias(top.input_len().to_usize())?,
+			layers: ContainerLayer::from_vec(top.into_iter().map(layer::AnyLayer::from).collect())?,
 		})
 	}
 }
@@ -63,7 +49,8 @@ impl From<Topology> for NeuralNet {
 }
 
 impl<'a, I> Predict<I> for NeuralNet
-	where I: Into<UnbiasedSignalView<'a>>
+where
+	I: Into<UnbiasedSignalView<'a>>,
 {
 	/// Implementation for inputs that do not respect a bias value.
 	fn predict(&mut self, input: I) -> ArrayView1<f32> {
@@ -75,7 +62,8 @@ impl<'a, I> Predict<I> for NeuralNet
 }
 
 impl<'nn, S> PredictSupervised<S> for &'nn mut NeuralNet
-	where S: SupervisedSample
+where
+	S: SupervisedSample,
 {
 	type Finalizer = ReadyToOptimizeSupervised<'nn>;
 
@@ -87,8 +75,9 @@ impl<'nn, S> PredictSupervised<S> for &'nn mut NeuralNet
 		let mse = MeanSquaredError::from_arrays(
 			self.layers.output_signal().into_unbiased().into_data(),
 			sample.expected().into_data(),
-		).unwrap();
-		ReadyToOptimizeSupervised{nn: self, mse}
+		)
+		.unwrap();
+		ReadyToOptimizeSupervised { nn: self, mse }
 	}
 }
 
@@ -97,8 +86,10 @@ impl<'nn> OptimizeSupervised for ReadyToOptimizeSupervised<'nn> {
 
 	#[inline]
 	fn optimize_supervised(self, lr: LearnRate, lm: LearnMomentum) -> Self::Evaluator {
-		self.nn.layers.apply_error_signal_correction(self.nn.input.view(), lr, lm);
-		MSEEvaluator{mse: self.mse}
+		self.nn
+			.layers
+			.apply_error_signal_correction(self.nn.input.view(), lr, lm);
+		MSEEvaluator { mse: self.mse }
 	}
 }
 

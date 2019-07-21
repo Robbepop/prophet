@@ -1,16 +1,16 @@
-use crate::layer::{ActivationLayer, FullyConnectedLayer, ContainerLayer};
-use crate::layer::utils::prelude::*;
 use crate::layer::traits::prelude::*;
-use crate::utils::{LearnRate, LearnMomentum};
+use crate::layer::utils::prelude::*;
+use crate::layer::{ActivationLayer, ContainerLayer, FullyConnectedLayer};
 use crate::topology_v4;
+use crate::utils::{LearnMomentum, LearnRate};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AnyLayer {
 	Activation(ActivationLayer),
 	FullyConnected(FullyConnectedLayer),
-	Container(ContainerLayer)
+	Container(ContainerLayer),
 }
-use self::AnyLayer::{Activation, FullyConnected, Container};
+use self::AnyLayer::{Activation, Container, FullyConnected};
 
 impl From<ActivationLayer> for AnyLayer {
 	fn from(layer: ActivationLayer) -> Self {
@@ -35,7 +35,7 @@ impl From<topology_v4::AnyLayer> for AnyLayer {
 		use crate::topology_v4::AnyLayer::*;
 		match any_top_layer {
 			Activation(layer) => ActivationLayer::from(layer).into(),
-			FullyConnected(layer) => FullyConnectedLayer::from(layer).into()
+			FullyConnected(layer) => FullyConnectedLayer::from(layer).into(),
 		}
 	}
 }
@@ -45,7 +45,7 @@ impl ProcessInputSignal for AnyLayer {
 		match *self {
 			Activation(ref mut layer) => layer.process_input_signal(input_signal),
 			FullyConnected(ref mut layer) => layer.process_input_signal(input_signal),
-			Container(ref mut layer) => layer.process_input_signal(input_signal)
+			Container(ref mut layer) => layer.process_input_signal(input_signal),
 		}
 	}
 }
@@ -55,29 +55,35 @@ impl CalculateOutputErrorSignal for AnyLayer {
 		match *self {
 			Activation(ref mut layer) => layer.calculate_output_error_signal(target_signals),
 			FullyConnected(ref mut layer) => layer.calculate_output_error_signal(target_signals),
-			Container(ref mut layer) => layer.calculate_output_error_signal(target_signals)
+			Container(ref mut layer) => layer.calculate_output_error_signal(target_signals),
 		}
 	}
 }
 
 impl PropagateErrorSignal for AnyLayer {
 	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
-		where P: HasErrorSignal
+	where
+		P: HasErrorSignal,
 	{
 		match *self {
 			Activation(ref mut layer) => layer.propagate_error_signal(propagated),
 			FullyConnected(ref mut layer) => layer.propagate_error_signal(propagated),
-			Container(ref mut layer) => layer.propagate_error_signal(propagated)
+			Container(ref mut layer) => layer.propagate_error_signal(propagated),
 		}
 	}
 }
 
 impl ApplyErrorSignalCorrection for AnyLayer {
-	fn apply_error_signal_correction(&mut self, signal: BiasedSignalView, lr: LearnRate, lm: LearnMomentum) {
+	fn apply_error_signal_correction(
+		&mut self,
+		signal: BiasedSignalView,
+		lr: LearnRate,
+		lm: LearnMomentum,
+	) {
 		match *self {
 			Activation(ref mut layer) => layer.apply_error_signal_correction(signal, lr, lm),
 			FullyConnected(ref mut layer) => layer.apply_error_signal_correction(signal, lr, lm),
-			Container(ref mut layer) => layer.apply_error_signal_correction(signal, lr, lm)
+			Container(ref mut layer) => layer.apply_error_signal_correction(signal, lr, lm),
 		}
 	}
 }
@@ -87,7 +93,7 @@ impl HasOutputSignal for AnyLayer {
 		match *self {
 			Activation(ref layer) => layer.output_signal(),
 			FullyConnected(ref layer) => layer.output_signal(),
-			Container(ref layer) => layer.output_signal()
+			Container(ref layer) => layer.output_signal(),
 		}
 	}
 
@@ -95,7 +101,7 @@ impl HasOutputSignal for AnyLayer {
 		match *self {
 			Activation(ref mut layer) => layer.output_signal_mut(),
 			FullyConnected(ref mut layer) => layer.output_signal_mut(),
-			Container(ref mut layer) => layer.output_signal_mut()
+			Container(ref mut layer) => layer.output_signal_mut(),
 		}
 	}
 }
@@ -105,7 +111,7 @@ impl HasErrorSignal for AnyLayer {
 		match *self {
 			Activation(ref layer) => layer.error_signal(),
 			FullyConnected(ref layer) => layer.error_signal(),
-			Container(ref layer) => layer.error_signal()
+			Container(ref layer) => layer.error_signal(),
 		}
 	}
 
@@ -113,7 +119,7 @@ impl HasErrorSignal for AnyLayer {
 		match *self {
 			Activation(ref mut layer) => layer.error_signal_mut(),
 			FullyConnected(ref mut layer) => layer.error_signal_mut(),
-			Container(ref mut layer) => layer.error_signal_mut()
+			Container(ref mut layer) => layer.error_signal_mut(),
 		}
 	}
 }
@@ -123,7 +129,7 @@ impl SizedLayer for AnyLayer {
 		match *self {
 			Activation(ref layer) => layer.inputs(),
 			FullyConnected(ref layer) => layer.inputs(),
-			Container(ref layer) => layer.inputs()
+			Container(ref layer) => layer.inputs(),
 		}
 	}
 
@@ -131,7 +137,7 @@ impl SizedLayer for AnyLayer {
 		match *self {
 			Activation(ref layer) => layer.outputs(),
 			FullyConnected(ref layer) => layer.outputs(),
-			Container(ref layer) => layer.outputs()
+			Container(ref layer) => layer.outputs(),
 		}
 	}
 }
@@ -142,61 +148,49 @@ mod tests {
 
 	#[test]
 	#[ignore]
-	fn from_top_any_layer() {
-	}
+	fn from_top_any_layer() {}
 
 	#[test]
 	#[ignore]
-	fn from_activation_layer() {
-	}
+	fn from_activation_layer() {}
 
 	#[test]
 	#[ignore]
-	fn from_container_layer() {
-	}
+	fn from_container_layer() {}
 
 	#[test]
 	#[ignore]
-	fn from_fully_connected_layer() {
-	}
+	fn from_fully_connected_layer() {}
 
 	#[test]
 	#[ignore]
-	fn inputs() {
-	}
+	fn inputs() {}
 
 	#[test]
 	#[ignore]
-	fn outputs() {
-	}
+	fn outputs() {}
 
 	#[test]
 	#[ignore]
-	fn output_signal() {
-	}
+	fn output_signal() {}
 
 	#[test]
 	#[ignore]
-	fn error_signal() {
-	}
+	fn error_signal() {}
 
 	#[test]
 	#[ignore]
-	fn process_input_signal() {
-	}
+	fn process_input_signal() {}
 
 	#[test]
 	#[ignore]
-	fn calculate_output_error_signal() {
-	}
+	fn calculate_output_error_signal() {}
 
 	#[test]
 	#[ignore]
-	fn propagate_error_signal() {
-	}
+	fn propagate_error_signal() {}
 
 	#[test]
 	#[ignore]
-	fn apply_error_signal_correction() {
-	}
+	fn apply_error_signal_correction() {}
 }

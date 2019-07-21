@@ -1,11 +1,11 @@
 //! Provides conditions that can be used by training utilities such as halting condition
 //! or conditions for constraining logging to query and evaluate a training state during
 //! training process.
-//! 
+//!
 //! Condition types can be easily extended by the user.
 
-use std::time;
 use std::fmt::Debug;
+use std::time;
 
 use crate::errors::{Error, Result};
 use crate::trainer::MeanSquaredError;
@@ -24,12 +24,12 @@ pub trait TrainingState {
 	}
 
 	/// Returns the number of predict iterations so far.
-	/// 
+	///
 	/// Note: This is highly correlated with `epochs()`.
 	fn iterations(&self) -> usize;
 
 	/// Returns the number of epochs so far.
-	/// 
+	///
 	/// Note: This is highly correlated with `iterations()`.
 	fn epochs_passed(&self) -> usize;
 
@@ -39,7 +39,7 @@ pub trait TrainingState {
 
 /// This is used to query a `TrainingState` and check whether the requirements
 /// of the given `HaltingCondition` are met.
-/// 
+///
 /// With this trait users can implement their own `TrainCondition`s.
 pub trait TrainCondition: Debug {
 	/// Returns `true` if the halting condition requirements are met by
@@ -59,38 +59,41 @@ pub struct Never;
 /// evaluates to `false` for the given `TrainingState`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Not<C>
-	where C: TrainCondition
+where
+	C: TrainCondition,
 {
-	inner: C
+	inner: C,
 }
 
 /// Evaluates to `true` if both inner conditions evaluate to `true` for the given `TrainingState`.
-/// 
+///
 /// Users need to care themselves that the requirements of `lhs` and `rhs`
 /// are not mutually exclusive to prevent this condition to be a contradiction.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Conjunction<L, R>
-	where L: TrainCondition,
-	      R: TrainCondition
+where
+	L: TrainCondition,
+	R: TrainCondition,
 {
 	/// The left-hand-side halting condition.
 	lhs: L,
 	/// The right-hand-side halting condition.
-	rhs: R
+	rhs: R,
 }
 
 /// Evaluates to `true` if any inner condition evaluates to `true` for the given `TrainingState`.
-/// 
+///
 /// Users need to care themselves that the requirements of `lhs` and `rhs` do not form a tautology.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Disjunction<L, R>
-	where L: TrainCondition,
-	      R: TrainCondition
+where
+	L: TrainCondition,
+	R: TrainCondition,
 {
 	/// The left-hand-side halting condition.
 	lhs: L,
 	/// The right-hand-side halting condition.
-	rhs: R
+	rhs: R,
 }
 
 /// Evaluates to `true` if the duration passed since the start of the training process of the
@@ -99,7 +102,7 @@ pub struct Disjunction<L, R>
 pub struct TimeElapsed(time::Duration);
 
 /// Evaluates to `true` if the given `TrainingState` exceeds the given amount of `epochs` of this condition.
-/// 
+///
 /// By default an epoch is as large as the number of samples in the given sample set,
 /// however, this default value can be adjusted by the user during the setup process of
 /// a training instance.
@@ -108,68 +111,74 @@ pub struct EpochsPassed(usize);
 
 /// Evaluates to `true` as soon as the recent mean squared error (RMSE) drops below the given `target` value
 /// for the first time during the training process.
-/// 
+///
 /// The given `momentum` ranges from `(0, 1)` and regulates how strongly the RMSE depends on earlier iterations.
 /// A `momentum` near `0.0` has near to no influence by earlier iterations while a `momentum` near `1.0`
 /// is influenced heavily by earlier iterations.
-/// 
+///
 /// Note: Given a momentum `m` the RMSE in the `i+1`th iteration (`rmse_(i+1)`) is calculated by
 ///       the following formula. `mse_(n)` stands for the mean squared error of the `n`th iteration.
-/// 
+///
 /// - `rmse_(i+1) := (1.0 - m) * mse_(i+1) + m * rmse_i`
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct BelowRecentMSE{
+pub struct BelowRecentMSE {
 	/// The given `momentum` ranges from `(0, 1)` and regulates how strongly the RMSE depends on earlier iterations.
 	/// A `momentum` near `0` has near to no influence by earlier iterations while a `momentum` near `1`
 	/// is influenced heavily by earlier iterations.
 	momentum: f32,
 	/// This represents the target recent mean squared error.
 	/// The training process will stop once the training reaches this target value.
-	/// 
+	///
 	/// Normally this value should be near zero (`0`), e.g. `0.03`.
-	/// 
+	///
 	/// The lower this value is, the better are the results of the resulting neural net once
 	/// the training has finished. However, trying to reach a very low `taget` value can be very time
 	/// consuming and sometimes even impossible.
 	target: f32,
 	/// This is the current recent mean squared error calculated so far in the training process.
-	rmse: f32
+	rmse: f32,
 }
 
 /// Evaluates to `true` once every given amount of time passed.
-/// 
+///
 /// This is a special kind of training condition since its evaluation is not at all dependend on the
 /// training state. Also it is not static once it changes its evaluation in constrast to other conditions
 /// such as `EpochsPassed` or `TimeElapsed`.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct TimeInterval{
+pub struct TimeInterval {
 	/// The duration between the interval at which this condition evalutes to `true` once.
 	time_step: time::Duration,
 	/// The latest point in time where this condition evaluated to `true`.
-	latest: time::Instant
+	latest: time::Instant,
 }
 
 impl TrainCondition for Always {
 	#[inline]
-	fn evaluate(&mut self, _stats: &TrainingState) -> bool { true }
+	fn evaluate(&mut self, _stats: &TrainingState) -> bool {
+		true
+	}
 }
 
 impl TrainCondition for Never {
 	#[inline]
-	fn evaluate(&mut self, _stats: &TrainingState) -> bool { false }
+	fn evaluate(&mut self, _stats: &TrainingState) -> bool {
+		false
+	}
 }
 
 impl<C> Not<C>
-	where C: TrainCondition
+where
+	C: TrainCondition,
 {
 	/// Creates a new `TrainCondition` that represents a logical-not.
 	pub fn new(inner: C) -> Self {
-		Not{inner: inner}
+		Not { inner: inner }
 	}
 }
 
 impl<C> TrainCondition for Not<C>
-	where C: TrainCondition
+where
+	C: TrainCondition,
 {
 	#[inline]
 	fn evaluate(&mut self, stats: &TrainingState) -> bool {
@@ -178,18 +187,20 @@ impl<C> TrainCondition for Not<C>
 }
 
 impl<L, R> Conjunction<L, R>
-	where L: TrainCondition,
-	      R: TrainCondition
+where
+	L: TrainCondition,
+	R: TrainCondition,
 {
 	/// Creates a new `TrainCondition` that represents a logical-and.
 	pub fn new(lhs: L, rhs: R) -> Self {
-		Conjunction{lhs, rhs}
+		Conjunction { lhs, rhs }
 	}
 }
 
 impl<L, R> TrainCondition for Conjunction<L, R>
-	where L: TrainCondition,
-	      R: TrainCondition
+where
+	L: TrainCondition,
+	R: TrainCondition,
 {
 	#[inline]
 	fn evaluate(&mut self, stats: &TrainingState) -> bool {
@@ -198,18 +209,20 @@ impl<L, R> TrainCondition for Conjunction<L, R>
 }
 
 impl<L, R> Disjunction<L, R>
-	where L: TrainCondition,
-	      R: TrainCondition
+where
+	L: TrainCondition,
+	R: TrainCondition,
 {
 	/// Creates a new `TrainCondition` that represents a logical-or.
 	pub fn new(lhs: L, rhs: R) -> Self {
-		Disjunction{lhs, rhs}
+		Disjunction { lhs, rhs }
 	}
 }
 
 impl<L, R> TrainCondition for Disjunction<L, R>
-	where L: TrainCondition,
-	      R: TrainCondition
+where
+	L: TrainCondition,
+	R: TrainCondition,
 {
 	#[inline]
 	fn evaluate(&mut self, stats: &TrainingState) -> bool {
@@ -220,30 +233,37 @@ impl<L, R> TrainCondition for Disjunction<L, R>
 impl BelowRecentMSE {
 	/// Creates a new `BelowRecentMSE` `TrainCondition` with the given `momentum`
 	/// and `target` value.
-	/// 
+	///
 	/// # Errors
-	/// 
+	///
 	/// - If `momentum` is not within the range `[0, 1)`.
 	/// - If `target` is not strictly positive.
 	pub fn new(momentum: f32, target: f32) -> Result<BelowRecentMSE> {
 		if !(0.0 <= momentum && momentum < 1.0) {
-			return Err(Error::invalid_below_recent_mse_momentum(momentum))
+			return Err(Error::invalid_below_recent_mse_momentum(momentum));
 		}
 		if !(0.0 < target) {
-			return Err(Error::invalid_below_recent_mse_target(target))
+			return Err(Error::invalid_below_recent_mse_target(target));
 		}
-		Ok(BelowRecentMSE{momentum, target, rmse: 1.0})
+		Ok(BelowRecentMSE {
+			momentum,
+			target,
+			rmse: 1.0,
+		})
 	}
 }
 
 impl TimeInterval {
 	/// Creates a new `TimeInterval` `TrainCondition` with the given `time_step` duration
 	/// that evaluates to `true` every time the duration `time_step` has passed.
-	/// 
+	///
 	/// Note: This condition is especially useful for logging purposes where a user want to
 	///       log the training state once every given amount of time.
 	pub fn new(time_step: time::Duration) -> TimeInterval {
-		TimeInterval{time_step, latest: time::Instant::now()}
+		TimeInterval {
+			time_step,
+			latest: time::Instant::now(),
+		}
 	}
 }
 
@@ -275,8 +295,7 @@ impl TrainCondition for TimeInterval {
 		if time::Instant::now().duration_since(self.latest) >= self.time_step {
 			self.latest = time::Instant::now();
 			true
-		}
-		else {
+		} else {
 			false
 		}
 	}
@@ -291,7 +310,7 @@ mod tests {
 		time_started: time::Instant,
 		iterations: usize,
 		epochs_passed: usize,
-		latest_mse: MeanSquaredError
+		latest_mse: MeanSquaredError,
 	}
 
 	impl TrainingState for DummyContext {
@@ -314,11 +333,11 @@ mod tests {
 	}
 
 	fn dummy_state() -> DummyContext {
-		DummyContext{
+		DummyContext {
 			time_started: time::Instant::now(),
 			iterations: 42,
 			epochs_passed: 1337,
-			latest_mse: MeanSquaredError::new(7.77).unwrap()
+			latest_mse: MeanSquaredError::new(7.77).unwrap(),
 		}
 	}
 
@@ -367,22 +386,34 @@ mod tests {
 
 		#[test]
 		fn true_and_true() {
-			assert_eq!(Conjunction::new(Always, Always).evaluate(&dummy_state()), true)
+			assert_eq!(
+				Conjunction::new(Always, Always).evaluate(&dummy_state()),
+				true
+			)
 		}
 
 		#[test]
 		fn true_and_false() {
-			assert_eq!(Conjunction::new(Always, Never).evaluate(&dummy_state()), false)
+			assert_eq!(
+				Conjunction::new(Always, Never).evaluate(&dummy_state()),
+				false
+			)
 		}
 
 		#[test]
 		fn false_and_true() {
-			assert_eq!(Conjunction::new(Never, Always).evaluate(&dummy_state()), false)
+			assert_eq!(
+				Conjunction::new(Never, Always).evaluate(&dummy_state()),
+				false
+			)
 		}
 
 		#[test]
 		fn false_and_false() {
-			assert_eq!(Conjunction::new(Never, Never).evaluate(&dummy_state()), false)
+			assert_eq!(
+				Conjunction::new(Never, Never).evaluate(&dummy_state()),
+				false
+			)
 		}
 	}
 
@@ -391,22 +422,34 @@ mod tests {
 
 		#[test]
 		fn true_or_true() {
-			assert_eq!(Disjunction::new(Always, Always).evaluate(&dummy_state()), true)
+			assert_eq!(
+				Disjunction::new(Always, Always).evaluate(&dummy_state()),
+				true
+			)
 		}
 
 		#[test]
 		fn true_or_false() {
-			assert_eq!(Disjunction::new(Always, Never).evaluate(&dummy_state()), true)
+			assert_eq!(
+				Disjunction::new(Always, Never).evaluate(&dummy_state()),
+				true
+			)
 		}
 
 		#[test]
 		fn false_or_true() {
-			assert_eq!(Disjunction::new(Never, Always).evaluate(&dummy_state()), true)
+			assert_eq!(
+				Disjunction::new(Never, Always).evaluate(&dummy_state()),
+				true
+			)
 		}
 
 		#[test]
 		fn false_or_false() {
-			assert_eq!(Disjunction::new(Never, Never).evaluate(&dummy_state()), false)
+			assert_eq!(
+				Disjunction::new(Never, Never).evaluate(&dummy_state()),
+				false
+			)
 		}
 	}
 
@@ -421,12 +464,18 @@ mod tests {
 
 		#[test]
 		fn eval_true() {
-			assert_eq!(TimeElapsed(time::Duration::from_secs(0)).evaluate(&time_elapsed_ctx()), true)
+			assert_eq!(
+				TimeElapsed(time::Duration::from_secs(0)).evaluate(&time_elapsed_ctx()),
+				true
+			)
 		}
 
 		#[test]
 		fn eval_false() {
-			assert_eq!(TimeElapsed(time::Duration::from_secs(1000)).evaluate(&time_elapsed_ctx()), false)
+			assert_eq!(
+				TimeElapsed(time::Duration::from_secs(1000)).evaluate(&time_elapsed_ctx()),
+				false
+			)
 		}
 
 		#[test]
@@ -435,7 +484,7 @@ mod tests {
 			// comes from a system clock that's not  up to date. In fact, on Appveyor the time
 			// now seems to start from 0s(?) judging from the fact that we can observe an
 			// `Instant { t: 303.4676818s }` ...
-			let     dur = time::Duration::from_secs(10);
+			let dur = time::Duration::from_secs(10);
 			let mut ctx = time_elapsed_ctx();
 			let mut cond = TimeElapsed(dur);
 			assert_eq!(cond.evaluate(&ctx), false);
@@ -475,8 +524,8 @@ mod tests {
 
 		#[test]
 		fn before_and_after_passed() {
-			let mut ctx    = epochs_passed_ctx(41);
-			let mut cond   = EpochsPassed(42);
+			let mut ctx = epochs_passed_ctx(41);
+			let mut cond = EpochsPassed(42);
 			assert_eq!(cond.evaluate(&ctx), false);
 			ctx.epochs_passed += 1;
 			assert_eq!(cond.evaluate(&ctx), true);
@@ -507,7 +556,7 @@ mod tests {
 			// Similar to `before_and_after_elapsed()`, the clock on CI might start from 0s,
 			// we have to pick a really small duration for this test not to panic.
 			let dur_in_s = 10;
-			let     dur  = time::Duration::from_secs(dur_in_s);
+			let dur = time::Duration::from_secs(dur_in_s);
 			let half_dur = time::Duration::from_secs(dur_in_s / 2);
 			let mut cond = TimeInterval::new(dur);
 			assert_eq!(cond.evaluate(&dummy_state()), false);
@@ -546,16 +595,16 @@ mod tests {
 				Err(Error::invalid_below_recent_mse_momentum(-1.0))
 			);
 			assert_eq!(
-				BelowRecentMSE::new(0.0-eps, 0.5),
-				Err(Error::invalid_below_recent_mse_momentum(0.0-eps))
+				BelowRecentMSE::new(0.0 - eps, 0.5),
+				Err(Error::invalid_below_recent_mse_momentum(0.0 - eps))
 			);
 			assert_eq!(
 				BelowRecentMSE::new(1.0, 0.5),
 				Err(Error::invalid_below_recent_mse_momentum(1.0))
 			);
 			assert_eq!(
-				BelowRecentMSE::new(1.0+eps, 0.5),
-				Err(Error::invalid_below_recent_mse_momentum(1.0+eps))
+				BelowRecentMSE::new(1.0 + eps, 0.5),
+				Err(Error::invalid_below_recent_mse_momentum(1.0 + eps))
 			);
 			assert_eq!(
 				BelowRecentMSE::new(7.7, 0.5),
@@ -569,19 +618,35 @@ mod tests {
 
 			assert_eq!(
 				BelowRecentMSE::new(0.0, 0.0 + eps),
-				Ok(BelowRecentMSE{momentum: 0.0, target: 0.0 + eps, rmse: 1.0})
+				Ok(BelowRecentMSE {
+					momentum: 0.0,
+					target: 0.0 + eps,
+					rmse: 1.0
+				})
 			);
 			assert_eq!(
 				BelowRecentMSE::new(0.0, 1.0),
-				Ok(BelowRecentMSE{momentum: 0.0, target: 1.0, rmse: 1.0})
+				Ok(BelowRecentMSE {
+					momentum: 0.0,
+					target: 1.0,
+					rmse: 1.0
+				})
 			);
 			assert_eq!(
 				BelowRecentMSE::new(0.5, 0.5),
-				Ok(BelowRecentMSE{momentum: 0.5, target: 0.5, rmse: 1.0})
+				Ok(BelowRecentMSE {
+					momentum: 0.5,
+					target: 0.5,
+					rmse: 1.0
+				})
 			);
 			assert_eq!(
-				BelowRecentMSE::new(1.0-eps, 0.5),
-				Ok(BelowRecentMSE{momentum: 1.0-eps, target: 0.5, rmse: 1.0})
+				BelowRecentMSE::new(1.0 - eps, 0.5),
+				Ok(BelowRecentMSE {
+					momentum: 1.0 - eps,
+					target: 0.5,
+					rmse: 1.0
+				})
 			);
 		}
 

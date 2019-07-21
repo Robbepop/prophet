@@ -1,4 +1,4 @@
-use std::time::{SystemTime, Duration};
+use std::time::{Duration, SystemTime};
 
 use crate::mentor::configs::LogConfig;
 
@@ -6,27 +6,27 @@ use crate::mentor::configs::LogConfig;
 #[derive(Debug, Copy, Clone)]
 pub struct Stats {
 	/// Number of samples learned so far.
-	pub iterations  : u64,
+	pub iterations: u64,
 
 	/// Time passed since beginning of the training.
 	pub elapsed_time: Duration,
 
 	/// The latest mean squared error.
-	pub latest_mse  : f64,
+	pub latest_mse: f64,
 
 	/// The recent mean squared error.
-	pub recent_mse  : f64
+	pub recent_mse: f64,
 }
 
 /// Logger facility for stats logging during the learning process.
 #[derive(Debug, Clone)]
 pub enum Logger {
 	Never,
-	TimeSteps{
+	TimeSteps {
 		last_log: SystemTime,
-		interval: Duration
+		interval: Duration,
 	},
-	Iterations(u64)
+	Iterations(u64),
 }
 
 impl From<LogConfig> for Logger {
@@ -34,11 +34,11 @@ impl From<LogConfig> for Logger {
 		use self::LogConfig::*;
 		match config {
 			Never => Logger::Never,
-			TimeSteps(duration) => Logger::TimeSteps{
+			TimeSteps(duration) => Logger::TimeSteps {
 				last_log: SystemTime::now(),
-				interval: duration
+				interval: duration,
 			},
-			Iterations(interval) => Logger::Iterations(interval)
+			Iterations(interval) => Logger::Iterations(interval),
 		}
 	}
 }
@@ -52,17 +52,20 @@ impl Logger {
 	pub fn try_log(&mut self, stats: Stats) {
 		use self::Logger::*;
 		match *self {
-			TimeSteps{ref mut last_log, interval} => {
+			TimeSteps {
+				ref mut last_log,
+				interval,
+			} => {
 				if last_log.elapsed().expect("expected valid duration") >= interval {
 					Self::log(stats);
 					*last_log = SystemTime::now();
 				}
-			},
+			}
 			Iterations(interval) => {
 				if stats.iterations % interval == 0 {
 					Self::log(stats)
 				}
-			},
+			}
 			_ => {
 				// nothing to do here!
 			}

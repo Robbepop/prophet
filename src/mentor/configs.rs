@@ -1,8 +1,7 @@
+use std::time::Duration;
 
-use std::time::{Duration};
-
-use crate::errors::{Result, Error};
-use crate::utils::{LearnRate, LearnMomentum};
+use crate::errors::{Error, Result};
+use crate::utils::{LearnMomentum, LearnRate};
 
 /// Cirterias after which the learning process holds.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -23,8 +22,7 @@ impl Criterion {
 	pub fn check_validity(&self) -> Result<()> {
 		use self::Criterion::*;
 		match *self {
-			TimeOut(_)    |
-			Iterations(_) => Ok(()),
+			TimeOut(_) | Iterations(_) => Ok(()),
 			RecentMSE(recent_mse) => {
 				if recent_mse > 0.0 {
 					Ok(())
@@ -57,7 +55,7 @@ pub enum LearnMomentumConfig {
 }
 
 /// Logging interval for logging stats during the learning process.
-/// 
+///
 /// Default logging configuration is to never log anything.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum LogConfig {
@@ -68,7 +66,7 @@ pub enum LogConfig {
 	TimeSteps(Duration),
 
 	/// Log every given number of training iterations.
-	Iterations(u64)
+	Iterations(u64),
 }
 
 impl Default for LogConfig {

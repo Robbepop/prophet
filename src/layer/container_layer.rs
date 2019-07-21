@@ -1,23 +1,23 @@
+use crate::errors::Result;
 use crate::layer::any_layer::AnyLayer;
-use crate::layer::utils::prelude::*;
 use crate::layer::traits::prelude::*;
-use crate::errors::{Result};
-use crate::utils::{LearnRate, LearnMomentum};
+use crate::layer::utils::prelude::*;
+use crate::utils::{LearnMomentum, LearnRate};
 
 /// `ContainerLayer` is itself a neuronal layer that contains other layers in sequential order.
-/// 
+///
 /// It forwards signals and information flow to its child layers in the correct order.
 /// With this layer kind it is possible to stack layer hierachies and modularize layer topologies.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ContainerLayer {
-	childs: Vec<AnyLayer>
+	childs: Vec<AnyLayer>,
 }
 
 impl ContainerLayer {
 	/// Creates a new `ContainerLayer` from the given vector of layers.
-	/// 
+	///
 	/// # Errors
-	/// 
+	///
 	/// This fails if the given vector is empty or when the input and output sizes of the
 	/// given layers within the vector do not match.
 	pub fn from_vec(layers: Vec<AnyLayer>) -> Result<ContainerLayer> {
@@ -32,9 +32,7 @@ impl ContainerLayer {
 				        l.outputs(), r.inputs(), ith) // TODO: Rewrite as error.
 			}
 		}
-		Ok(ContainerLayer{
-			childs: layers
-		})
+		Ok(ContainerLayer { childs: layers })
 	}
 
 	/// Returns a reference to the input child layer.
@@ -64,15 +62,18 @@ impl ContainerLayer {
 	/// Propagates the error signal from the last internal child layer to the first.
 	pub(crate) fn propagate_error_signal_internally(&mut self) {
 		if let Some((last, predecessors)) = self.childs.split_last_mut() {
-			predecessors.iter_mut().rev().fold(last, |layer, prev_layer| {
-				layer.propagate_error_signal(prev_layer);
-				prev_layer
-			});
-		}
-		else {
+			predecessors
+				.iter_mut()
+				.rev()
+				.fold(last, |layer, prev_layer| {
+					layer.propagate_error_signal(prev_layer);
+					prev_layer
+				});
+		} else {
 			unreachable!(
 				"Reached code marked as unreachable in `ContainerLayer::propagate_error_signal: \
-				 This code is unreachable since ContainerLayers cannot have an empty set of child layers");
+				 This code is unreachable since ContainerLayers cannot have an empty set of child layers"
+			);
 		};
 	}
 }
@@ -80,31 +81,36 @@ impl ContainerLayer {
 impl ProcessInputSignal for ContainerLayer {
 	fn process_input_signal(&mut self, prev_output_signal: BiasedSignalView) {
 		if let Some((first, tail)) = self.childs.split_first_mut() {
-			tail.iter_mut().fold({
-				first.process_input_signal(prev_output_signal);
-				first.output_signal()
-			}, |prev_output_signal, layer| {
-				layer.process_input_signal(prev_output_signal);
-				layer.output_signal()
-			});
-		}
-		else {
+			tail.iter_mut().fold(
+				{
+					first.process_input_signal(prev_output_signal);
+					first.output_signal()
+				},
+				|prev_output_signal, layer| {
+					layer.process_input_signal(prev_output_signal);
+					layer.output_signal()
+				},
+			);
+		} else {
 			unreachable!(
 				"Reached code marked as unreachable in `ContainerLayer::process_input_signal: \
-				 This code is unreachable since ContainerLayers cannot have an empty set of child layers");
+				 This code is unreachable since ContainerLayers cannot have an empty set of child layers"
+			);
 		}
 	}
 }
 
 impl CalculateOutputErrorSignal for ContainerLayer {
 	fn calculate_output_error_signal(&mut self, target_signals: UnbiasedSignalView) {
-		self.output_layer_mut().calculate_output_error_signal(target_signals)
+		self.output_layer_mut()
+			.calculate_output_error_signal(target_signals)
 	}
 }
 
 impl PropagateErrorSignal for ContainerLayer {
 	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
-		where P: HasErrorSignal
+	where
+		P: HasErrorSignal,
 	{
 		self.propagate_error_signal_internally();
 		self.input_layer_mut().propagate_error_signal(propagated)
@@ -112,17 +118,24 @@ impl PropagateErrorSignal for ContainerLayer {
 }
 
 impl ApplyErrorSignalCorrection for ContainerLayer {
-	fn apply_error_signal_correction(&mut self, prev_output_signal: BiasedSignalView, rate: LearnRate, momentum: LearnMomentum) {
+	fn apply_error_signal_correction(
+		&mut self,
+		prev_output_signal: BiasedSignalView,
+		rate: LearnRate,
+		momentum: LearnMomentum,
+	) {
 		if let Some((first, tail)) = self.childs.split_first_mut() {
-			tail.iter_mut().fold({
-				first.apply_error_signal_correction(prev_output_signal, rate, momentum);
-				first.output_signal()
-			}, |prev_output_signal, layer| {
-				layer.apply_error_signal_correction(prev_output_signal, rate, momentum);
-				layer.output_signal()
-			});
-		}
-		else {
+			tail.iter_mut().fold(
+				{
+					first.apply_error_signal_correction(prev_output_signal, rate, momentum);
+					first.output_signal()
+				},
+				|prev_output_signal, layer| {
+					layer.apply_error_signal_correction(prev_output_signal, rate, momentum);
+					layer.output_signal()
+				},
+			);
+		} else {
 			unreachable!(
 				"Reached code marked as unreachable in `ContainerLayer::apply_error_signal_correction: \
 				 This code is unreachable since ContainerLayers cannot have an empty set of child layers");
@@ -166,51 +179,41 @@ mod tests {
 
 	#[test]
 	#[ignore]
-	fn from_vec() {
-	}
+	fn from_vec() {}
 
 	#[test]
 	#[ignore]
-	fn propagate_error_signal_internally() {
-	}
+	fn propagate_error_signal_internally() {}
 
 	#[test]
 	#[ignore]
-	fn inputs() {
-	}
+	fn inputs() {}
 
 	#[test]
 	#[ignore]
-	fn outputs() {
-	}
+	fn outputs() {}
 
 	#[test]
 	#[ignore]
-	fn output_signal() {
-	}
+	fn output_signal() {}
 
 	#[test]
 	#[ignore]
-	fn error_signal() {
-	}
+	fn error_signal() {}
 
 	#[test]
 	#[ignore]
-	fn process_input_signal() {
-	}
+	fn process_input_signal() {}
 
 	#[test]
 	#[ignore]
-	fn calculate_output_error_signal() {
-	}
+	fn calculate_output_error_signal() {}
 
 	#[test]
 	#[ignore]
-	fn propagate_error_signal() {
-	}
+	fn propagate_error_signal() {}
 
 	#[test]
 	#[ignore]
-	fn apply_error_signal_correction() {
-	}
+	fn apply_error_signal_correction() {}
 }

@@ -1,13 +1,13 @@
 //! Provides operations, data structures and error definitions for Disciple objects
 //! which form the basis for topologies of neural networks.
 
-use std::slice::Iter;
 use crate::activation::Activation;
+use std::slice::Iter;
 
 /// Represents the topology element for a fully connected layer
 /// with input neurons, output neurons and an activation function.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Layer{
+pub struct Layer {
 	/// Number of input neurons to this layer.
 	pub inputs: usize,
 
@@ -15,49 +15,49 @@ pub struct Layer{
 	pub outputs: usize,
 
 	/// Activation function for this layer.
-	pub activation: Activation
+	pub activation: Activation,
 }
 
 impl Layer {
 	/// Create a new layer.
 	fn new(inputs: usize, outputs: usize, activation: Activation) -> Self {
-		Layer{
+		Layer {
 			inputs: inputs,
 			outputs: outputs,
-			activation: activation
+			activation: activation,
 		}
 	}
 }
 
-/// Used to build topologies and do some minor compile-time and 
+/// Used to build topologies and do some minor compile-time and
 /// runtime checks to enforce validity of the topology as a shape for neural nets.
-/// 
+///
 /// Can be used by `Mentor` types to train it and become a trained neural network
 /// with which the user can predict data.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopologyBuilder {
-	last  : usize,
-	layers: Vec<Layer>
+	last: usize,
+	layers: Vec<Layer>,
 }
 
 /// Represents the neural network topology.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Topology {
-	layers: Vec<Layer>
+	layers: Vec<Layer>,
 }
 
 impl Topology {
 	/// Creates a new topology.
-	/// 
+	///
 	/// # Panics
-	/// 
+	///
 	/// If size is zero.
 	pub fn input(size: usize) -> TopologyBuilder {
 		assert!(size >= 1, "cannot define a zero-sized input layer");
 
-		TopologyBuilder{
-			last  : size,
-			layers: vec![]
+		TopologyBuilder {
+			last: size,
+			layers: vec![],
 		}
 	}
 
@@ -98,9 +98,9 @@ impl TopologyBuilder {
 	/// Adds a hidden layer to this topology with the given amount of neurons.
 	///
 	/// Bias-Neurons are implicitely added!
-	/// 
+	///
 	/// # Panics
-	/// 
+	///
 	/// If `layer_size` is zero.
 	pub fn layer(mut self, layer_size: usize, act: Activation) -> TopologyBuilder {
 		self.push_layer(layer_size, act);
@@ -110,9 +110,9 @@ impl TopologyBuilder {
 	/// Adds some hidden layers to this topology with the given amount of neurons.
 	///
 	/// Bias-Neurons are implicitely added!
-	/// 
+	///
 	/// # Panics
-	/// 
+	///
 	/// If any of the specified layer sizes is zero.
 	pub fn layers(mut self, layers: &[(usize, Activation)]) -> TopologyBuilder {
 		for &layer in layers {
@@ -124,9 +124,9 @@ impl TopologyBuilder {
 	/// Finishes constructing a topology by defining its output layer neurons.
 	///
 	/// Bias-Neurons are implicitely added!
-	/// 
+	///
 	/// # Panics
-	/// 
+	///
 	/// If `layer_size` is zero.
 	pub fn output(mut self, layer_size: usize, act: Activation) -> Topology {
 		assert!(layer_size >= 1, "cannot define a zero-sized output layer");
@@ -144,16 +144,12 @@ mod tests {
 
 	#[test]
 	fn construction() {
-		use self::Activation::{Logistic, Identity, ReLU, Tanh};
+		use self::Activation::{Identity, Logistic, ReLU, Tanh};
 		let dis = Topology::input(2)
 			.layer(5, Logistic)
-			.layers(&[
-				(10, Identity),
-				(10, ReLU)
-			])
+			.layers(&[(10, Identity), (10, ReLU)])
 			.output(5, Tanh);
-		let mut it = dis.iter_layers()
-			.map(|&size| size);
+		let mut it = dis.iter_layers().map(|&size| size);
 		assert_eq!(it.next(), Some(Layer::new(2, 5, Logistic)));
 		assert_eq!(it.next(), Some(Layer::new(5, 10, Identity)));
 		assert_eq!(it.next(), Some(Layer::new(10, 10, ReLU)));

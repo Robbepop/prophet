@@ -1,5 +1,5 @@
 use crate::layer::utils::prelude::*;
-use crate::utils::{LearnRate, LearnMomentum};
+use crate::utils::{LearnMomentum, LearnRate};
 
 pub(crate) trait ProcessInputSignal {
 	fn process_input_signal(&mut self, signal: BiasedSignalView);
@@ -21,11 +21,17 @@ pub(crate) trait HasErrorSignal {
 
 pub(crate) trait PropagateErrorSignal {
 	fn propagate_error_signal<P>(&mut self, propagated: &mut P)
-		where P: HasErrorSignal;
+	where
+		P: HasErrorSignal;
 }
 
 pub(crate) trait ApplyErrorSignalCorrection {
-	fn apply_error_signal_correction(&mut self, signal: BiasedSignalView, lr: LearnRate, lm: LearnMomentum);
+	fn apply_error_signal_correction(
+		&mut self,
+		signal: BiasedSignalView,
+		lr: LearnRate,
+		lm: LearnMomentum,
+	);
 }
 
 pub(crate) trait SizedLayer {
@@ -36,12 +42,7 @@ pub(crate) trait SizedLayer {
 pub mod prelude {
 	#[doc(no_inline)]
 	pub(crate) use super::{
-		SizedLayer,
-		HasOutputSignal,
-		HasErrorSignal,
-		ProcessInputSignal,
-		CalculateOutputErrorSignal,
-		PropagateErrorSignal,
-		ApplyErrorSignalCorrection
+		ApplyErrorSignalCorrection, CalculateOutputErrorSignal, HasErrorSignal, HasOutputSignal,
+		ProcessInputSignal, PropagateErrorSignal, SizedLayer,
 	};
 }

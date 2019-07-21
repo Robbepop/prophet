@@ -4,10 +4,10 @@
 use std::vec;
 
 use crate::activation::Activation;
-use crate::errors::{Result, Error};
+use crate::errors::{Error, Result};
 
 /// Represents the number of neurons within a layer of a topology.
-/// 
+///
 /// Note: This does not respect bias neurons! They are implicitely
 ///       added in later stages of neural network construction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -15,13 +15,13 @@ pub struct LayerSize(usize);
 
 impl LayerSize {
 	/// Creates a new `LayerSize` with the given number of neurons.
-	/// 
+	///
 	/// # Errors
-	/// 
+	///
 	/// - If the given size is equal to 0 (zero).
 	pub fn new(size: usize) -> Result<LayerSize> {
 		if size == 0 {
-			return Err(Error::zero_layer_size())
+			return Err(Error::zero_layer_size());
 		}
 		Ok(LayerSize(size))
 	}
@@ -34,13 +34,12 @@ impl LayerSize {
 
 impl From<usize> for LayerSize {
 	/// Creates a new `LayerSize` with the given number of neurons.
-	/// 
+	///
 	/// # Panics
-	/// 
+	///
 	/// - If the given size is equal to 0 (zero).
 	fn from(size: usize) -> LayerSize {
-		LayerSize::new(size)
-			.expect("This implementation expects the user to provide valid input.")
+		LayerSize::new(size).expect("This implementation expects the user to provide valid input.")
 	}
 }
 
@@ -54,30 +53,31 @@ pub trait Layer {
 }
 
 /// An abstracted `FullyConnectedLayer`.
-/// 
+///
 /// This is a layer that reshapes the neighbouring neural layer sizes
 /// by fully connecting their neuron signals to each other.
-/// 
+///
 /// This abstract layer includes all information required in order to
 /// construct a concrete `FullyConnectedLayer` with default settings.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct FullyConnectedLayer{
+pub struct FullyConnectedLayer {
 	/// The input signal length of this `FullyConnectedLayer`
 	inputs: LayerSize,
 	/// The output signal length of this `FullyConnectedLayer`
-	outputs: LayerSize
+	outputs: LayerSize,
 }
 
 impl FullyConnectedLayer {
 	/// Creates a new abstracted `FullyConnectedLayer` with the given
 	/// input and output signal lengths.
 	pub(crate) fn new<I, O>(inputs: I, outputs: O) -> FullyConnectedLayer
-		where I: Into<LayerSize>,
-		      O: Into<LayerSize>
+	where
+		I: Into<LayerSize>,
+		O: Into<LayerSize>,
 	{
-		FullyConnectedLayer{
+		FullyConnectedLayer {
 			inputs: inputs.into(),
-			outputs: outputs.into()
+			outputs: outputs.into(),
 		}
 	}
 }
@@ -95,24 +95,28 @@ impl Layer for FullyConnectedLayer {
 }
 
 /// An abstracted `ActivationLayer`.
-/// 
+///
 /// This layer simply forwards its input signal tranformed by its activation function.
-/// 
+///
 /// This abstract layer includes all information required in order to
 /// construct a concrete `ActivationLayer` with default settings.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct ActivationLayer{
+pub struct ActivationLayer {
 	size: LayerSize,
-	act: Activation
+	act: Activation,
 }
 
 impl ActivationLayer {
 	/// Creates a new abstracted `ActivationLayer` with the given
 	/// input signal length and activation function.
 	pub(crate) fn new<S>(size: S, act: Activation) -> ActivationLayer
-		where S: Into<LayerSize>
+	where
+		S: Into<LayerSize>,
 	{
-		ActivationLayer{size: size.into(), act}
+		ActivationLayer {
+			size: size.into(),
+			act,
+		}
 	}
 
 	/// Returns the activation function of this `ActivationLayer`.
@@ -139,7 +143,7 @@ pub enum AnyLayer {
 	/// An abstracted `FullyConnectedLayer`.
 	FullyConnected(FullyConnectedLayer),
 	/// An abstracted `ActivationLayer`.
-	Activation(ActivationLayer)
+	Activation(ActivationLayer),
 }
 
 impl Layer for AnyLayer {
@@ -148,7 +152,7 @@ impl Layer for AnyLayer {
 		use self::AnyLayer::*;
 		match *self {
 			FullyConnected(layer) => layer.input_len(),
-			Activation(layer) => layer.input_len()
+			Activation(layer) => layer.input_len(),
 		}
 	}
 
@@ -157,7 +161,7 @@ impl Layer for AnyLayer {
 		use self::AnyLayer::*;
 		match *self {
 			FullyConnected(layer) => layer.output_len(),
-			Activation(layer) => layer.output_len()
+			Activation(layer) => layer.output_len(),
 		}
 	}
 }
@@ -174,33 +178,36 @@ impl From<ActivationLayer> for AnyLayer {
 	}
 }
 
-/// Builds up topologies and do some minor compile-time and 
+/// Builds up topologies and do some minor compile-time and
 /// runtime checks to enforce validity of the topology as a shape for neural nets.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Topology {
-	layers: Vec<AnyLayer>
+	layers: Vec<AnyLayer>,
 }
 
 impl Topology {
 	/// Creates a new topology with an input layer of the given size.
-	/// 
+	///
 	/// # Panics
-	/// 
+	///
 	/// If size is zero.
 	pub fn input<S>(size: S) -> InitializingTopology
-		where S: Into<LayerSize>
+	where
+		S: Into<LayerSize>,
 	{
-		InitializingTopology{input_len: size.into()}
+		InitializingTopology {
+			input_len: size.into(),
+		}
 	}
 }
 
 /// This represents a `Topology` during its initialization.
-/// 
+///
 /// Note: This structure is always temporary and just used to correctly
 ///       propagate the input signal length information to the real topology builder.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct InitializingTopology {
-	input_len: LayerSize
+	input_len: LayerSize,
 }
 
 /// Types that can build-up topologies for neural networks incrementally.
@@ -210,7 +217,8 @@ pub trait TopologyBuilder {
 
 	/// Adds another abstracted fully connected layer to this topology.
 	fn fully_connect<S>(self, size: S) -> Self::Builder
-		where S: Into<LayerSize>;
+	where
+		S: Into<LayerSize>;
 
 	/// Adds another abstracted activation layer to this topology.
 	fn activation(self, act: Activation) -> Self::Builder;
@@ -220,22 +228,20 @@ impl TopologyBuilder for InitializingTopology {
 	type Builder = Topology;
 
 	fn fully_connect<S>(self, size: S) -> Self::Builder
-		where S: Into<LayerSize>
+	where
+		S: Into<LayerSize>,
 	{
-		Topology{
-			layers: vec![
-				AnyLayer::from(
-					FullyConnectedLayer::new(self.input_len, size.into()))
-			]
+		Topology {
+			layers: vec![AnyLayer::from(FullyConnectedLayer::new(
+				self.input_len,
+				size.into(),
+			))],
 		}
 	}
 
 	fn activation(self, act: Activation) -> Self::Builder {
-		Topology{
-			layers: vec![
-				AnyLayer::from(
-					ActivationLayer::new(self.input_len, act))
-			]
+		Topology {
+			layers: vec![AnyLayer::from(ActivationLayer::new(self.input_len, act))],
 		}
 	}
 }
@@ -244,31 +250,28 @@ impl TopologyBuilder for Topology {
 	type Builder = Topology;
 
 	fn fully_connect<S>(mut self, size: S) -> Self::Builder
-		where S: Into<LayerSize>
+	where
+		S: Into<LayerSize>,
 	{
 		let last_len = self.last_len();
-		self.layers.push(
-			AnyLayer::from(
-				FullyConnectedLayer::new(last_len, size.into())
-			)
-		);
+		self.layers.push(AnyLayer::from(FullyConnectedLayer::new(
+			last_len,
+			size.into(),
+		)));
 		self
 	}
 
 	fn activation(mut self, act: Activation) -> Self::Builder {
 		let last_len = self.last_len();
-		self.layers.push(
-			AnyLayer::from(
-				ActivationLayer::new(last_len, act)
-			)
-		);
+		self.layers
+			.push(AnyLayer::from(ActivationLayer::new(last_len, act)));
 		self
 	}
 }
 
 impl Topology {
 	/// Returns the length of the last pushed layer.
-	/// 
+	///
 	/// Useful for layers like activation layers which adopt their size
 	/// from their previous layer.
 	fn last_len(&self) -> LayerSize {
@@ -328,7 +331,7 @@ mod tests {
 			SoftPlus,
 			BentIdentity,
 			Sinusoid,
-			Gaussian
+			Gaussian,
 		]
 	}
 
@@ -375,14 +378,14 @@ mod tests {
 		fn new() {
 			assert_eq!(
 				FullyConnectedLayer::new(LayerSize(3), LayerSize(4)),
-				FullyConnectedLayer{
+				FullyConnectedLayer {
 					inputs: LayerSize(3),
 					outputs: LayerSize(4)
 				}
 			);
 			assert_eq!(
 				FullyConnectedLayer::new(3, 4),
-				FullyConnectedLayer{
+				FullyConnectedLayer {
 					inputs: LayerSize(3),
 					outputs: LayerSize(4)
 				}
@@ -393,14 +396,20 @@ mod tests {
 		fn input_len() {
 			assert_eq!(FullyConnectedLayer::new(1, 1).input_len(), LayerSize(1));
 			assert_eq!(FullyConnectedLayer::new(3, 4).input_len(), LayerSize(3));
-			assert_eq!(FullyConnectedLayer::new(42, 1337).input_len(), LayerSize(42));
+			assert_eq!(
+				FullyConnectedLayer::new(42, 1337).input_len(),
+				LayerSize(42)
+			);
 		}
 
 		#[test]
 		fn output_len() {
 			assert_eq!(FullyConnectedLayer::new(1, 1).output_len(), LayerSize(1));
 			assert_eq!(FullyConnectedLayer::new(3, 4).output_len(), LayerSize(4));
-			assert_eq!(FullyConnectedLayer::new(42, 1337).output_len(), LayerSize(1337));
+			assert_eq!(
+				FullyConnectedLayer::new(42, 1337).output_len(),
+				LayerSize(1337)
+			);
 		}
 	}
 
@@ -412,14 +421,14 @@ mod tests {
 		fn new() {
 			assert_eq!(
 				ActivationLayer::new(LayerSize(3), Tanh),
-				ActivationLayer{
+				ActivationLayer {
 					size: LayerSize(3),
 					act: Tanh
 				}
 			);
 			assert_eq!(
 				ActivationLayer::new(42, ReLU),
-				ActivationLayer{
+				ActivationLayer {
 					size: LayerSize(42),
 					act: ReLU
 				}
@@ -472,7 +481,7 @@ mod tests {
 		fn from_fully_connected_layer() {
 			assert_eq!(
 				AnyLayer::from(FullyConnectedLayer::new(3, 4)),
-				AnyLayer::FullyConnected(FullyConnectedLayer{
+				AnyLayer::FullyConnected(FullyConnectedLayer {
 					inputs: LayerSize(3),
 					outputs: LayerSize(4)
 				})
@@ -483,7 +492,7 @@ mod tests {
 		fn from_activation_layer() {
 			assert_eq!(
 				AnyLayer::from(ActivationLayer::new(3, Tanh)),
-				AnyLayer::Activation(ActivationLayer{
+				AnyLayer::Activation(ActivationLayer {
 					size: LayerSize(3),
 					act: Tanh
 				})
@@ -494,10 +503,16 @@ mod tests {
 		fn input_len() {
 			for i in 1..10 {
 				for o in 1..10 {
-					assert_eq!(AnyLayer::from(FullyConnectedLayer::new(i, o)).input_len(), LayerSize(i));
+					assert_eq!(
+						AnyLayer::from(FullyConnectedLayer::new(i, o)).input_len(),
+						LayerSize(i)
+					);
 				}
 				for act in activation_fns() {
-					assert_eq!(AnyLayer::from(ActivationLayer::new(i, act)).input_len(), LayerSize(i));
+					assert_eq!(
+						AnyLayer::from(ActivationLayer::new(i, act)).input_len(),
+						LayerSize(i)
+					);
 				}
 			}
 		}
@@ -506,10 +521,16 @@ mod tests {
 		fn output_len() {
 			for i in 1..10 {
 				for o in 1..10 {
-					assert_eq!(AnyLayer::from(FullyConnectedLayer::new(i, o)).output_len(), LayerSize(o));
+					assert_eq!(
+						AnyLayer::from(FullyConnectedLayer::new(i, o)).output_len(),
+						LayerSize(o)
+					);
 				}
 				for act in activation_fns() {
-					assert_eq!(AnyLayer::from(ActivationLayer::new(i, act)).output_len(), LayerSize(i));
+					assert_eq!(
+						AnyLayer::from(ActivationLayer::new(i, act)).output_len(),
+						LayerSize(i)
+					);
 				}
 			}
 		}
@@ -520,13 +541,15 @@ mod tests {
 		use crate::activation::Activation::*;
 
 		fn simple_dummy_topology() -> Topology {
-			Topology::input(1).fully_connect( 1)
+			Topology::input(1).fully_connect(1)
 		}
 
 		fn medium_dummy_topology() -> Topology {
 			Topology::input(2)
-				.fully_connect(3).activation(Tanh)
-				.fully_connect(1).activation(Tanh)
+				.fully_connect(3)
+				.activation(Tanh)
+				.fully_connect(1)
+				.activation(Tanh)
 		}
 
 		fn complex_dummy_topology() -> Topology {
@@ -535,8 +558,10 @@ mod tests {
 				.fully_connect(1337)
 				.activation(Tanh)
 				.activation(ReLU)
-				.fully_connect(11).activation(Logistic)
-				.fully_connect(7).activation(Gaussian)
+				.fully_connect(11)
+				.activation(Logistic)
+				.fully_connect(7)
+				.activation(Gaussian)
 		}
 
 		#[test]
@@ -544,12 +569,11 @@ mod tests {
 			for n in 1..10 {
 				assert_eq!(
 					Topology::input(LayerSize(n)),
-					InitializingTopology{input_len: LayerSize(n)}
+					InitializingTopology {
+						input_len: LayerSize(n)
+					}
 				);
-				assert_eq!(
-					Topology::input(LayerSize(n)),
-					Topology::input(n)
-				);
+				assert_eq!(Topology::input(LayerSize(n)), Topology::input(n));
 			}
 		}
 
@@ -559,7 +583,7 @@ mod tests {
 				let initial_output_len = top.output_len();
 				assert_eq!(
 					top.fully_connect(size).into_iter().last().unwrap(),
-					AnyLayer::FullyConnected(FullyConnectedLayer{
+					AnyLayer::FullyConnected(FullyConnectedLayer {
 						inputs: initial_output_len,
 						outputs: LayerSize(size)
 					})
@@ -579,7 +603,7 @@ mod tests {
 				let initial_output_len = top.output_len();
 				assert_eq!(
 					top.activation(act).into_iter().last().unwrap(),
-					AnyLayer::Activation(ActivationLayer{
+					AnyLayer::Activation(ActivationLayer {
 						size: initial_output_len,
 						act
 					})
@@ -596,10 +620,8 @@ mod tests {
 		fn check_simple() {
 			assert_eq!(
 				simple_dummy_topology(),
-				Topology{
-					layers: vec![
-						AnyLayer::from(FullyConnectedLayer::new(1, 1))
-					]
+				Topology {
+					layers: vec![AnyLayer::from(FullyConnectedLayer::new(1, 1))]
 				}
 			);
 		}
@@ -608,7 +630,7 @@ mod tests {
 		fn check_medium() {
 			assert_eq!(
 				medium_dummy_topology(),
-				Topology{
+				Topology {
 					layers: vec![
 						AnyLayer::from(FullyConnectedLayer::new(2, 3)),
 						AnyLayer::from(ActivationLayer::new(3, Tanh)),
@@ -623,7 +645,7 @@ mod tests {
 		fn check_complex() {
 			assert_eq!(
 				complex_dummy_topology(),
-				Topology{
+				Topology {
 					layers: vec![
 						AnyLayer::from(FullyConnectedLayer::new(10, 42)),
 						AnyLayer::from(FullyConnectedLayer::new(42, 1337)),
@@ -640,32 +662,47 @@ mod tests {
 
 		#[test]
 		fn input_len() {
-			assert_eq!(simple_dummy_topology().input_len() , LayerSize( 1));
-			assert_eq!(medium_dummy_topology().input_len() , LayerSize( 2));
+			assert_eq!(simple_dummy_topology().input_len(), LayerSize(1));
+			assert_eq!(medium_dummy_topology().input_len(), LayerSize(2));
 			assert_eq!(complex_dummy_topology().input_len(), LayerSize(10));
 		}
 
 		#[test]
 		fn output_len() {
-			assert_eq!(simple_dummy_topology().output_len() , LayerSize(1));
-			assert_eq!(medium_dummy_topology().output_len() , LayerSize(1));
+			assert_eq!(simple_dummy_topology().output_len(), LayerSize(1));
+			assert_eq!(medium_dummy_topology().output_len(), LayerSize(1));
 			assert_eq!(complex_dummy_topology().output_len(), LayerSize(7));
 		}
 
 		#[test]
 		fn into_iter_simple() {
 			let mut iter = simple_dummy_topology().into_iter();
-			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(1, 1))));
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(FullyConnectedLayer::new(1, 1)))
+			);
 			assert_eq!(iter.next(), None);
 		}
 
 		#[test]
 		fn into_iter_medium() {
 			let mut iter = medium_dummy_topology().into_iter();
-			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(2, 3))));
-			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(3, Tanh))));
-			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(3, 1))));
-			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(1, Tanh))));
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(FullyConnectedLayer::new(2, 3)))
+			);
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(ActivationLayer::new(3, Tanh)))
+			);
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(FullyConnectedLayer::new(3, 1)))
+			);
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(ActivationLayer::new(1, Tanh)))
+			);
 			assert_eq!(iter.next(), None);
 		}
 
@@ -673,14 +710,38 @@ mod tests {
 		fn into_iter_complex() {
 			let mut iter = complex_dummy_topology().into_iter();
 
-			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(10, 42))));
-			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(42, 1337))));
-			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(1337, Tanh))));
-			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(1337, ReLU))));
-			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(1337, 11))));
-			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(11, Logistic))));
-			assert_eq!(iter.next(), Some(AnyLayer::from(FullyConnectedLayer::new(11, 7))));
-			assert_eq!(iter.next(), Some(AnyLayer::from(ActivationLayer::new(7, Gaussian))));
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(FullyConnectedLayer::new(10, 42)))
+			);
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(FullyConnectedLayer::new(42, 1337)))
+			);
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(ActivationLayer::new(1337, Tanh)))
+			);
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(ActivationLayer::new(1337, ReLU)))
+			);
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(FullyConnectedLayer::new(1337, 11)))
+			);
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(ActivationLayer::new(11, Logistic)))
+			);
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(FullyConnectedLayer::new(11, 7)))
+			);
+			assert_eq!(
+				iter.next(),
+				Some(AnyLayer::from(ActivationLayer::new(7, Gaussian)))
+			);
 
 			assert_eq!(iter.next(), None);
 		}

@@ -2,14 +2,11 @@
 
 use ndarray::prelude::*;
 
-use crate::layer::utils::{
-	UnbiasedSignalView,
-	UnbiasedSignalBuffer
-};
 use crate::errors::{Error, Result};
+use crate::layer::utils::{UnbiasedSignalBuffer, UnbiasedSignalView};
 
+use rand::prelude::{FromEntropy, SmallRng};
 use std::fmt::Debug;
-use rand::prelude::{SmallRng, FromEntropy};
 
 /// Represents a supervised sample for supervised learning purposes.
 ///
@@ -26,7 +23,7 @@ pub trait SupervisedSample {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Sample {
 	input: UnbiasedSignalBuffer,
-	expected: UnbiasedSignalBuffer
+	expected: UnbiasedSignalBuffer,
 }
 
 impl Sample {
@@ -37,12 +34,13 @@ impl Sample {
 	///
 	/// When the given signals are invalid, e.g. empty.
 	pub fn new<I, E>(input: I, expected: E) -> Result<Sample>
-		where I: Into<Array1<f32>>,
-		      E: Into<Array1<f32>>
+	where
+		I: Into<Array1<f32>>,
+		E: Into<Array1<f32>>,
 	{
 		let input = UnbiasedSignalBuffer::from_raw(input.into())?; // TODO: add annotation to error
 		let expected = UnbiasedSignalBuffer::from_raw(expected.into())?; // TODO: add annotation to error
-		Ok(Sample{input, expected})
+		Ok(Sample { input, expected })
 	}
 }
 
@@ -66,7 +64,7 @@ impl SupervisedSample for Sample {
 /// `SampleCollection`s are used by `SampleGen`s.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SampleCollection {
-	samples: Vec<Sample>
+	samples: Vec<Sample>,
 }
 
 impl SampleCollection {
@@ -83,9 +81,9 @@ impl SampleCollection {
 	///
 	/// This won't fail for duplicate samples within the iterator, however,
 	/// a check for this scenario might be added in the future.
-	///
 	pub fn from_iter<I>(samples: I) -> Result<SampleCollection>
-		where I: IntoIterator<Item = Sample>
+	where
+		I: IntoIterator<Item = Sample>,
 	{
 		let samples: Vec<Sample> = samples.into_iter().collect();
 		if let Some((first, rest)) = samples.split_first() {
@@ -93,18 +91,22 @@ impl SampleCollection {
 			let expected_len = first.expected().dim();
 			for sample in rest {
 				if sample.input().dim() != input_len {
-					return Err(Error::unmatching_sample_input_len(input_len, sample.input().dim()))
+					return Err(Error::unmatching_sample_input_len(
+						input_len,
+						sample.input().dim(),
+					));
 				}
 				if sample.expected().dim() != expected_len {
-					return Err(Error::unmatching_sample_expected_len(expected_len, sample.expected().dim()))
+					return Err(Error::unmatching_sample_expected_len(
+						expected_len,
+						sample.expected().dim(),
+					));
 				}
 			}
-			
+		} else {
+			return Err(Error::empty_sample_collection());
 		}
-		else {
-			return Err(Error::empty_sample_collection())
-		}
-		Ok(SampleCollection{samples})
+		Ok(SampleCollection { samples })
 	}
 
 	/// Returns the sample length of the input signal.
@@ -142,10 +144,16 @@ impl SampleCollection {
 	#[inline]
 	pub fn insert(&mut self, sample: Sample) -> Result<()> {
 		if sample.input().dim() != self.input_len() {
-			return Err(Error::unmatching_sample_input_len(self.input_len(), sample.input().dim()))
+			return Err(Error::unmatching_sample_input_len(
+				self.input_len(),
+				sample.input().dim(),
+			));
 		}
 		if sample.expected().dim() != self.expected_len() {
-			return Err(Error::unmatching_sample_expected_len(self.expected_len(), sample.expected().dim()))
+			return Err(Error::unmatching_sample_expected_len(
+				self.expected_len(),
+				sample.expected().dim(),
+			));
 		}
 		self.samples.push(sample);
 		Ok(())
@@ -172,15 +180,18 @@ pub trait SampleGen: Debug {
 
 /// A `SampleGen` that iterates over its finite set of samples in a sequential fashion.
 #[derive(Debug, Clone, PartialEq)]
-pub struct SequentialSampleScheduler{
+pub struct SequentialSampleScheduler {
 	samples: SampleCollection,
-	current: usize
+	current: usize,
 }
 
 impl SequentialSampleScheduler {
 	/// Creates a new `SequentialSampleScheduler` from the given `SampleCollection`.
 	pub fn new(samples: SampleCollection) -> SequentialSampleScheduler {
-		SequentialSampleScheduler{samples, current: 0}
+		SequentialSampleScheduler {
+			samples,
+			current: 0,
+		}
 	}
 }
 
@@ -194,20 +205,25 @@ impl SampleGen for SequentialSampleScheduler {
 	}
 
 	#[inline]
-	fn finite_len(&self) -> Option<usize> { Some(self.samples.len()) }
+	fn finite_len(&self) -> Option<usize> {
+		Some(self.samples.len())
+	}
 }
 
 /// A `SampleGen` that iterates over its finite set of samples in a random fashion.
 #[derive(Debug, Clone)]
-pub struct RandomSampleScheduler{
+pub struct RandomSampleScheduler {
 	samples: SampleCollection,
-	rng: SmallRng
+	rng: SmallRng,
 }
 
 impl RandomSampleScheduler {
 	/// Creates a new `RandomSampleScheduler` from the given `SampleCollection`.
 	pub fn new(samples: SampleCollection) -> RandomSampleScheduler {
-		RandomSampleScheduler{samples, rng: SmallRng::from_entropy()}
+		RandomSampleScheduler {
+			samples,
+			rng: SmallRng::from_entropy(),
+		}
 	}
 }
 
@@ -219,7 +235,9 @@ impl SampleGen for RandomSampleScheduler {
 	}
 
 	#[inline]
-	fn finite_len(&self) -> Option<usize> { Some(self.samples.len()) }
+	fn finite_len(&self) -> Option<usize> {
+		Some(self.samples.len())
+	}
 }
 
 /// Creates a new `SampleCollection`.
@@ -399,7 +417,6 @@ macro_rules! samples {
 /// let sample = sample!( f  =>  t );
 /// # }
 /// ```
-///
 #[macro_export]
 macro_rules! sample {
 	( [ $($i:expr),+ ] => [ $($e:expr),+ ] ) => {
@@ -440,15 +457,12 @@ mod tests {
 
 		#[test]
 		fn create_ok() {
-			let sample = Sample::new(
-				vec![1.0, 2.0, 3.0],
-				vec![10.0, 11.0]
-			);
-			let expected = Ok(Sample{
-				input: UnbiasedSignalBuffer::from_raw(
-					Array::from_vec(vec![1.0, 2.0, 3.0])).unwrap(),
-				expected: UnbiasedSignalBuffer::from_raw(
-					Array::from_vec(vec![10.0, 11.0])).unwrap()
+			let sample = Sample::new(vec![1.0, 2.0, 3.0], vec![10.0, 11.0]);
+			let expected = Ok(Sample {
+				input: UnbiasedSignalBuffer::from_raw(Array::from_vec(vec![1.0, 2.0, 3.0]))
+					.unwrap(),
+				expected: UnbiasedSignalBuffer::from_raw(Array::from_vec(vec![10.0, 11.0]))
+					.unwrap(),
 			});
 			assert_eq!(sample, expected);
 		}
@@ -469,20 +483,14 @@ mod tests {
 
 		#[test]
 		fn input() {
-			let sample = Sample::new(
-				vec![1.0, 2.0, 3.0],
-				vec![10.0, 11.0]
-			).unwrap();
+			let sample = Sample::new(vec![1.0, 2.0, 3.0], vec![10.0, 11.0]).unwrap();
 			let expected_input = Array::from_vec(vec![1.0, 2.0, 3.0]);
 			assert!(sample.input().data().all_close(&expected_input, 0.0));
 		}
 
 		#[test]
 		fn expected() {
-			let sample = Sample::new(
-				vec![1.0, 2.0, 3.0],
-				vec![10.0, 11.0]
-			).unwrap();
+			let sample = Sample::new(vec![1.0, 2.0, 3.0], vec![10.0, 11.0]).unwrap();
 			let expected_expected = Array::from_vec(vec![10.0, 11.0]);
 			assert!(sample.expected().data().all_close(&expected_expected, 0.0));
 		}
@@ -493,10 +501,13 @@ mod tests {
 
 		#[test]
 		fn create_ok() {
-			let samples = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
-				Sample::new(vec![4.0, 5.0], vec![5.0]).unwrap(),
-			].into_iter());
+			let samples = SampleCollection::from_iter(
+				vec![
+					Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
+					Sample::new(vec![4.0, 5.0], vec![5.0]).unwrap(),
+				]
+				.into_iter(),
+			);
 
 			assert!(samples.is_ok());
 			let samples = samples.unwrap();
@@ -507,11 +518,23 @@ mod tests {
 			assert_eq!(samples.as_slice()[0].expected().dim(), 1);
 			assert_eq!(samples.as_slice()[1].expected().dim(), 1);
 
-			assert_eq!(samples.as_slice()[0].input().data(), Array::from_vec(vec![1.0, 2.0]));
-			assert_eq!(samples.as_slice()[1].input().data(), Array::from_vec(vec![4.0, 5.0]));
+			assert_eq!(
+				samples.as_slice()[0].input().data(),
+				Array::from_vec(vec![1.0, 2.0])
+			);
+			assert_eq!(
+				samples.as_slice()[1].input().data(),
+				Array::from_vec(vec![4.0, 5.0])
+			);
 
-			assert_eq!(samples.as_slice()[0].expected().data(), Array::from_vec(vec![3.0]));
-			assert_eq!(samples.as_slice()[1].expected().data(), Array::from_vec(vec![5.0]));
+			assert_eq!(
+				samples.as_slice()[0].expected().data(),
+				Array::from_vec(vec![3.0])
+			);
+			assert_eq!(
+				samples.as_slice()[1].expected().data(),
+				Array::from_vec(vec![5.0])
+			);
 		}
 
 		#[test]
@@ -525,17 +548,23 @@ mod tests {
 		#[test]
 		fn create_unmatching_input() {
 			assert_eq!(
-				SampleCollection::from_iter(vec![
-					Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
-					Sample::new(vec![4.0]     , vec![5.0]).unwrap()
-				].into_iter()),
+				SampleCollection::from_iter(
+					vec![
+						Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
+						Sample::new(vec![4.0], vec![5.0]).unwrap()
+					]
+					.into_iter()
+				),
 				Err(Error::unmatching_sample_input_len(2, 1))
 			);
 			assert_eq!(
-				SampleCollection::from_iter(vec![
-					Sample::new(vec![1.0     ], vec![2.0]).unwrap(),
-					Sample::new(vec![3.0, 4.0], vec![5.0]).unwrap()
-				].into_iter()),
+				SampleCollection::from_iter(
+					vec![
+						Sample::new(vec![1.0], vec![2.0]).unwrap(),
+						Sample::new(vec![3.0, 4.0], vec![5.0]).unwrap()
+					]
+					.into_iter()
+				),
 				Err(Error::unmatching_sample_input_len(1, 2))
 			);
 		}
@@ -543,17 +572,23 @@ mod tests {
 		#[test]
 		fn create_unmatching_expected() {
 			assert_eq!(
-				SampleCollection::from_iter(vec![
-					Sample::new(vec![1.0, 2.0], vec![3.0, 4.0]).unwrap(),
-					Sample::new(vec![5.0, 6.0], vec![7.0     ]).unwrap()
-				].into_iter()),
+				SampleCollection::from_iter(
+					vec![
+						Sample::new(vec![1.0, 2.0], vec![3.0, 4.0]).unwrap(),
+						Sample::new(vec![5.0, 6.0], vec![7.0]).unwrap()
+					]
+					.into_iter()
+				),
 				Err(Error::unmatching_sample_expected_len(2, 1))
 			);
 			assert_eq!(
-				SampleCollection::from_iter(vec![
-					Sample::new(vec![1.0, 2.0], vec![3.0     ]).unwrap(),
-					Sample::new(vec![4.0, 5.0], vec![6.0, 7.0]).unwrap()
-				].into_iter()),
+				SampleCollection::from_iter(
+					vec![
+						Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
+						Sample::new(vec![4.0, 5.0], vec![6.0, 7.0]).unwrap()
+					]
+					.into_iter()
+				),
 				Err(Error::unmatching_sample_expected_len(1, 2))
 			);
 		}
@@ -561,31 +596,43 @@ mod tests {
 		#[test]
 		fn create_unmatching_both() {
 			assert_eq!(
-				SampleCollection::from_iter(vec![
-					Sample::new(vec![0.0, 1.0], vec![2.0, 3.0]).unwrap(),
-					Sample::new(vec![4.0     ], vec![5.0, 6.0]).unwrap(),
-					Sample::new(vec![7.0, 8.0], vec![9.0     ]).unwrap()
-				].into_iter()),
+				SampleCollection::from_iter(
+					vec![
+						Sample::new(vec![0.0, 1.0], vec![2.0, 3.0]).unwrap(),
+						Sample::new(vec![4.0], vec![5.0, 6.0]).unwrap(),
+						Sample::new(vec![7.0, 8.0], vec![9.0]).unwrap()
+					]
+					.into_iter()
+				),
 				Err(Error::unmatching_sample_input_len(2, 1))
 			);
 			assert_eq!(
-				SampleCollection::from_iter(vec![
-					Sample::new(vec![0.0, 1.0], vec![2.0, 3.0]).unwrap(),
-					Sample::new(vec![4.0, 5.0], vec![6.0     ]).unwrap(),
-					Sample::new(vec![7.0     ], vec![8.0, 9.0]).unwrap()
-				].into_iter()),
+				SampleCollection::from_iter(
+					vec![
+						Sample::new(vec![0.0, 1.0], vec![2.0, 3.0]).unwrap(),
+						Sample::new(vec![4.0, 5.0], vec![6.0]).unwrap(),
+						Sample::new(vec![7.0], vec![8.0, 9.0]).unwrap()
+					]
+					.into_iter()
+				),
 				Err(Error::unmatching_sample_expected_len(2, 1))
 			);
 		}
 
 		#[test]
 		fn insert_ok() {
-			let mut samples = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()
-			].into_iter()).unwrap();
+			let mut samples = SampleCollection::from_iter(
+				vec![Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()].into_iter(),
+			)
+			.unwrap();
 			assert_eq!(samples.len(), 1);
-			assert_eq!(samples.as_slice(), &[Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()]);
-			samples.insert(Sample::new(vec![4.0, 5.0], vec![6.0]).unwrap()).unwrap();
+			assert_eq!(
+				samples.as_slice(),
+				&[Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()]
+			);
+			samples
+				.insert(Sample::new(vec![4.0, 5.0], vec![6.0]).unwrap())
+				.unwrap();
 			assert_eq!(samples.len(), 2);
 			assert_eq!(
 				samples.as_slice(),
@@ -598,9 +645,10 @@ mod tests {
 
 		#[test]
 		fn insert_unmatching_input() {
-			let mut samples = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()
-			].into_iter()).unwrap();
+			let mut samples = SampleCollection::from_iter(
+				vec![Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()].into_iter(),
+			)
+			.unwrap();
 			assert_eq!(
 				samples.insert(Sample::new(vec![4.0], vec![5.0]).unwrap()),
 				Err(Error::unmatching_sample_input_len(2, 1))
@@ -613,9 +661,10 @@ mod tests {
 
 		#[test]
 		fn insert_unmatching_expected() {
-			let mut samples = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0], vec![2.0, 3.0]).unwrap()
-			].into_iter()).unwrap();
+			let mut samples = SampleCollection::from_iter(
+				vec![Sample::new(vec![1.0], vec![2.0, 3.0]).unwrap()].into_iter(),
+			)
+			.unwrap();
 			assert_eq!(
 				samples.insert(Sample::new(vec![4.0], vec![5.0]).unwrap()),
 				Err(Error::unmatching_sample_expected_len(2, 1))
@@ -628,17 +677,19 @@ mod tests {
 
 		#[test]
 		fn len() {
-			let samples = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()
-			].into_iter()).unwrap();
+			let samples = SampleCollection::from_iter(
+				vec![Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()].into_iter(),
+			)
+			.unwrap();
 			assert_eq!(samples.len(), 1);
 		}
 
 		#[test]
 		fn is_empty() {
-			let samples = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()
-			].into_iter()).unwrap();
+			let samples = SampleCollection::from_iter(
+				vec![Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap()].into_iter(),
+			)
+			.unwrap();
 			assert_eq!(samples.is_empty(), false);
 		}
 
@@ -648,26 +699,33 @@ mod tests {
 			// Due to non-constructor construction invariants are broken.
 			// Thus `is_empty` may fail spuriously.
 			// Note that this kind of code is not possible outside of this module.
-			let samples = SampleCollection{
-				samples: vec![]
-			};
+			let samples = SampleCollection { samples: vec![] };
 			assert_eq!(samples.is_empty(), true);
 		}
 
 		#[test]
 		fn input_len() {
-			let samples_1 = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0], vec![2.0]).unwrap(),
-				Sample::new(vec![3.0], vec![4.0]).unwrap(),
-				Sample::new(vec![5.0], vec![6.0]).unwrap()
-			].into_iter()).unwrap();
-			let samples_2 = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
-				Sample::new(vec![4.0, 5.0], vec![6.0]).unwrap()
-			].into_iter()).unwrap();
-			let samples_3 = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0, 2.0, 3.0], vec![4.0]).unwrap()
-			].into_iter()).unwrap();
+			let samples_1 = SampleCollection::from_iter(
+				vec![
+					Sample::new(vec![1.0], vec![2.0]).unwrap(),
+					Sample::new(vec![3.0], vec![4.0]).unwrap(),
+					Sample::new(vec![5.0], vec![6.0]).unwrap(),
+				]
+				.into_iter(),
+			)
+			.unwrap();
+			let samples_2 = SampleCollection::from_iter(
+				vec![
+					Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
+					Sample::new(vec![4.0, 5.0], vec![6.0]).unwrap(),
+				]
+				.into_iter(),
+			)
+			.unwrap();
+			let samples_3 = SampleCollection::from_iter(
+				vec![Sample::new(vec![1.0, 2.0, 3.0], vec![4.0]).unwrap()].into_iter(),
+			)
+			.unwrap();
 			assert_eq!(samples_1.input_len(), 1);
 			assert_eq!(samples_2.input_len(), 2);
 			assert_eq!(samples_3.input_len(), 3);
@@ -675,18 +733,27 @@ mod tests {
 
 		#[test]
 		fn expected_len() {
-			let samples_1 = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0], vec![2.0]).unwrap(),
-				Sample::new(vec![3.0], vec![4.0]).unwrap(),
-				Sample::new(vec![5.0], vec![6.0]).unwrap()
-			].into_iter()).unwrap();
-			let samples_2 = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0], vec![2.0, 3.0]).unwrap(),
-				Sample::new(vec![4.0], vec![5.0, 6.0]).unwrap()
-			].into_iter()).unwrap();
-			let samples_3 = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0], vec![2.0, 3.0, 4.0]).unwrap()
-			].into_iter()).unwrap();
+			let samples_1 = SampleCollection::from_iter(
+				vec![
+					Sample::new(vec![1.0], vec![2.0]).unwrap(),
+					Sample::new(vec![3.0], vec![4.0]).unwrap(),
+					Sample::new(vec![5.0], vec![6.0]).unwrap(),
+				]
+				.into_iter(),
+			)
+			.unwrap();
+			let samples_2 = SampleCollection::from_iter(
+				vec![
+					Sample::new(vec![1.0], vec![2.0, 3.0]).unwrap(),
+					Sample::new(vec![4.0], vec![5.0, 6.0]).unwrap(),
+				]
+				.into_iter(),
+			)
+			.unwrap();
+			let samples_3 = SampleCollection::from_iter(
+				vec![Sample::new(vec![1.0], vec![2.0, 3.0, 4.0]).unwrap()].into_iter(),
+			)
+			.unwrap();
 			assert_eq!(samples_1.expected_len(), 1);
 			assert_eq!(samples_2.expected_len(), 2);
 			assert_eq!(samples_3.expected_len(), 3);
@@ -740,10 +807,14 @@ mod tests {
 				[1.0, 2.0] => [3.0],
 				[4.0, 5.0] => [5.0]
 			];
-			let expected = SampleCollection::from_iter(vec![
-				Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
-				Sample::new(vec![4.0, 5.0], vec![5.0]).unwrap(),
-			].into_iter()).unwrap();
+			let expected = SampleCollection::from_iter(
+				vec![
+					Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap(),
+					Sample::new(vec![4.0, 5.0], vec![5.0]).unwrap(),
+				]
+				.into_iter(),
+			)
+			.unwrap();
 			assert_eq!(expansion, expected);
 		}
 
@@ -799,28 +870,28 @@ mod tests {
 		#[test]
 		fn macro_eq() {
 			let expansion = sample!([1.0, 2.0] => [3.0]);
-			let expected  = Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap();
+			let expected = Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap();
 			assert_eq!(expansion, expected);
 		}
 
 		#[test]
 		fn macro_without_right_brackets() {
 			let expansion = sample!([1.0, 2.0] => 3.0);
-			let expected  = Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap();
+			let expected = Sample::new(vec![1.0, 2.0], vec![3.0]).unwrap();
 			assert_eq!(expansion, expected);
 		}
 
 		#[test]
 		fn macro_without_left_brackets() {
 			let expansion = sample!(1.0 => [2.0, 3.0]);
-			let expected  = Sample::new(vec![1.0], vec![2.0, 3.0]).unwrap();
+			let expected = Sample::new(vec![1.0], vec![2.0, 3.0]).unwrap();
 			assert_eq!(expansion, expected);
 		}
 
 		#[test]
 		fn macro_without_brackets() {
 			let expansion = sample!(1.0 => 2.0);
-			let expected  = Sample::new(vec![1.0], vec![2.0]).unwrap();
+			let expected = Sample::new(vec![1.0], vec![2.0]).unwrap();
 			assert_eq!(expansion, expected);
 		}
 

@@ -50,17 +50,17 @@ impl Activation {
 		use self::details::*;
 		use self::Activation::*;
 		match self {
-			Identity     => identity(x),
-			BinaryStep   => binary_step(x),
-			Logistic     => logistic(x),
-			Tanh         => tanh(x),
-			ArcTan       => arctan(x),
-			SoftSign     => softsign(x),
-			ReLU         => relu(x),
-			SoftPlus     => softplus(x),
+			Identity => identity(x),
+			BinaryStep => binary_step(x),
+			Logistic => logistic(x),
+			Tanh => tanh(x),
+			ArcTan => arctan(x),
+			SoftSign => softsign(x),
+			ReLU => relu(x),
+			SoftPlus => softplus(x),
 			BentIdentity => bent_identity(x),
-			Sinusoid     => sinusoid(x),
-			Gaussian     => gaussian(x),
+			Sinusoid => sinusoid(x),
+			Gaussian => gaussian(x),
 		}
 	}
 
@@ -69,17 +69,17 @@ impl Activation {
 		use self::details::*;
 		use self::Activation::*;
 		match self {
-			Identity     => identity_dx(x),
-			BinaryStep   => binary_step_dx(x),
-			Logistic     => logistic_dx(x),
-			Tanh         => tanh_dx(x),
-			ArcTan       => arctan_dx(x),
-			SoftSign     => softsign_dx(x),
-			ReLU         => relu_dx(x),
-			SoftPlus     => softplus_dx(x),
+			Identity => identity_dx(x),
+			BinaryStep => binary_step_dx(x),
+			Logistic => logistic_dx(x),
+			Tanh => tanh_dx(x),
+			ArcTan => arctan_dx(x),
+			SoftSign => softsign_dx(x),
+			ReLU => relu_dx(x),
+			SoftPlus => softplus_dx(x),
 			BentIdentity => bent_identity_dx(x),
-			Sinusoid     => sinusoid_dx(x),
-			Gaussian     => gaussian_dx(x),
+			Sinusoid => sinusoid_dx(x),
+			Gaussian => gaussian_dx(x),
 		}
 	}
 }
@@ -100,7 +100,11 @@ mod details {
 	/// *ƒ(x) = 0* **if** *x < 0*
 	/// *ƒ(x) = 1* **if** *x ≥ 0*
 	pub fn binary_step<F: NdFloat>(x: F) -> F {
-		if x < F::zero() { F::zero() } else { F::one() }
+		if x < F::zero() {
+			F::zero()
+		} else {
+			F::one()
+		}
 	}
 	/// Derivation of Binary Step: *ƒ(x) = 0, x ≠ 0*
 	pub fn binary_step_dx<F: NdFloat>(x: F) -> F {
@@ -153,14 +157,22 @@ mod details {
 	/// *ƒ(x) = 0* **if** *x < 0*
 	/// *ƒ(x) = x* **else**
 	pub fn relu<F: NdFloat>(x: F) -> F {
-		if x < F::zero() { F::zero() } else { x }
+		if x < F::zero() {
+			F::zero()
+		} else {
+			x
+		}
 	}
 
 	/// Derivation of `ReLU`:
 	/// *ƒ(x) = 0* **if** *x < 0*
 	/// *ƒ(x) = 1* **else**
 	pub fn relu_dx<F: NdFloat>(x: F) -> F {
-		if x < F::zero() { F::zero() } else { F::one() }
+		if x < F::zero() {
+			F::zero()
+		} else {
+			F::one()
+		}
 	}
 
 	/// `SoftPlus`: *ƒ(x) = __ln__(1 + eˣ)*

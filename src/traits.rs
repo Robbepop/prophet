@@ -2,10 +2,7 @@
 
 use ndarray::*;
 
-use crate::utils::{
-	LearnRate,
-	LearnMomentum
-};
+use crate::utils::{LearnMomentum, LearnRate};
 
 /// Types that can predict data based on a one-dimensional input data range.
 pub trait Predict<I> {
@@ -36,8 +33,5 @@ pub mod prelude {
 	pub use super::Predict;
 
 	#[doc(no_inline)]
-	pub(crate) use super::{
-		UpdateGradients,
-		UpdateWeights
-	};
+	pub(crate) use super::{UpdateGradients, UpdateWeights};
 }

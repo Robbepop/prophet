@@ -3,16 +3,16 @@
 
 use std::vec::Vec;
 
-use ndarray_rand::RandomExt;
 use ndarray::prelude::*;
-use ndarray::{Zip, Ix};
+use ndarray::{Ix, Zip};
+use ndarray_rand::RandomExt;
 
 use itertools::{multizip, Itertools};
 
-use crate::traits::prelude::*;
-use crate::utils::{LearnRate, LearnMomentum};
 use crate::activation::Activation;
 use crate::topology::*;
+use crate::traits::prelude::*;
+use crate::utils::{LearnMomentum, LearnRate};
 use rand::distributions::Uniform;
 
 /// A fully connected layer within a neural net.
@@ -43,11 +43,11 @@ use rand::distributions::Uniform;
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 struct FullyConnectedLayer {
-	weights      : Array2<f32>,
+	weights: Array2<f32>,
 	delta_weights: Array2<f32>,
-	outputs      : Array1<f32>,
-	gradients    : Array1<f32>,
-	activation   : Activation,
+	outputs: Array1<f32>,
+	gradients: Array1<f32>,
+	activation: Activation,
 }
 
 /// A neural net.
@@ -87,12 +87,12 @@ impl FullyConnectedLayer {
 		// weight matrices, not for outputs. However, it is done for outputs, too,
 		// to create size-symmetry which simplifies implementation of
 		// optimized algorithms.
-		let (n_outputs, _)   = weights.dim();
-		let biased_outputs   = n_outputs + 1;
+		let (n_outputs, _) = weights.dim();
+		let biased_outputs = n_outputs + 1;
 		let biased_gradients = biased_outputs;
-		let biased_shape     = weights.dim();
+		let biased_shape = weights.dim();
 
-		FullyConnectedLayer{
+		FullyConnectedLayer {
 			weights,
 
 			// Must be initialized with zeros or else computation
@@ -123,11 +123,13 @@ impl FullyConnectedLayer {
 	fn random(n_inputs: Ix, n_outputs: Ix, activation: Activation) -> Self {
 		assert!(n_inputs >= 1 && n_outputs >= 1);
 
-		let biased_inputs = n_inputs  + 1;
-		let biased_shape  = (n_outputs, biased_inputs);
+		let biased_inputs = n_inputs + 1;
+		let biased_shape = (n_outputs, biased_inputs);
 
 		FullyConnectedLayer::with_weights(
-			Array2::random(biased_shape, Uniform::new(-1.0, 1.0)), activation)
+			Array2::random(biased_shape, Uniform::new(-1.0, 1.0)),
+			activation,
+		)
 	}
 
 	/// Count output neurons of this layer.
@@ -172,19 +174,19 @@ impl FullyConnectedLayer {
 	/// ### Returns
 	///
 	///  - A view to the resulting output. Useful for method chaining and reductions.
-	///
-	fn feed_forward(
-		&mut self,
-		input: ArrayView1<f32>
-	)
-		-> ArrayView1<f32>
-	{
+	fn feed_forward(&mut self, input: ArrayView1<f32>) -> ArrayView1<f32> {
 		debug_assert_eq!(self.weights.rows() + 1, self.count_outputs());
-		debug_assert_eq!(self.weights.cols()    , input.len());
+		debug_assert_eq!(self.weights.cols(), input.len());
 
 		use ndarray::linalg::general_mat_vec_mul;
 
-		general_mat_vec_mul(1.0, &self.weights, &input, 1.0, &mut (self.outputs.slice_mut(s![..-1])));
+		general_mat_vec_mul(
+			1.0,
+			&self.weights,
+			&input,
+			1.0,
+			&mut (self.outputs.slice_mut(s![..-1])),
+		);
 
 		self.apply_activation_to_outputs();
 
@@ -197,24 +199,18 @@ impl FullyConnectedLayer {
 	/// ### Returns
 	///
 	/// `&Self` to allow for method chaining, especially reductions.
-	///
-	fn calculate_output_gradients(
-		&mut self,
-	    target_values: ArrayView1<f32>
-	)
-		-> &Self
-	{
-		debug_assert_eq!(self.count_outputs()  , target_values.len() + 1); // No calculation for bias neurons.
+	fn calculate_output_gradients(&mut self, target_values: ArrayView1<f32>) -> &Self {
+		debug_assert_eq!(self.count_outputs(), target_values.len() + 1); // No calculation for bias neurons.
 		debug_assert_eq!(self.count_gradients(), target_values.len() + 1); // see above ...
 
 		let act = self.activation; // Required because of non-lexical borrows.
 
 		Zip::from(&mut self.gradients.slice_mut(s![..-1]))
-				.and(&target_values)
-				.and(&self.outputs.slice(s![..-1]))
-				.apply(|gradient, &target, &output| {
-			*gradient = (target - output) * act.derived(output)
-		});
+			.and(&target_values)
+			.and(&self.outputs.slice(s![..-1]))
+			.apply(|gradient, &target, &output| {
+				*gradient = (target - output) * act.derived(output)
+			});
 
 		// gradient of bias should be set equal to zero during object initialization already.
 		self
@@ -234,14 +230,15 @@ impl FullyConnectedLayer {
 	/// ### Expects
 	///
 	/// - number of gradients equals number of outputs
-	///
 	fn apply_activation_to_gradients(&mut self) {
 		debug_assert_eq!(self.count_gradients(), self.count_outputs());
 
 		let act = self.activation; // Required because of non-lexical borrows.
 
 		// NEW CODE
-		Zip::from(&mut self.gradients).and(&self.outputs).apply(|g, o| *g *= act.derived(*o));
+		Zip::from(&mut self.gradients)
+			.and(&self.outputs)
+			.apply(|g, o| *g *= act.derived(*o));
 
 		// OLD CODE: slightly faster sequentially, but also not as easy parallelizable as new code above ...
 		// multizip((&mut self.gradients, &self.outputs))
@@ -251,7 +248,9 @@ impl FullyConnectedLayer {
 	/// Applies this layer's activation function on all outputs of this layer.
 	fn apply_activation_to_outputs(&mut self) {
 		let act = self.activation;
-		self.outputs.slice_mut(s![..-1]).mapv_inplace(|o| act.base(o));
+		self.outputs
+			.slice_mut(s![..-1])
+			.mapv_inplace(|o| act.base(o));
 	}
 
 	/// Back propagate gradients from the previous layer (in reversed order) to this layer
@@ -262,20 +261,16 @@ impl FullyConnectedLayer {
 	/// ### Returns
 	///
 	/// `&Self` to allow for method chaining, especially reductions.
-	fn propagate_gradients(
-		&mut self,
-	    prev: &FullyConnectedLayer
-	)
-	    -> &Self
-	{
+	fn propagate_gradients(&mut self, prev: &FullyConnectedLayer) -> &Self {
 		debug_assert_eq!(prev.weights.rows() + 1, prev.count_gradients());
-		debug_assert_eq!(prev.weights.cols()    , self.count_gradients());
+		debug_assert_eq!(prev.weights.cols(), self.count_gradients());
 
-		multizip((prev.weights.genrows(), prev.gradients.iter()))
-			.for_each(|(prev_weights_row, prev_gradient)| {
+		multizip((prev.weights.genrows(), prev.gradients.iter())).for_each(
+			|(prev_weights_row, prev_gradient)| {
 				multizip((self.gradients.iter_mut(), prev_weights_row.iter()))
 					.for_each(|(gradient, weight)| *gradient += weight * prev_gradient)
-			});
+			},
+		);
 
 		self.apply_activation_to_gradients();
 		self
@@ -285,29 +280,27 @@ impl FullyConnectedLayer {
 	/// This operation is usually used after successful computation of gradients.
 	fn update_weights(
 		&mut self,
-	    prev_outputs: ArrayView1<f32>,
-	    learn_rate  : LearnRate,
-	    learn_mom   : LearnMomentum
-	)
-	    -> ArrayView1<f32>
-	{
-		debug_assert_eq!(prev_outputs.len()    , self.weights.cols());
+		prev_outputs: ArrayView1<f32>,
+		learn_rate: LearnRate,
+		learn_mom: LearnMomentum,
+	) -> ArrayView1<f32> {
+		debug_assert_eq!(prev_outputs.len(), self.weights.cols());
 		debug_assert_eq!(self.count_gradients(), self.delta_weights.rows() + 1);
 
 		// Compute new delta weights.
-		multizip((self.delta_weights.genrows_mut(),
-		          self.gradients.iter()))
-			.for_each(|(mut delta_weights_row, gradient)| {
-				multizip((prev_outputs.iter(),
-				          delta_weights_row.iter_mut()))
-					.for_each(|(prev_output, delta_weight)| {
+		multizip((self.delta_weights.genrows_mut(), self.gradients.iter())).for_each(
+			|(mut delta_weights_row, gradient)| {
+				multizip((prev_outputs.iter(), delta_weights_row.iter_mut())).for_each(
+					|(prev_output, delta_weight)| {
 						*delta_weight =
 							// Individual input, magnified by the gradient and train rate
 							learn_rate.to_f32() * prev_output * gradient
 							// Also add momentum which is a fraction of the previous delta weight
 							+ learn_mom.to_f32() * *delta_weight;
-					});
-			});
+					},
+				);
+			},
+		);
 
 		// Add the delta weights computed above to the current real weights.
 		self.weights += &self.delta_weights;
@@ -327,8 +320,8 @@ impl NeuralNet {
 		assert!(!layers.is_empty());
 
 		NeuralNet {
-			input : Array::from_iter(iter::repeat(0.0).take(inputs).chain(iter::once(1.0))),
-			layers: layers
+			input: Array::from_iter(iter::repeat(0.0).take(inputs).chain(iter::once(1.0))),
+			layers: layers,
 		}
 	}
 
@@ -339,16 +332,16 @@ impl NeuralNet {
 			topology
 				.iter_layers()
 				.map(|&layer| {
-					FullyConnectedLayer::random(
-						layer.inputs, layer.outputs, layer.activation)
+					FullyConnectedLayer::random(layer.inputs, layer.outputs, layer.activation)
 				})
-				.collect()
+				.collect(),
 		)
 	}
 }
 
 impl<'b, A> Predict<A> for NeuralNet
-	where A: Into<ArrayView1<'b, f32>>
+where
+	A: Into<ArrayView1<'b, f32>>,
 {
 	fn predict(&mut self, input: A) -> ArrayView1<f32> {
 		let input = input.into();
@@ -373,37 +366,36 @@ impl<'b, A> Predict<A> for NeuralNet
 					layer.feed_forward(prev)
 				})
 		} else {
-			unreachable!("Since neural networks can never have an empty stack of layers
-				          this code should never be reachable.");
+			unreachable!(
+				"Since neural networks can never have an empty stack of layers
+				          this code should never be reachable."
+			);
 		}
 	}
 }
 
 impl<'a, A> UpdateGradients<A> for NeuralNet
-	where A: Into<ArrayView1<'a, f32>>
+where
+	A: Into<ArrayView1<'a, f32>>,
 {
 	fn update_gradients(&mut self, target_values: A) {
 		if let Some((&mut ref mut last, ref mut tail)) = self.layers.split_last_mut() {
-			tail.iter_mut()
-				.rev()
-				.fold(last.calculate_output_gradients(target_values.into()),
-				      |prev, layer| layer.propagate_gradients(prev));
+			tail.iter_mut().rev().fold(
+				last.calculate_output_gradients(target_values.into()),
+				|prev, layer| layer.propagate_gradients(prev),
+			);
 		}
 	}
 }
 
-impl UpdateWeights for NeuralNet
-{
-	fn update_weights(
-		&mut self,
-		rate: LearnRate,
-		momentum: LearnMomentum
-	) {
+impl UpdateWeights for NeuralNet {
+	fn update_weights(&mut self, rate: LearnRate, momentum: LearnMomentum) {
 		// Update the weights of this neural network from first to last layer.
 		if let Some((first, tail)) = self.layers.split_first_mut() {
-			tail.iter_mut()
-				.fold(first.update_weights(self.input.view(), rate, momentum),
-				      |prev, layer| layer.update_weights(prev, rate, momentum));
+			tail.iter_mut().fold(
+				first.update_weights(self.input.view(), rate, momentum),
+				|prev, layer| layer.update_weights(prev, rate, momentum),
+			);
 		}
 	}
 }
@@ -419,13 +411,17 @@ mod tests {
 
 		#[test]
 		fn construction_invariants() {
-			use self::Activation::{Identity};
+			use self::Activation::Identity;
 			let weights = Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap();
 			let layer = FullyConnectedLayer::with_weights(weights.clone(), Identity);
 			assert_eq!(layer.weights, weights);
-			assert_eq!(layer.delta_weights, Array1::zeros(12).into_shape((3, 4)).unwrap());
+			assert_eq!(
+				layer.delta_weights,
+				Array1::zeros(12).into_shape((3, 4)).unwrap()
+			);
 			assert_eq!(layer.gradients, Array1::zeros(4));
-			let expected_outputs = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
+			let expected_outputs =
+				Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
 			assert_eq!(layer.outputs, expected_outputs);
 		}
 
@@ -435,7 +431,7 @@ mod tests {
 				weights: Array2<f32>,
 				activation: Activation,
 				applier: Array1<f32>,
-				expected: Array1<f32>
+				expected: Array1<f32>,
 			) {
 				let mut layer = FullyConnectedLayer::with_weights(weights, activation);
 				let result = layer.feed_forward(applier.view()).to_owned();
@@ -445,17 +441,20 @@ mod tests {
 			fn assert_config_with_expected(
 				weights: Array2<f32>,
 				applier: Array1<f32>,
-				expected: Array1<f32>
+				expected: Array1<f32>,
 			) {
 				use self::Activation::*;
 				let activations = [Identity, Tanh, Logistic, SoftPlus, ReLU, Gaussian];
 				for act in &activations {
 					let mut expected_activated = expected.clone();
-					expected_activated.slice_mut(s![..-1]).mapv_inplace(|e| act.base(e));
+					expected_activated
+						.slice_mut(s![..-1])
+						.mapv_inplace(|e| act.base(e));
 					assert_raw_config_with_expected(
-						weights.clone(), *act,
+						weights.clone(),
+						*act,
 						applier.clone(),
-						expected_activated
+						expected_activated,
 					);
 				}
 			}
@@ -464,30 +463,30 @@ mod tests {
 				Array::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
 				Array::from_vec(vec![1.0, 2.0, 3.0, 1.0]),
 				Array::from_vec(vec![
-					1.0*1.0 +  2.0*2.0 +  3.0*3.0 +  4.0*1.0, // = 18.0,
-					5.0*1.0 +  6.0*2.0 +  7.0*3.0 +  8.0*1.0, // = 46.0,
-					9.0*1.0 + 10.0*2.0 + 11.0*3.0 + 12.0*1.0, // = 74.0,
-					1.0 // just the bias!
-				])
+					1.0 * 1.0 + 2.0 * 2.0 + 3.0 * 3.0 + 4.0 * 1.0, // = 18.0,
+					5.0 * 1.0 + 6.0 * 2.0 + 7.0 * 3.0 + 8.0 * 1.0, // = 46.0,
+					9.0 * 1.0 + 10.0 * 2.0 + 11.0 * 3.0 + 12.0 * 1.0, // = 74.0,
+					1.0,                                           // just the bias!
+				]),
 			);
 		}
 
 		#[test]
 		fn calculate_output_gradients() {
 			fn assert_raw_config_with_expected(
-				outputs   : Array1<f32>,
+				outputs: Array1<f32>,
 				activation: Activation,
-				targets   : Array1<f32>,
-				expected_gradients: Array1<f32>
+				targets: Array1<f32>,
+				expected_gradients: Array1<f32>,
 			) {
 				let unbiased_dim = (outputs.dim() - 1, 1);
 				let zero_weights = Array2::zeros(unbiased_dim);
-				let mut layer = FullyConnectedLayer{
-					weights      : zero_weights.clone(),
+				let mut layer = FullyConnectedLayer {
+					weights: zero_weights.clone(),
 					delta_weights: zero_weights.clone(),
-					gradients    : Array::zeros(outputs.dim()),
-					outputs      : outputs.clone(),
-					activation
+					gradients: Array::zeros(outputs.dim()),
+					outputs: outputs.clone(),
+					activation,
 				};
 				layer.calculate_output_gradients(targets.view());
 				let result_gradients = layer.gradients.clone();
@@ -497,24 +496,28 @@ mod tests {
 			fn assert_config_with_expected(
 				outputs: Array1<f32>,
 				targets: Array1<f32>,
-				expected_gradients: Array1<f32>
+				expected_gradients: Array1<f32>,
 			) {
 				use self::Activation::*;
 				let activations = [Identity, Tanh, Logistic, SoftPlus, ReLU, Gaussian];
 				for act in &activations {
 					let mut expected_gradients_activated = expected_gradients.clone();
-					multizip((expected_gradients_activated.slice_mut(s![..-1]), outputs.slice(s![..-1])))
-						.for_each(|(g, o)| *g *= act.derived(*o));
+					multizip((
+						expected_gradients_activated.slice_mut(s![..-1]),
+						outputs.slice(s![..-1]),
+					))
+					.for_each(|(g, o)| *g *= act.derived(*o));
 					assert_raw_config_with_expected(
-						outputs.clone(), *act,
+						outputs.clone(),
+						*act,
 						targets.clone(),
-						expected_gradients_activated
+						expected_gradients_activated,
 					);
 				}
 			}
 
 			assert_config_with_expected(
-				Array1::from_vec(vec![ 1.0,  2.0,  3.0,  4.0,  5.0, 1.0]),
+				Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0, 1.0]),
 				Array1::from_vec(vec![10.0, 10.0, 10.0, 10.0, 10.0]),
 				Array1::from_vec(vec![
 					10.0 - 1.0,
@@ -522,8 +525,8 @@ mod tests {
 					10.0 - 3.0,
 					10.0 - 4.0,
 					10.0 - 5.0,
-					0.0
-				])
+					0.0,
+				]),
 			);
 		}
 
@@ -534,35 +537,42 @@ mod tests {
 				activation: Activation,
 				next_weights: Array2<f32>,
 				next_gradients: Array1<f32>,
-				expected_gradients: Array1<f32>
+				expected_gradients: Array1<f32>,
 			) {
 				let self_n_outputs = self_outputs.dim();
-				let self_n_inputs  = 1;
-				let self_shape     = (self_n_outputs, self_n_inputs);
+				let self_n_inputs = 1;
+				let self_shape = (self_n_outputs, self_n_inputs);
 
 				let (next_n_outputs, next_n_inputs) = next_weights.dim();
 				let next_shape = next_weights.dim();
 
-				let next_outputs = Array1::from_iter(iter::repeat(0.0)
-					.take(next_n_outputs).chain(iter::once(1.0)));
+				let next_outputs = Array1::from_iter(
+					iter::repeat(0.0)
+						.take(next_n_outputs)
+						.chain(iter::once(1.0)),
+				);
 
-				let self_zero_weights = Array1::zeros(self_n_inputs * self_n_outputs).into_shape(self_shape).unwrap();
-				let next_zero_weights = Array1::zeros(next_n_inputs * next_n_outputs).into_shape(next_shape).unwrap();
+				let self_zero_weights = Array1::zeros(self_n_inputs * self_n_outputs)
+					.into_shape(self_shape)
+					.unwrap();
+				let next_zero_weights = Array1::zeros(next_n_inputs * next_n_outputs)
+					.into_shape(next_shape)
+					.unwrap();
 
-				let mut self_layer = FullyConnectedLayer{
-					weights      : self_zero_weights.clone(),
+				let mut self_layer = FullyConnectedLayer {
+					weights: self_zero_weights.clone(),
 					delta_weights: self_zero_weights.clone(),
-					outputs      : self_outputs,
-					gradients    : Array1::zeros(self_n_outputs),
-					activation
+					outputs: self_outputs,
+					gradients: Array1::zeros(self_n_outputs),
+					activation,
 				};
 
-				let next_layer = FullyConnectedLayer{
-					weights      : next_weights,
+				let next_layer = FullyConnectedLayer {
+					weights: next_weights,
 					delta_weights: next_zero_weights.clone(),
-					outputs      : next_outputs,
-					gradients    : next_gradients,
-					activation
+					outputs: next_outputs,
+					gradients: next_gradients,
+					activation,
 				};
 
 				self_layer.propagate_gradients(&next_layer);
@@ -572,10 +582,10 @@ mod tests {
 			}
 
 			fn assert_config_with_expected(
-				self_outputs  : Array1<f32>,
+				self_outputs: Array1<f32>,
 				next_gradients: Array1<f32>,
-				next_weights  : Array2<f32>,
-				expected_gradients_without_act: Array1<f32>
+				next_weights: Array2<f32>,
+				expected_gradients_without_act: Array1<f32>,
 			) {
 				use self::Activation::*;
 				let activations = [Identity, Tanh, Logistic, SoftPlus, ReLU, Gaussian];
@@ -584,53 +594,57 @@ mod tests {
 					multizip((&mut expected_gradients, &self_outputs))
 						.for_each(|(g, o)| *g *= act.derived(*o));
 					assert_raw_config_with_expected(
-						self_outputs.clone(), *act,
+						self_outputs.clone(),
+						*act,
 						next_weights.clone(),
 						next_gradients.clone(),
-						expected_gradients
+						expected_gradients,
 					);
 				}
 			}
 
 			assert_config_with_expected(
-				Array1::from_vec(vec![ 0.25,  0.5,  0.75, 1.0]),
+				Array1::from_vec(vec![0.25, 0.5, 0.75, 1.0]),
 				Array1::from_vec(vec![10.00, 20.0, 30.00, 0.0]),
 				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
 				Array1::from_vec(vec![
-					1.0 * 10.0 + 5.0 * 20.0 +  9.0 * 30.0, // self.gradient_1
+					1.0 * 10.0 + 5.0 * 20.0 + 9.0 * 30.0,  // self.gradient_1
 					2.0 * 10.0 + 6.0 * 20.0 + 10.0 * 30.0, // self.gradient_2
 					3.0 * 10.0 + 7.0 * 20.0 + 11.0 * 30.0, // self.gradient_3
-					4.0 * 10.0 + 8.0 * 20.0 + 12.0 * 30.0  // self.gradient_4
-				])
+					4.0 * 10.0 + 8.0 * 20.0 + 12.0 * 30.0, // self.gradient_4
+				]),
 			);
 		}
 
 		#[test]
 		fn update_weights() {
 			fn assert_raw_config_with_expected(
-				self_gradients    : Array1<f32>,
-				self_weights      : Array2<f32>,
+				self_gradients: Array1<f32>,
+				self_weights: Array2<f32>,
 				self_delta_weights: Array2<f32>,
-				prev_outputs      : Array1<f32>,
-				learn_rate        : LearnRate,
-				learn_momentum    : LearnMomentum,
-				expected_weights  : Array2<f32>,
-				expected_deltas   : Array2<f32>
+				prev_outputs: Array1<f32>,
+				learn_rate: LearnRate,
+				learn_momentum: LearnMomentum,
+				expected_weights: Array2<f32>,
+				expected_deltas: Array2<f32>,
 			) {
 				let (self_n_outputs, _self_n_inputs) = self_weights.dim();
-				let self_outputs = Array1::from_iter(iter::repeat(0.0)
-					.take(self_n_outputs).chain(iter::once(1.0)));
-				let mut self_layer = FullyConnectedLayer{
-					weights      : self_weights,
+				let self_outputs = Array1::from_iter(
+					iter::repeat(0.0)
+						.take(self_n_outputs)
+						.chain(iter::once(1.0)),
+				);
+				let mut self_layer = FullyConnectedLayer {
+					weights: self_weights,
 					delta_weights: self_delta_weights,
-					gradients    : self_gradients,
-					outputs      : self_outputs,
-					activation   : Activation::Identity
+					gradients: self_gradients,
+					outputs: self_outputs,
+					activation: Activation::Identity,
 				};
 				self_layer.update_weights(prev_outputs.view(), learn_rate, learn_momentum);
 
 				let result_weights = self_layer.weights.clone();
-				let result_deltas  = self_layer.delta_weights.clone();
+				let result_deltas = self_layer.delta_weights.clone();
 
 				// println!("=========================");
 				// println!("expected_weights = \n{:?}\n", expected_weights);
@@ -645,21 +659,23 @@ mod tests {
 			}
 
 			fn assert_raw_config(
-				self_gradients    : Array1<f32>,
-				self_weights      : Array2<f32>,
+				self_gradients: Array1<f32>,
+				self_weights: Array2<f32>,
 				self_delta_weights: Array2<f32>,
-				prev_outputs      : Array1<f32>,
-				learn_rate        : LearnRate,
-				learn_momentum    : LearnMomentum
+				prev_outputs: Array1<f32>,
+				learn_rate: LearnRate,
+				learn_momentum: LearnMomentum,
 			) {
 				let lr = learn_rate.to_f32();
 				let lm = learn_momentum.to_f32();
 				let mut expected_deltas = self_delta_weights.clone();
-				multizip((expected_deltas.genrows_mut(), &self_gradients)).for_each(|(mut s_dw_rows, s_g)| {
-					multizip((&mut s_dw_rows, &prev_outputs)).for_each(|(dw, p_o)| {
-						*dw = lr * s_g * (*p_o) + lm * (*dw);
-					})
-				});
+				multizip((expected_deltas.genrows_mut(), &self_gradients)).for_each(
+					|(mut s_dw_rows, s_g)| {
+						multizip((&mut s_dw_rows, &prev_outputs)).for_each(|(dw, p_o)| {
+							*dw = lr * s_g * (*p_o) + lm * (*dw);
+						})
+					},
+				);
 				let mut expected_weights = self_weights.clone();
 				expected_weights += &expected_deltas;
 				assert_raw_config_with_expected(
@@ -670,15 +686,15 @@ mod tests {
 					learn_rate,
 					learn_momentum,
 					expected_weights,
-					expected_deltas
+					expected_deltas,
 				)
 			}
 
 			fn assert_config(
-				self_gradients    : Array1<f32>,
-				self_weights      : Array2<f32>,
+				self_gradients: Array1<f32>,
+				self_weights: Array2<f32>,
 				self_delta_weights: Array2<f32>,
-				prev_outputs      : Array1<f32>,
+				prev_outputs: Array1<f32>,
 			) {
 				let learn_rates = [
 					LearnRate::from(0.0),
@@ -686,7 +702,7 @@ mod tests {
 					LearnRate::from(0.3),
 					LearnRate::from(0.5),
 					LearnRate::from(0.75),
-					LearnRate::from(1.0)
+					LearnRate::from(1.0),
 				];
 				let learn_momentums = [
 					LearnMomentum::from(0.0),
@@ -694,7 +710,7 @@ mod tests {
 					LearnMomentum::from(0.25),
 					LearnMomentum::from(0.5),
 					LearnMomentum::from(0.75),
-					LearnMomentum::from(1.0)
+					LearnMomentum::from(1.0),
 				];
 				use itertools::Itertools;
 				for (lr, lm) in learn_rates.iter().cartesian_product(&learn_momentums) {
@@ -703,39 +719,43 @@ mod tests {
 						self_weights.clone(),
 						self_delta_weights.clone(),
 						prev_outputs.clone(),
-						*lr, *lm
+						*lr,
+						*lm,
 					);
 				}
 			}
 
 			assert_config(
 				Array1::from_vec(vec![7.0, 11.0, 13.0, 17.0]),
-				Array1::linspace( 1.0,  12.0, 12).into_shape((3, 4)).unwrap(),
-				Array1::linspace(10.0, 120.0, 12).into_shape((3, 4)).unwrap(),
-				Array1::from_vec(vec![11.0, 22.0, 33.0, 1.0])
+				Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
+				Array1::linspace(10.0, 120.0, 12)
+					.into_shape((3, 4))
+					.unwrap(),
+				Array1::from_vec(vec![11.0, 22.0, 33.0, 1.0]),
 			);
 		}
 
 		#[test]
 		fn update_weights_old() {
-			use self::Activation::{Identity};
+			use self::Activation::Identity;
 			let lr = LearnRate::from(0.5);
 			let lm = LearnMomentum::from(1.0);
 			let outputs = Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0)));
-			let mut layer = FullyConnectedLayer{
-				weights      : Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
+			let mut layer = FullyConnectedLayer {
+				weights: Array1::linspace(1.0, 12.0, 12).into_shape((3, 4)).unwrap(),
 				delta_weights: Array::zeros((3, 4)),
-				outputs      : Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0))),
-				gradients    : Array1::linspace(10.0, 40.0, 4),
-				activation   : Identity
+				outputs: Array1::from_iter(iter::repeat(0.0).take(3).chain(iter::once(1.0))),
+				gradients: Array1::linspace(10.0, 40.0, 4),
+				activation: Identity,
 			};
 			let result_outputs = layer.update_weights(outputs.view(), lr, lm).to_owned();
 			let target_outputs = Array::from_vec(vec![0.0, 0.0, 0.0, 1.0]);
 			let result_weights = layer.weights.clone();
 			let target_weights = Array::from_vec(vec![
-				1.0,  2.0,  3.0,  9.0,
-				5.0,  6.0,  7.0, 18.0,
-				9.0, 10.0, 11.0, 27.0]).into_shape((3, 4)).unwrap();
+				1.0, 2.0, 3.0, 9.0, 5.0, 6.0, 7.0, 18.0, 9.0, 10.0, 11.0, 27.0,
+			])
+			.into_shape((3, 4))
+			.unwrap();
 			assert_eq!(result_outputs, target_outputs);
 			assert_eq!(result_weights, target_weights);
 		}
@@ -745,38 +765,34 @@ mod tests {
 	fn equivalence() {
 		use self::Activation::{Identity, Tanh};
 
-		let mut merged = FullyConnectedLayer{
-			weights: Array::from_vec(vec![
-					1.0, 2.0, 3.0,
-					4.0, 5.0, 6.0
-				]).into_shape((2, 3)).unwrap(),
+		let mut merged = FullyConnectedLayer {
+			weights: Array::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+				.into_shape((2, 3))
+				.unwrap(),
 			delta_weights: Array::zeros((2, 3)),
 			outputs: Array::zeros(3),
 			gradients: Array::zeros(3),
-			activation: Tanh
+			activation: Tanh,
 		};
 
-		let mut weights_part = FullyConnectedLayer{
-			weights: Array::from_vec(vec![
-					1.0, 2.0, 3.0,
-					4.0, 5.0, 6.0
-				]).into_shape((2, 3)).unwrap(),
+		let mut weights_part = FullyConnectedLayer {
+			weights: Array::from_vec(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+				.into_shape((2, 3))
+				.unwrap(),
 			delta_weights: Array::zeros((2, 3)),
 			outputs: Array::zeros(3),
 			gradients: Array::zeros(3),
-			activation: Identity
+			activation: Identity,
 		};
 
-		let mut activation_part = FullyConnectedLayer{
-			weights: Array::from_vec(vec![
-					1.0, 0.0, 0.0,
-					0.0, 1.0, 0.0,
-					0.0, 0.0, 1.0
-				]).into_shape((3, 3)).unwrap(),
+		let mut activation_part = FullyConnectedLayer {
+			weights: Array::from_vec(vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
+				.into_shape((3, 3))
+				.unwrap(),
 			delta_weights: Array::zeros((3, 3)),
 			outputs: Array::zeros(4),
 			gradients: Array::zeros(4),
-			activation: Tanh
+			activation: Tanh,
 		};
 
 		let input = Array::from_vec(vec![0.1, 0.2, 0.3]);
@@ -785,7 +801,9 @@ mod tests {
 		println!("result_merged = {:?}", result_merged);
 		let result_split_temp = weights_part.feed_forward(input.view()).to_owned();
 		println!("result_split_temp = {:?}", result_split_temp);
-		let result_split = activation_part.feed_forward(result_split_temp.view()).to_owned();
+		let result_split = activation_part
+			.feed_forward(result_split_temp.view())
+			.to_owned();
 		println!("result_split = {:?}", result_split);
 
 		assert_eq!(result_merged, result_split.slice(s![..-1]));
