@@ -132,40 +132,76 @@ mod mentor;
 pub mod topology;
 pub mod topology_v4;
 
-pub use crate::activation::Activation;
-pub use crate::neural_net::NeuralNet;
+pub use crate::{
+    activation::Activation,
+    neural_net::NeuralNet,
+};
 
-pub use crate::mentor::configs::{Criterion, LogConfig, Scheduling};
-pub use crate::mentor::samples::{Sample, SampleView};
-pub use crate::mentor::training::{Mentor, MentorBuilder};
+pub use crate::mentor::{
+    configs::{
+        Criterion,
+        LogConfig,
+        Scheduling,
+    },
+    samples::{
+        Sample,
+        SampleView,
+    },
+    training::{
+        Mentor,
+        MentorBuilder,
+    },
+};
 
-pub use crate::errors::{ErrorKind, Result};
-pub use crate::traits::Predict;
+pub use crate::{
+    errors::{
+        ErrorKind,
+        Result,
+    },
+    traits::Predict,
+};
 
 /// The prophet prelude publicly imports all propet modules the user
 /// needs in order to create, train and use neural networks.
 pub mod prelude {
-	#[doc(no_inline)]
-	pub use crate::activation::Activation;
+    #[doc(no_inline)]
+    pub use crate::activation::Activation;
 
-	#[doc(no_inline)]
-	pub use crate::neural_net::NeuralNet;
+    #[doc(no_inline)]
+    pub use crate::neural_net::NeuralNet;
 
-	#[doc(no_inline)]
-	pub use crate::traits::Predict;
+    #[doc(no_inline)]
+    pub use crate::traits::Predict;
 
-	#[doc(no_inline)]
-	pub use crate::topology::{Layer, Topology, TopologyBuilder};
+    #[doc(no_inline)]
+    pub use crate::topology::{
+        Layer,
+        Topology,
+        TopologyBuilder,
+    };
 
-	#[doc(no_inline)]
-	pub use crate::errors::{ErrorKind, Result};
+    #[doc(no_inline)]
+    pub use crate::errors::{
+        ErrorKind,
+        Result,
+    };
 
-	#[doc(no_inline)]
-	pub use crate::mentor::configs::{Criterion, LogConfig, Scheduling};
+    #[doc(no_inline)]
+    pub use crate::mentor::configs::{
+        Criterion,
+        LogConfig,
+        Scheduling,
+    };
 
-	#[doc(no_inline)]
-	pub use crate::mentor::training::{Mentor, MentorBuilder};
+    #[doc(no_inline)]
+    pub use crate::mentor::training::{
+        Mentor,
+        MentorBuilder,
+    };
 
-	#[doc(no_inline)]
-	pub use crate::mentor::samples::{Sample, SampleView};
+    #[doc(no_inline)]
+    pub use crate::mentor::samples::{
+        Sample,
+        SampleView,
+    };
 }

@@ -25,14 +25,29 @@ mod traits;
 mod utils;
 
 pub use self::sample::{
-	RandomSampleScheduler, Sample, SampleCollection, SampleGen, SequentialSampleScheduler,
-	SupervisedSample,
+    RandomSampleScheduler,
+    Sample,
+    SampleCollection,
+    SampleGen,
+    SequentialSampleScheduler,
+    SupervisedSample,
 };
 
-pub use self::condition::{TrainCondition, TrainingState};
+pub use self::condition::{
+    TrainCondition,
+    TrainingState,
+};
 
-pub use self::mentor::{InitializingMentor, Mentor, MentorBuilder};
+pub use self::mentor::{
+    InitializingMentor,
+    Mentor,
+    MentorBuilder,
+};
 
-pub use self::traits::{EvaluateSupervised, OptimizeSupervised, PredictSupervised};
+pub use self::traits::{
+    EvaluateSupervised,
+    OptimizeSupervised,
+    PredictSupervised,
+};
 
 pub use self::utils::MeanSquaredError;

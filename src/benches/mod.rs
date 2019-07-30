@@ -7,6 +7,9 @@
 
 pub use prelude::*;
 
-pub use test::{black_box, Bencher};
+pub use test::{
+    black_box,
+    Bencher,
+};
 
 mod neural_net;
