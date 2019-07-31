@@ -1,91 +1,100 @@
 #[macro_use]
 extern crate prophet;
 
-extern crate rand;
 extern crate itertools;
+extern crate rand;
 
 #[macro_use]
 extern crate approx;
 
 use prophet::prelude::*;
-use rand::{Rng, thread_rng};
+use rand::{
+    distributions::Uniform,
+    thread_rng,
+    Rng,
+};
 use std::time::Duration;
-use rand::distributions::Uniform;
 
 fn validate_impl(mut net: NeuralNet, samples: Vec<Sample>, rounded: bool) {
-	use itertools::{Itertools, multizip};
-	for sample in samples {
-		let predicted = net.predict(sample.input.view());
-		multizip((predicted.iter(), sample.target.iter()))
-			.for_each(|(&predicted, &expected)| {
-				if rounded {
-					relative_eq!(predicted.round(), expected);
-				}
-				else {
-					relative_eq!(predicted, expected);
-				}
-			});
-	}
+    use itertools::{
+        multizip,
+        Itertools,
+    };
+    for sample in samples {
+        let predicted = net.predict(sample.input.view());
+        multizip((predicted.iter(), sample.target.iter())).for_each(
+            |(&predicted, &expected)| {
+                if rounded {
+                    relative_eq!(predicted.round(), expected);
+                } else {
+                    relative_eq!(predicted, expected);
+                }
+            },
+        );
+    }
 }
 
 /// Validate given samples for the given net with rounded mode.
 fn validate_rounded(net: NeuralNet, samples: Vec<Sample>) {
-	validate_impl(net, samples, true)
+    validate_impl(net, samples, true)
 }
 
 /// Validate given samples for the given net with exact precision.
 fn validate_exact(net: NeuralNet, samples: Vec<Sample>) {
-	validate_impl(net, samples, false)
+    validate_impl(net, samples, false)
 }
 
 /// Create a sample collection with given amount of samples,
 /// each of given input and output size.
 /// Also has a mapper to specify how the expected vector
 /// values are calculated.
-fn gen_random_samples<F>(amount: usize,
-                         input_size: usize,
-                         output_size: usize,
-                         mapping: F) -> Vec<Sample>
-	where F: Fn(&[f32]) -> Vec<f32>
+fn gen_random_samples<F>(
+    amount: usize,
+    input_size: usize,
+    output_size: usize,
+    mapping: F,
+) -> Vec<Sample>
+where
+    F: Fn(&[f32]) -> Vec<f32>,
 {
-	let mut rng = thread_rng();
-	let mut samples = Vec::with_capacity(amount);
-	for _ in 0..amount {
-		let inputs = rng.sample_iter(&Uniform::new(0_f32, 1_f32))
-			.take(input_size)
-			.collect::<Vec<f32>>();
-		assert_eq!(inputs.len(), input_size);
-		let outputs = mapping(&inputs);
-		assert_eq!(outputs.len(), output_size);
-		samples.push(Sample::from((inputs, outputs)))
-	}
-	assert_eq!(samples.len(), amount);
-	samples
+    let mut rng = thread_rng();
+    let mut samples = Vec::with_capacity(amount);
+    for _ in 0..amount {
+        let inputs = rng
+            .sample_iter(&Uniform::new(0_f32, 1_f32))
+            .take(input_size)
+            .collect::<Vec<f32>>();
+        assert_eq!(inputs.len(), input_size);
+        let outputs = mapping(&inputs);
+        assert_eq!(outputs.len(), output_size);
+        samples.push(Sample::from((inputs, outputs)))
+    }
+    assert_eq!(samples.len(), amount);
+    samples
 }
 
 #[test]
 fn train_xor() {
-	use crate::Activation::Tanh;
+    use crate::Activation::Tanh;
 
-	let (t, f) = (1.0, -1.0);
-	let samples = samples_vec![
-		[f, f] => f,
-		[t, f] => t,
-		[f, t] => t,
-		[t, t] => f
-	];
+    let (t, f) = (1.0, -1.0);
+    let samples = samples_vec![
+        [f, f] => f,
+        [t, f] => t,
+        [f, t] => t,
+        [t, t] => f
+    ];
 
-	let net = Topology::input(2)
-		.layer(2, Tanh)
-		.output(1, Tanh)
+    let net = Topology::input(2)
+        .layer(2, Tanh)
+        .output(1, Tanh)
+        .train(samples.clone())
+        .learn_rate(0.6)
+        .log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
+        .go()
+        .unwrap();
 
-		.train(samples.clone())
-		.learn_rate(0.6)
-		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
-		.go()
-		.unwrap();
-
-	validate_rounded(net, samples);
+    validate_rounded(net, samples);
 }
 
 // #[test]
@@ -124,25 +133,24 @@ fn train_xor() {
 
 #[test]
 fn train_and() {
-	use crate::Activation::Tanh;
+    use crate::Activation::Tanh;
 
-	let (t, f) = (1.0, -1.0);
-	let samples = samples_vec![
-		[f, f] => f,
-		[f, t] => f,
-		[t, f] => f,
-		[t, t] => t
-	];
+    let (t, f) = (1.0, -1.0);
+    let samples = samples_vec![
+        [f, f] => f,
+        [f, t] => f,
+        [t, f] => f,
+        [t, t] => t
+    ];
 
-	let net = Topology::input(2)
-		.output(1, Tanh)
+    let net = Topology::input(2)
+        .output(1, Tanh)
+        .train(samples.clone())
+        .log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
+        .go()
+        .unwrap();
 
-		.train(samples.clone())
-		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
-		.go()
-		.unwrap();
-
-	validate_rounded(net, samples)
+    validate_rounded(net, samples)
 }
 
 // #[test]
@@ -176,36 +184,32 @@ fn train_and() {
 
 #[test]
 fn train_compare() {
-	use crate::Activation::Tanh;
+    use crate::Activation::Tanh;
 
-	let count_learn_samples = 10_000;
-	let count_test_samples  =    100;
-	let inputs  = 2;
-	let outputs = 1;
+    let count_learn_samples = 10_000;
+    let count_test_samples = 100;
+    let inputs = 2;
+    let outputs = 1;
 
-	fn mapper(inputs: &[f32]) -> Vec<f32> {
-		if inputs[0] < inputs[1] {
-			vec![-1.0]
-		}
-		else {
-			vec![1.0]
-		}
-	}
+    fn mapper(inputs: &[f32]) -> Vec<f32> {
+        if inputs[0] < inputs[1] {
+            vec![-1.0]
+        } else {
+            vec![1.0]
+        }
+    }
 
-	let learn_samples = gen_random_samples(
-		count_learn_samples, inputs, outputs, mapper);
-	let test_samples = gen_random_samples(
-		count_test_samples, inputs, outputs, mapper);
+    let learn_samples = gen_random_samples(count_learn_samples, inputs, outputs, mapper);
+    let test_samples = gen_random_samples(count_test_samples, inputs, outputs, mapper);
 
-	let net = Topology::input(inputs)
-		.layer(4, Tanh)
-		.layer(3, Tanh)
-		.output(outputs, Tanh)
+    let net = Topology::input(inputs)
+        .layer(4, Tanh)
+        .layer(3, Tanh)
+        .output(outputs, Tanh)
+        .train(learn_samples)
+        .log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
+        .go()
+        .unwrap();
 
-		.train(learn_samples)
-		.log_config(LogConfig::TimeSteps(Duration::from_secs(1)))
-		.go()
-		.unwrap();
-
-	validate_exact(net, test_samples)
+    validate_exact(net, test_samples)
 }
